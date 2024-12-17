@@ -2,6 +2,7 @@
 #define _SGCPP_PARSER_HPP
 
 #include "ast.hpp"
+#include "errors.hpp"
 #include "lexer.hpp"
 #include "operations.hpp"
 
@@ -64,6 +65,8 @@ namespace Parse {
         private:
             /* The scanner we'll get our tokens from */
             Scan::Scanner& scanner;
+            /* The output class we use to error and warn. */
+            Output& output;
 
             /* Will be set to the first token of the stream */
             Scan::Token current_token;
@@ -84,7 +87,7 @@ namespace Parse {
             Rules::led_func_t get_led() const;
         
         public:
-            Parser(Scan::Scanner& scanner);
+            Parser(Scan::Scanner& scanner, Output& output);
 
             /* Pratt top-down parse expressions with this precedence or higher. */
             AST::Node* parse_precedence(int prec);

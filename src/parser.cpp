@@ -8,10 +8,10 @@
 using namespace Parse;
 using Rules::nud_func_t, Rules::led_func_t;
 
-/* Parse rule initialization */
+/* Parse rule initialization > */
 std::array<Rules::ParseRule, Scan::NUM_TOKEN_TYPES> Rules::rules = {};
 
-// Rule functions
+// Rule functions >
 AST::Node* Parse::Rules::number(Scan::Token current, Parser* parser) {
     return new AST::Number(current.get_number());
 }
@@ -89,8 +89,12 @@ void Parser::initialize_parse_rules() {
 
     Parser::rules_initialized = true;
 }
+// < Rule functions
+/* < Parse rule initialization */
 
-Parser::Parser(Scan::Scanner& scanner) : scanner(scanner), current_token(scanner.next_token()) {
+Parser::Parser(Scan::Scanner& scanner, Output& output) :
+    scanner(scanner), output(output), current_token(scanner.next_token())
+{
     #ifdef DEBUG
     /* You ABSOLUTELY CAN NOT initialize a parser without initializing the rules */
     assert(Parser::rules_initialized);
@@ -120,6 +124,11 @@ AST::Node* Parser::parse_precedence(int prec) {
     /* If there's no nud, it's not a prefix operator, so this token should not be here.
         Throw an error. */
     if (nud == nullptr) {
+        char error_message[100];
+        snprintf(error_message, 100, "Unexpected token type %s", Scan::tok_type_to_string(this->curr().get_type()));
+        this->output.error(this->curr().get_position(), error_message);
+        
+        return nullptr;
     }
 
     /* Save the start because we have to advance before calling nud. */
