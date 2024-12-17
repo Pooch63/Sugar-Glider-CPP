@@ -36,6 +36,8 @@ namespace Scan {
         Value::number_t num;
     };
 
+    const char* tok_type_to_string(TokType type);
+
     class Token {
         /* Payload is only valid if the type calls for it. E.g, if the token type is PLUS,
             that value is a constant, so the payload's number can be anything.
@@ -51,6 +53,7 @@ namespace Scan {
             Token(Value::number_t number, TokenPosition position);
 
             inline TokType get_type() const { return this->type; };
+            inline TokenPosition get_position() const { return this->position; };
             Value::number_t get_number() const;
 
             #ifdef DEBUG
