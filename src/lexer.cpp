@@ -8,6 +8,26 @@
 using namespace Scan;
 using Position::TokenPosition;
 
+const char* Scan::tok_type_to_string(TokType type) {
+    switch (type) {
+        case NUMBER: return "number";
+
+        case PLUS: return "+";
+        case MINUS: return "-";
+        case STAR: return "*";
+        case SLASH: return "/";
+        case PERCENT: return "%";
+
+        case EOI: return "end of file";
+
+        default:
+            /* We should not have to convert any other token to a string */
+            #ifdef DEBUG
+            assert(false);
+            #endif
+    }
+};
+
 Token::Token(TokType type, TokenPosition position) : type(type), position(position) {};
 Token::Token(Value::number_t number, TokenPosition position) :
     type(TokType::NUMBER),
@@ -132,7 +152,7 @@ Token Scanner::next_token() {
         Value::number_t number;
         try {
             number = static_cast<Value::number_t>(std::stod(number_string));
-        } catch (std::exception) {
+        } catch (const std::exception&) {
             // If we catch an exception, that means the number failed to parse
             return Token(TokType::ERROR, Position::null_token_position);
         };
