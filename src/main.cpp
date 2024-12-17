@@ -8,7 +8,7 @@
 #include <iostream>
 
 int main() {
-    std::string prog = "1131\n+  \n 8";
+    std::string prog = "3 + -4 / 5";
     Scan::Scanner lexer(prog);
 
     // std::cout << "was NOT the seg fault!" << std::endl;
@@ -25,6 +25,8 @@ int main() {
 
     Parse::Parser parser(lexer, output);
     AST::Node* node = parser.parse_precedence(-1);
+
+    std::cout << node->get_type() << std::endl;
 
     using namespace Instruction;
     Chunk chunk = Chunk();
