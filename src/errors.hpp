@@ -59,7 +59,9 @@ class Output {
         /* Get the index of the newline character at the given line.
             If -1 is passed, -1 is returned (since it's the index of the character
             right before the start of the program.) */
-        int get_line_end(int line);
+        int get_line_end(int line) const;
+
+        bool errored = false;
 
     public:
         /* Automatically extract line inds. */
@@ -67,6 +69,8 @@ class Output {
 
         /* Write an error to the console */
         void error(Position::TokenPosition position, std::string error);
+
+        inline bool had_error() const { return this->errored; };
 };
 
 #endif
