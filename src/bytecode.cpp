@@ -158,14 +158,20 @@ int Chunk::print_instruction(int current_byte_index) {
         case OpCode::OP_BIN:
         {
             Operations::BinOpType type = static_cast<Operations::BinOpType>(this->read_byte(current_byte_index + read_count));
-            output += std::to_string(type);
+            output += std::to_string(static_cast<uint>(type));
+            output += " (";
+            output += Operations::bin_op_to_string(type);
+            output += ')';
             read_count += 1;
         }
             break;
         case OpCode::OP_UNARY:
         {
             Operations::UnaryOpType type = static_cast<Operations::UnaryOpType>(this->read_byte(current_byte_index + read_count));
-            output += std::to_string(type);
+            output += std::to_string(static_cast<uint>(type));
+            output += " (";
+            output += Operations::unary_op_to_string(type);
+            output += ')';
             read_count += 1;
         }
             break;
