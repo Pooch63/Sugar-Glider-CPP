@@ -9,12 +9,14 @@ namespace AST {
         NODE_NUMBER,
 
         NODE_BINOP,
-        NODE_UNARYOP
+        NODE_UNARYOP,
+        NODE_TERNARY_OP
     };
 
     class Number;
     class BinOp;
     class UnaryOp;
+    class TernaryOp;
 
     /* A collection of pointers to all the possible nodes
         that the node could be wrapping. While this COULD be
@@ -23,6 +25,7 @@ namespace AST {
         Number* number;
         BinOp* bin_op;
         UnaryOp* unary_op;
+        TernaryOp* ternary_op;
     };
 
     class Node {
@@ -40,6 +43,7 @@ namespace AST {
             Number* as_number() const;
             BinOp* as_bin_op() const;
             UnaryOp* as_unary_op() const;
+            TernaryOp* as_ternary_op() const;
 
             /* Frees the node payload depending on its type. */
             ~Node();
@@ -76,6 +80,20 @@ namespace AST {
 
             inline Operations::UnaryOpType get_type() const { return this->type; }
             inline Node* get_argument() const { return this->argument; }
+
+            void free();
+    };
+    class TernaryOp : public Node {
+        private:
+            Node* condition;
+            Node* true_value;
+            Node* false_value;
+        public:
+            TernaryOp(Node* condition, Node* true_value, Node* false_value);
+
+            inline Node* get_condition() const { return this->condition; }
+            inline Node* get_true_value() const { return this->true_value; }
+            inline Node* get_false_value() const { return this->false_value; }
 
             void free();
     };

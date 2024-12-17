@@ -70,7 +70,13 @@ AST::Node* Parse::Rules::paren_group(Scan::Token current, Parser* parser) {
 
     return expression;
 };
+AST::Node* Parse::Rules::ternary_op(Scan::Token current, AST::Node* left, Parser* parser) {
+    AST::Node* if_true = parser->parse_precedence((int)Precedence::PREC_NONE);
+    parser->expect_symbol(Scan::TokType::COLON);
+    AST::Node* if_false = parser->parse_precedence((int)Precedence::PREC_NONE);
 
+    return new AST::TernaryOp(left, if_true, if_false);
+};
 
 bool Parser::rules_initialized = false;
 void Parser::initialize_parse_rules() {
@@ -94,7 +100,7 @@ void Parser::initialize_parse_rules() {
     rules[Scan::TokType::STAR] =
         rules[Scan::TokType::SLASH] = rules[Scan::TokType::PERCENT] =
         ParseRule{
-            .nud = Rules::unary_op,
+            .nud = nullptr,
             .led = Rules::binary_op,
             .precedence = Precedence::PREC_FACTOR
         };
@@ -103,6 +109,12 @@ void Parser::initialize_parse_rules() {
         .nud = Rules::paren_group,
         .led = nullptr,
         .precedence = Precedence::PREC_NONE
+    };
+
+    rules[Scan::TokType::QUESTION_MARK] = ParseRule{
+        .nud = nullptr,
+        .led = Rules::ternary_op,
+        .precedence = Precedence::PREC_ASSIGNMENT_OR_TERNARY
     };
 
     Parser::rules_initialized = true;
@@ -143,6 +155,27 @@ Scan::Token* Parser::expect_symbol(Scan::TokType type) {
     this->output.error(curr.get_position(), error_message);
     return nullptr;
 };
+Scan::Token* Parser::expect(Scan::TokType type, char* error_message) {
+    Scan::Token current = this->curr();
+    if (current.get_type() == type) {
+        this->advance();
+        return &this->current_token;
+    }
+
+    return nullptr;
+}
+
+void Parser::synchronize() {
+    using namespace Scan;
+    while (true) {
+        switch (this->curr().get_type()) {
+            case TokType::EOI:
+                return;
+            default: break;
+        }
+        this->advance();
+    }
+}
 
 Rules::ParseRule Parser::get_parse_rule() const {
     return Rules::rules.at(static_cast<int>(this->curr().get_type()));
@@ -163,6 +196,9 @@ AST::Node* Parser::parse_precedence(int prec) {
         char error_message[100];
         snprintf(error_message, 100, "Unexpected token type %s", Scan::tok_type_to_string(this->curr().get_type()));
         this->output.error(this->curr().get_position(), error_message);
+
+        // Enter panic mode
+        this->synchronize();
         
         return nullptr;
     }

@@ -8,18 +8,12 @@
 #include <iostream>
 
 int main() {
-    std::string prog = "(4 / 5)";
+    Parse::Parser::initialize_parse_rules();
+
+    std::string prog = "3 + 4 ? 34 / 4 + 7 * 9 / 75 : 4 * 7 / 7 + 78";
     Scan::Scanner lexer(prog);
 
-    // std::cout << "was NOT the seg fault!" << std::endl;
-
-    // std::cout << lexer.next_token().to_string() << std::endl;
-    // std::cout << lexer.next_token().get_type() << std::endl;
-    // std::cout << lexer.next_token().to_string() << std::endl;
-
     Output output(prog);
-
-    Parse::Parser::initialize_parse_rules();
 
     Parse::Parser parser(lexer, output);
     AST::Node* node = parser.parse_precedence(-1);
@@ -35,15 +29,6 @@ int main() {
     compiler.compile(node);
 
     chunk.print_code();
-
-    // chunk.push_small_enum<OpCode>(OpCode::OP_NUMBER);
-    // chunk.push_number_value(1.58);
-    // chunk.push_small_enum<OpCode>(OpCode::OP_TRUE);
-    // chunk.push_small_enum<OpCode>(OpCode::OP_BIN);
-    // chunk.push_small_enum<Operations::BinOpType>(Operations::BinOpType::BINOP_ADD);
-
-    // chunk.print_code();
-
     delete node;
 
     return 0;

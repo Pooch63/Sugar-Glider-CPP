@@ -1,6 +1,7 @@
 #include "bytecode.hpp"
 
 #ifdef DEBUG
+#include <cassert>
 #include <iostream>
 #include <string>
 #endif
@@ -46,10 +47,30 @@ void Chunk::push_number_value(Value::number_t data) {
     }
 };
 
-uint8_t Chunk::read_byte(int current_byte_index) const {
+
+void Chunk::insert_uint32(uint index, uint32_t data) {
+    #ifdef DEBUG
+    /* Can't insert into an invalid index */
+    assert(this->code.size() >= index + 4 + 1);
+    #endif
+
+    union {
+        uint32_t payload;
+        /* Don't take for granted the uint32_t. Certain architectures (i.e., Arduino), may not
+            have 4-byte integers. */
+        uint8_t bytes[sizeof(uint32_t)];
+    } reader;
+    reader.payload = data;
+
+    for (uint_fast8_t byte = 0; byte < sizeof(uint32_t); byte += 1) {
+        this->code[index + byte] = reader.bytes[byte];
+    }
+};
+
+uint8_t Chunk::read_byte(uint current_byte_index) const {
     return this->code.at(current_byte_index);
 }
-uint32_t Chunk::read_uint32(int current_byte_index) const {
+uint32_t Chunk::read_uint32(uint current_byte_index) const {
     #ifdef _SGCPP_SYSTEM_IS_BIG_ENDIAN
     #else
     union {
@@ -64,7 +85,7 @@ uint32_t Chunk::read_uint32(int current_byte_index) const {
     return payload.data;
     #endif
 }
-Value::number_t Chunk::read_number_value(int current_byte_index) const {
+Value::number_t Chunk::read_number_value(uint current_byte_index) const {
     #ifdef _SGCPP_SYSTEM_IS_BIG_ENDIAN
     #else
     union {
@@ -97,7 +118,7 @@ static uint get_digits(uint number) {
 
 /* How long the area for the instruction name should be when we're logging */
 static int INSTRUCTION_NAME_LENGTH = 30;
-int Chunk::print_instruction(int current_byte_index) {
+int Chunk::print_instruction(uint current_byte_index) {
     OpCode code = static_cast<OpCode>(this->read_byte(current_byte_index));
     /* The number of bytes we'll need to read. The first is the instruction */
     int read_count = 1;
@@ -139,6 +160,9 @@ int Chunk::print_instruction(int current_byte_index) {
         case OpCode::OP_LOAD_CONST:
             output = "LOAD_CONST";
             break;
+        case OpCode::OP_EXIT:
+            output = "EXIT";
+            break;
     }
 
     // Add spaces
@@ -152,8 +176,8 @@ int Chunk::print_instruction(int current_byte_index) {
         case OpCode::OP_GOTO:
         case OpCode::OP_POP_JIZ:
         case OpCode::OP_POP_JNZ:
-            output += std::to_string(this->read_byte(current_byte_index + read_count));
-            read_count += 1;
+            output += std::to_string(this->read_uint32(current_byte_index + read_count));
+            read_count += 4;
             break;
         case OpCode::OP_BIN:
         {

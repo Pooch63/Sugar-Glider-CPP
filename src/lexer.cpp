@@ -21,6 +21,9 @@ const char* Scan::tok_type_to_string(TokType type) {
         case LPAREN: return "(";
         case RPAREN: return ")";
 
+        case QUESTION_MARK: return "?";
+        case COLON: return ":";
+
         case EOI: return "end of file";
 
         default:
@@ -139,6 +142,9 @@ Token Scanner::next_token() {
 
         case '(': one_char_type = TokType::LPAREN; break;
         case ')': one_char_type = TokType::RPAREN; break;
+
+        case '?': one_char_type = TokType::QUESTION_MARK; break;
+        case ':': one_char_type = TokType::COLON; break;
     };
     if (one_char_type != TokType::ERROR) {
         this->advance();

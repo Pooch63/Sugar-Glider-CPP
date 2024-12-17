@@ -15,6 +15,8 @@ namespace Parse {
         // Used for unary operators that are NOT infix operators, e.g. numbers
         PREC_NONE,
 
+        PREC_ASSIGNMENT_OR_TERNARY, // a = b OR a ? b : c
+
         // + or -
         PREC_TERM,
         // *, / or %
@@ -86,6 +88,8 @@ namespace Parse {
             /* Returns the led function of the current token. (Could be null) */
             Rules::led_func_t get_led() const;
         
+            /* Panic until we find a syncronizing token */
+            void synchronize();
         public:
             Parser(Scan::Scanner& scanner, Output& output);
 
@@ -93,10 +97,16 @@ namespace Parse {
             AST::Node* parse_precedence(int prec);
 
             // Error helpers (public so that the parsing functions can access them)
+            // None of the expect functions enter panic mode.
             /* If the current token is the given type, advance and return the token.
-                Otherwise, don't advance, error, and return nullptr. */
-            /* Generate an error based on the token types. */
+                Otherwise, don't advance, error, and return nullptr.
+                Generates an error based on the token types.
+                Meant to be used in situations where tokens are constants, e.g.
+                expecting a ')' in an expression. */
             Scan::Token* expect_symbol(Scan::TokType type);
+            /* If the current token is the given type, advance and return the token.
+                Otherwise, error and return nullptr. */
+            Scan::Token* expect(Scan::TokType type, char* error_message);
     };
 };
 

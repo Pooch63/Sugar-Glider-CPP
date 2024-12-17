@@ -27,6 +27,11 @@ namespace Scan {
         // )
         RPAREN,
 
+        // ?
+        QUESTION_MARK,
+        // :
+        COLON,
+
         /* End of input. Signifies that there were no more tokens. */
         EOI,
 

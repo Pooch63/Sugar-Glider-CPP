@@ -27,6 +27,12 @@ UnaryOp* Node::as_unary_op() const {
     #endif
     return this->node.unary_op;
 }
+TernaryOp* Node::as_ternary_op() const {
+    #ifdef DEBUG
+    assert(this->node_type == NodeType::NODE_TERNARY_OP);
+    #endif
+    return this->node.ternary_op;
+}
 
 Node::~Node() {
     switch (this->node_type) {
@@ -62,4 +68,13 @@ UnaryOp::UnaryOp(Operations::UnaryOpType type, Node* argument) :
     type(type), argument(argument) {};
 void UnaryOp::free() {
     delete this->argument;
+}
+
+TernaryOp::TernaryOp(Node* condition, Node* true_value, Node* false_value) :
+    Node(NodeType::NODE_TERNARY_OP, node_wrapper_t{ .ternary_op = this }),
+    condition(condition), true_value(true_value), false_value(false_value) {};
+void TernaryOp::free() {
+    delete this->condition;
+    delete this->true_value;
+    delete this->false_value;
 }

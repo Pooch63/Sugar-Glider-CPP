@@ -60,6 +60,10 @@ namespace Instruction {
             Constant must be a value of unknown size at runtime, so not a boolean, null, nor number.
     OpCode        Argument is 4 bytes, uint32_t. */
         OP_LOAD_CONST,
+
+        /* Exit the program,
+            0 arguments */
+        OP_EXIT
     };
 
     typedef std::vector<uint8_t> bytecode_t;
@@ -71,7 +75,7 @@ namespace Instruction {
             /* From the current byte index in the code, log the instruction
                 and any arguments it has. Then, return the number of bytes we read,
                 starting from the current byte, in order to log it. */
-            int print_instruction(int current_byte_index);
+            int print_instruction(uint current_byte_index);
             #endif
         public:
             /* Push an enum into the code.
@@ -91,11 +95,19 @@ namespace Instruction {
             void push_number_value(Value::number_t data);
 
             /* Read a single unsigned byte at the specified index */
-            uint8_t read_byte(int index) const;
+            uint8_t read_byte(uint index) const;
             /* Read a uint32, starting from the specified index */
-            uint32_t read_uint32(int current_byte_index) const;
+            uint32_t read_uint32(uint current_byte_index) const;
             /* Read a value of type number_t, starting from the specified index */
-            Value::number_t read_number_value(int current_byte_index) const;
+            Value::number_t read_number_value(uint current_byte_index) const;
+
+            /* Insert a uint32 into the code, with the first byte starting at the specified index */
+            void insert_uint32(uint index, uint32_t data);
+
+            /* Get the current number of instructions
+                Made public so that the compiler can reserve code space, and then use the instruction count
+                to know where exactly to insert the value later */
+            inline size_t code_byte_count() const { return this->code.size(); };
 
             #ifdef DEBUG
             /* Log representation of bytecode to console */
