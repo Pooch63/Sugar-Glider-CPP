@@ -1,5 +1,5 @@
 CC = g++
-flags = -Wall -ggdb3 -std=c++17 -O0
+flags = -Wall -ggdb3 -std=c++17 -O3
 
 SRC_DIR = ./src
 OBJ_DIR =./obj
