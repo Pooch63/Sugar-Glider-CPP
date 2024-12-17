@@ -91,6 +91,12 @@ namespace Parse {
 
             /* Pratt top-down parse expressions with this precedence or higher. */
             AST::Node* parse_precedence(int prec);
+
+            // Error helpers (public so that the parsing functions can access them)
+            /* If the current token is the given type, advance and return the token.
+                Otherwise, don't advance, error, and return nullptr. */
+            /* Generate an error based on the token types. */
+            Scan::Token* expect_symbol(Scan::TokType type);
     };
 };
 

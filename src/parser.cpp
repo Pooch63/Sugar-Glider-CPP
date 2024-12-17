@@ -27,7 +27,7 @@ AST::Node* Parse::Rules::unary_op(Scan::Token current, Parser* parser) {
             #endif
             break;
     }
-    AST::Node* argument = parser->parse_precedence((int)Precedence::PREC_UNARY);
+    AST::Node* argument = parser->parse_precedence((int)Precedence::PREC_UNARY + 1);
     return new AST::UnaryOp(type, argument);
 }
 AST::Node* Parse::Rules::binary_op(Scan::Token current, AST::Node* left, Parser* parser) {
@@ -64,6 +64,13 @@ AST::Node* Parse::Rules::binary_op(Scan::Token current, AST::Node* left, Parser*
     AST::Node* right = parser->parse_precedence(static_cast<int>(prec) + 1);
     return new AST::BinOp(type, left, right);
 }
+AST::Node* Parse::Rules::paren_group(Scan::Token current, Parser* parser) {
+    AST::Node* expression = parser->parse_precedence((int)Precedence::PREC_NONE);
+    parser->expect_symbol(Scan::TokType::RPAREN);
+
+    return expression;
+};
+
 
 bool Parser::rules_initialized = false;
 void Parser::initialize_parse_rules() {
@@ -73,19 +80,24 @@ void Parser::initialize_parse_rules() {
         .led = nullptr,
         .precedence = Precedence::PREC_NONE
     };
-    rules[Scan::TokType::PLUS] =
-        rules[Scan::TokType::STAR] = rules[Scan::TokType::SLASH] =
-        rules[Scan::TokType::PERCENT] =
-        ParseRule{
+    rules[Scan::TokType::PLUS] = ParseRule{
             .nud = nullptr,
             .led = Rules::binary_op,
-            .precedence = Precedence::PREC_NONE
+            .precedence = Precedence::PREC_TERM
         };
     rules[Scan::TokType::MINUS] = ParseRule{
         .nud = Rules::unary_op,
         .led = Rules::binary_op,
         .precedence = Precedence::PREC_TERM
     };
+
+    rules[Scan::TokType::STAR] =
+        rules[Scan::TokType::SLASH] = rules[Scan::TokType::PERCENT] =
+        ParseRule{
+            .nud = Rules::unary_op,
+            .led = Rules::binary_op,
+            .precedence = Precedence::PREC_FACTOR
+        };
 
     Parser::rules_initialized = true;
 }
@@ -99,7 +111,7 @@ Parser::Parser(Scan::Scanner& scanner, Output& output) :
     /* You ABSOLUTELY CAN NOT initialize a parser without initializing the rules */
     assert(Parser::rules_initialized);
     #endif
-};
+}
 
 Scan::Token Parser::advance() {
     Scan::Token current = this->curr();
@@ -107,6 +119,24 @@ Scan::Token Parser::advance() {
 
     return current;
 }
+
+Scan::Token* Parser::expect_symbol(Scan::TokType type) {
+    Scan::Token curr = this->curr();
+    if (curr.get_type() == type) {
+        this->advance();
+        return &this->current_token;
+    }
+
+    char error_message[100];
+    snprintf(
+        error_message, 100,
+        "Unexpected token %s (%s) -- expected token of type %s",
+        Scan::tok_type_to_string(this->curr().get_type()),
+        Scan::tok_to_concise_string(this->curr()).c_str(),
+        Scan::tok_type_to_string(type));
+    this->output.error(curr.get_position(), error_message);
+    return nullptr;
+};
 
 Rules::ParseRule Parser::get_parse_rule() const {
     return Rules::rules.at(static_cast<int>(this->curr().get_type()));
