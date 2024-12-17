@@ -99,6 +99,12 @@ void Parser::initialize_parse_rules() {
             .precedence = Precedence::PREC_FACTOR
         };
 
+    rules[Scan::TokType::LPAREN] = ParseRule{
+        .nud = Rules::paren_group,
+        .led = nullptr,
+        .precedence = Precedence::PREC_NONE
+    };
+
     Parser::rules_initialized = true;
 }
 // < Rule functions
@@ -130,7 +136,7 @@ Scan::Token* Parser::expect_symbol(Scan::TokType type) {
     char error_message[100];
     snprintf(
         error_message, 100,
-        "Unexpected token %s (%s) -- expected token of type %s",
+        "Unexpected token %s (%s) -- expected token of type '%s'",
         Scan::tok_type_to_string(this->curr().get_type()),
         Scan::tok_to_concise_string(this->curr()).c_str(),
         Scan::tok_type_to_string(type));
