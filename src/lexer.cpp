@@ -18,6 +18,9 @@ const char* Scan::tok_type_to_string(TokType type) {
         case SLASH: return "/";
         case PERCENT: return "%";
 
+        case LPAREN: return "(";
+        case RPAREN: return ")";
+
         case EOI: return "end of file";
 
         default:
@@ -30,7 +33,7 @@ const char* Scan::tok_type_to_string(TokType type) {
 std::string Scan::tok_to_concise_string(Token token) {
     switch (token.get_type()) {
         case NUMBER: return std::to_string(token.get_number());
-        default: return tok_type_to_string(token.get_type());
+        default: return std::string(tok_type_to_string(token.get_type()));
     }
 };
 
@@ -113,10 +116,12 @@ TokenPosition Scanner::make_single_line_position(int length) const {
 Token Scanner::next_token() {
     this->skip_whitespace();
 
-    // If we're at the end of the file, just return an EOI
+    /* If we're at the end of the file, just return an EOI.
+        Make the length 1 so that errors saying they expected another
+        token at the end of the file have a carat. */
     if (this->current() == '\0') return Token(
         TokType::EOI,
-        TokenPosition{ .line = this->line, col = this->col, .length = 0 }
+        TokenPosition{ .line = this->line, col = this->col, .length = 1 }
     );
 
     char curr = this->current();
@@ -149,7 +154,7 @@ Token Scanner::next_token() {
         std::string number_string = "";
 
         while (!this->at_EOF()) {
-            char curr = this->advance();
+            char curr = this->current();
             if (is_digit(curr)) number_string += curr;
             else if (curr == '.') {
                 // We can't have two decimal places in one number, so if we've
@@ -162,6 +167,8 @@ Token Scanner::next_token() {
             else break;
 
             length += 1;
+            // Only advance if it was a valid character.
+            this->advance();
         }
 
         Value::number_t number;
