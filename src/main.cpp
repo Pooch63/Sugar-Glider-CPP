@@ -8,7 +8,7 @@
 #include <iostream>
 
 int main() {
-    std::string prog = "3 + -4 / 5";
+    std::string prog = "(4 / 5)";
     Scan::Scanner lexer(prog);
 
     // std::cout << "was NOT the seg fault!" << std::endl;
@@ -18,15 +18,15 @@ int main() {
     // std::cout << lexer.next_token().to_string() << std::endl;
 
     Output output(prog);
-    output.error(TokenPosition{ .line = 0, .col = 2, .length = 1 }, "This is a test error");
-
 
     Parse::Parser::initialize_parse_rules();
 
     Parse::Parser parser(lexer, output);
     AST::Node* node = parser.parse_precedence(-1);
 
-    std::cout << node->get_type() << std::endl;
+    /* If there was a parse error, there will be some null pointers, so DO NOT
+        actually compile. */
+    if (output.had_error()) return -1;
 
     using namespace Instruction;
     Chunk chunk = Chunk();
