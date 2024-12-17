@@ -17,11 +17,13 @@ void Output::extract_line_ends() {
     // We need a line end for the VERY end of the program
     this->line_ends.push_back(prog.size());
 }
-int Output::get_line_end(int line) {
+int Output::get_line_end(int line) const {
     return line == -1 ? -1 : this->line_ends.at(line);
 }
 void Output::error(Position::TokenPosition position, std::string error) {
     using std::max, std::min;
+
+    this->errored = true;
 
     // Log the line information
     std::string location = std::to_string(position.line);
@@ -49,7 +51,10 @@ void Output::error(Position::TokenPosition position, std::string error) {
     }
     /* Now, log the red error. */
     Colors::set_color(Colors::RED);
-    for (int ind = error_start; ind < error_start + position.length; ind += 1) {
+    // An EOF token goes past the program length, so make sure not to go too far
+    for (int ind = error_start; ind < min(
+            static_cast<int>(this->prog.size()), error_start + position.length
+        ); ind += 1) {
         std::cout << this->prog.at(ind);
     }
     Colors::set_color(Colors::DEFAULT);
@@ -83,5 +88,5 @@ void Output::error(Position::TokenPosition position, std::string error) {
     std::cout << error;
 
 
-    std::cout << std::endl;
+    std::cout << '\n' << std::endl;
 };
