@@ -15,14 +15,16 @@ void Compiler::compile_bin_op(AST::BinOp* node) {
     this->compile(node->get_left());
     this->compile(node->get_right());
 
-    /* Now, push the type */
+    /* Now, push the operation */
+    this->main_chunk.push_opcode(OpCode::OP_BIN);
     this->main_chunk.push_bin_op_type(node->get_type());
 }
 void Compiler::compile_unary_op(AST::UnaryOp* node) {
     /* Push the argument. */
     this->compile(node->get_argument());
 
-    /* Now, push the type */
+    /* Now, push the operation */
+    this->main_chunk.push_opcode(OpCode::OP_UNARY);
     this->main_chunk.push_unary_op_type(node->get_type());
 }
 
