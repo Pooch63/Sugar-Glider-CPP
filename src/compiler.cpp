@@ -35,5 +35,8 @@ void Compiler::compile(AST::Node* node) {
         case AST::NodeType::NODE_BINOP:
             this->compile_bin_op(node->as_bin_op());
             break;
+        case AST::NodeType::NODE_UNARYOP:
+            this->compile_unary_op(node->as_unary_op());
+            break;
     }
 }
