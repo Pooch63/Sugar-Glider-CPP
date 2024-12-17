@@ -1,13 +1,14 @@
 #include "ast.hpp"
 #include "bytecode.hpp"
 #include "compiler.hpp"
+#include "errors.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
 
 #include <iostream>
 
 int main() {
-    std::string prog = "1131.4531454534 + 8";
+    std::string prog = "1131\n+  \n 8";
     Scan::Scanner lexer(prog);
 
     // std::cout << "was NOT the seg fault!" << std::endl;
@@ -16,9 +17,13 @@ int main() {
     // std::cout << lexer.next_token().get_type() << std::endl;
     // std::cout << lexer.next_token().to_string() << std::endl;
 
+    Output output(prog);
+    output.error(TokenPosition{ .line = 0, .col = 2, .length = 1 }, "This is a test error");
+
+
     Parse::Parser::initialize_parse_rules();
 
-    Parse::Parser parser(lexer);
+    Parse::Parser parser(lexer, output);
     AST::Node* node = parser.parse_precedence(-1);
 
     using namespace Instruction;
