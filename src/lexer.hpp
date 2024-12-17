@@ -22,6 +22,11 @@ namespace Scan {
         SLASH,
         PERCENT,
 
+        // (
+        LPAREN,
+        // )
+        RPAREN,
+
         /* End of input. Signifies that there were no more tokens. */
         EOI,
 
@@ -35,8 +40,6 @@ namespace Scan {
     union token_payload_t {
         Value::number_t num;
     };
-
-    const char* tok_type_to_string(TokType type);
 
     class Token {
         /* Payload is only valid if the type calls for it. E.g, if the token type is PLUS,
@@ -60,6 +63,10 @@ namespace Scan {
             std::string to_string() const;
             #endif
     };
+
+    const char* tok_type_to_string(TokType type);
+    /* Use std::string because we don't know how long it could be */
+    std::string tok_to_concise_string(Token token);
 
     class Scanner {
         private:

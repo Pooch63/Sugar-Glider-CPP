@@ -27,6 +27,12 @@ const char* Scan::tok_type_to_string(TokType type) {
             #endif
     }
 };
+std::string Scan::tok_to_concise_string(Token token) {
+    switch (token.get_type()) {
+        case NUMBER: return std::to_string(token.get_number());
+        default: return tok_type_to_string(token.get_type());
+    }
+};
 
 Token::Token(TokType type, TokenPosition position) : type(type), position(position) {};
 Token::Token(Value::number_t number, TokenPosition position) :
@@ -102,7 +108,6 @@ void Scanner::skip_whitespace() {
 
 TokenPosition Scanner::make_single_line_position(int length) const {
     return TokenPosition{ .line = this->line, .col = this->col - length, .length = length };
-
 };
 
 Token Scanner::next_token() {
@@ -117,13 +122,23 @@ Token Scanner::next_token() {
     char curr = this->current();
 
     // Constant symbols
+
+    /* One-character symbols */
+    TokType one_char_type = TokType::ERROR;
     switch (curr) {
-        case '+': this->advance(); return Token(TokType::PLUS, this->make_single_line_position(1));
-        case '-': this->advance(); return Token(TokType::MINUS, this->make_single_line_position(1));
-        case '*': this->advance(); return Token(TokType::STAR, this->make_single_line_position(1));
-        case '/': this->advance(); return Token(TokType::SLASH, this->make_single_line_position(1));
-        case '%': this->advance(); return Token(TokType::PERCENT, this->make_single_line_position(1));
+        case '+': one_char_type = TokType::PLUS; break;
+        case '-': one_char_type = TokType::MINUS; break;
+        case '*': one_char_type = TokType::STAR; break;
+        case '/': one_char_type = TokType::SLASH; break;
+        case '%': one_char_type = TokType::PERCENT; break;
+
+        case '(': one_char_type = TokType::LPAREN; break;
+        case ')': one_char_type = TokType::RPAREN; break;
     };
+    if (one_char_type != TokType::ERROR) {
+        this->advance();
+        return Token(one_char_type, this->make_single_line_position(1));
+    }
 
     // Number?
     if ( is_digit(curr) || (curr == '.' && is_digit(this->peek(1))) ) {
