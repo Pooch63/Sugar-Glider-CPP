@@ -131,9 +131,9 @@ int Chunk::print_instruction(uint current_byte_index) {
             break;
         case OpCode::OP_NUMBER:
         {
-            Value::number_t number = this->read_number_value(current_byte_index + read_count);
+            Values::number_t number = this->read_number_value(current_byte_index + read_count);
             output += std::to_string(number);
-            read_count += sizeof(Value::number_t);
+            read_count += sizeof(Values::number_t);
         }
             break;
 

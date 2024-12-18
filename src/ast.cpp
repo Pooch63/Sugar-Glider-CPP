@@ -47,7 +47,7 @@ Node::~Node() {
     }
 };
 
-Number::Number(Value::number_t number) :
+Number::Number(Values::number_t number) :
     Node(NodeType::NODE_NUMBER, node_wrapper_t{ .number = this })
 {
     this->number = number;

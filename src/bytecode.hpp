@@ -58,7 +58,7 @@ namespace Instruction {
         OP_NULL,
 
         /* Push a specified number value onto the stack.
-            Argument is sizeof(Value::number_t) bytes long (so 8 if it's a double), the number value to pass. */
+            Argument is sizeof(Values::number_t) bytes long (so 8 if it's a double), the number value to pass. */
         OP_NUMBER,
 
         /* Push the constant at this index in the constant array onto the stack.
@@ -156,9 +156,9 @@ namespace Instruction {
             inline void push_uint32(uint32_t data) {
                 this->push_value<uint32_t>(data);
             };
-            /* Push a number of type Value::number_t into the code in individual bytes */
-            inline void push_number_value(Value::number_t data) {
-                this->push_value<Value::number_t>(data);
+            /* Push a number of type Values::number_t into the code in individual bytes */
+            inline void push_number_value(Values::number_t data) {
+                this->push_value<Values::number_t>(data);
             };
 
             /* Read helpers, read a value of the specified type,
@@ -167,8 +167,8 @@ namespace Instruction {
             inline uint32_t read_uint32(uint current_byte_index) const {
                 return this->read_value<uint32_t>(current_byte_index);
             };
-            inline Value::number_t read_number_value(uint current_byte_index) const {
-                return this->read_value<Value::number_t>(current_byte_index);
+            inline Values::number_t read_number_value(uint current_byte_index) const {
+                return this->read_value<Values::number_t>(current_byte_index);
             };
             inline address_t read_address(uint current_byte_index) const {
                 return this->read_value<address_t>(current_byte_index);

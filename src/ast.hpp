@@ -51,11 +51,11 @@ namespace AST {
 
     class Number : public Node {
         private:
-            Value::number_t number;
+            Values::number_t number;
         public:
-            Number(Value::number_t number);
+            Number(Values::number_t number);
 
-            inline Value::number_t get_number() const { return this->number; };
+            inline Values::number_t get_number() const { return this->number; };
     };
     class BinOp : public Node {
         private:
