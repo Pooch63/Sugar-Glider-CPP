@@ -41,12 +41,12 @@ std::string Scan::tok_to_concise_string(Token token) {
 };
 
 Token::Token(TokType type, TokenPosition position) : type(type), position(position) {};
-Token::Token(Value::number_t number, TokenPosition position) :
+Token::Token(Values::number_t number, TokenPosition position) :
     type(TokType::NUMBER),
     payload(token_payload_t{ .num = number }),
     position(position) {};
 
-Value::number_t Token::get_number() const {
+Values::number_t Token::get_number() const {
     #ifdef DEBUG
     assert(this->type == TokType::NUMBER);
     #endif
@@ -177,9 +177,9 @@ Token Scanner::next_token() {
             this->advance();
         }
 
-        Value::number_t number;
+        Values::number_t number;
         try {
-            number = static_cast<Value::number_t>(std::stod(number_string));
+            number = static_cast<Values::number_t>(std::stod(number_string));
         } catch (const std::exception&) {
             // If we catch an exception, that means the number failed to parse
             return Token(TokType::ERROR, Position::null_token_position);

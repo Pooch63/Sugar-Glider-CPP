@@ -16,6 +16,7 @@ namespace Scan {
 
         /* The rest of the token types are constants.
             Their value will always be the same. (e.g., +, *, /, ], etc.) */
+        // Operators >
         PLUS,
         MINUS,
         STAR,
@@ -31,6 +32,11 @@ namespace Scan {
         QUESTION_MARK,
         // :
         COLON,
+        // < Operators
+
+        // Keywords >
+        VAR,
+        // < Keywords
 
         /* End of input. Signifies that there were no more tokens. */
         EOI,
@@ -43,7 +49,7 @@ namespace Scan {
         NUM_TOKEN_TYPES
     };
     union token_payload_t {
-        Value::number_t num;
+        Values::number_t num;
     };
 
     class Token {
@@ -58,11 +64,11 @@ namespace Scan {
             /* Use this constructor if the token type is a constant and does not need a payload. */
             Token(TokType type, TokenPosition position);
             /* Use this constructor if the token type is a number. The token type will automatically be set. */
-            Token(Value::number_t number, TokenPosition position);
+            Token(Values::number_t number, TokenPosition position);
 
             inline TokType get_type() const { return this->type; };
             inline TokenPosition get_position() const { return this->position; };
-            Value::number_t get_number() const;
+            Values::number_t get_number() const;
 
             #ifdef DEBUG
             std::string to_string() const;
