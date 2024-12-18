@@ -152,14 +152,16 @@ namespace Instruction {
             }
             
 
-            /* Push a uint32 into the code in individual bytes. */
+            /* Push helpers that push the type in individual bytes to the chunk. */
             inline void push_uint32(uint32_t data) {
                 this->push_value<uint32_t>(data);
             };
-            /* Push a number of type Values::number_t into the code in individual bytes */
             inline void push_number_value(Values::number_t data) {
                 this->push_value<Values::number_t>(data);
             };
+            inline void push_address(address_t address) {
+                this->push_value<address_t>(address);
+            }
 
             /* Read helpers, read a value of the specified type,
                 with the first byte starting at the specified index  */

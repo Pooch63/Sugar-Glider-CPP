@@ -1,5 +1,10 @@
 #include "bytecode.hpp"
 #include "compiler.hpp"
+#include "globals.hpp"
+
+#ifdef DEBUG
+#include <cassert>
+#endif
 
 using namespace Instruction;
 
@@ -46,7 +51,7 @@ void Compiler::compile_ternary_op(AST::TernaryOp* node) {
     /* Reserve space for the address to jump to.
         We'll insert it after compiling the false value. */
     size_t ending_true_goto_arg_start = this->main_chunk.code_byte_count();
-    this->main_chunk.push_uint32(0);
+    this->main_chunk.push_address(0);
 
     /* Insert the jump argument if the condition was false.
         Add 1 so that */
@@ -62,6 +67,12 @@ void Compiler::compile_ternary_op(AST::TernaryOp* node) {
 }
 
 void Compiler::compile_node(AST::Node* node) {
+    /* The parser may create a null node pointer if there was an error
+        In that case, we should have halted compilation, but just make sure. */
+    #ifdef DEBUG
+    assert(node != nullptr);
+    #endif
+
     switch (node->get_type()) {
         /* Push a number onto the stack */
         case AST::NodeType::NODE_NUMBER:

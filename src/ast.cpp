@@ -44,6 +44,9 @@ Node::~Node() {
         case NODE_UNARYOP:
             this->node.unary_op->free();
             break;
+        case NODE_TERNARY_OP:
+            this->node.ternary_op->free();
+            break;
     }
 };
 
