@@ -131,11 +131,8 @@ Parser::Parser(Scan::Scanner& scanner, Output& output) :
     #endif
 }
 
-Scan::Token Parser::advance() {
-    Scan::Token current = this->curr();
+void Parser::advance() {
     this->current_token = this->scanner.next_token();
-
-    return current;
 }
 
 Scan::Token* Parser::expect_symbol(Scan::TokType type) {
@@ -157,8 +154,9 @@ Scan::Token* Parser::expect_symbol(Scan::TokType type) {
 };
 Scan::Token* Parser::expect(Scan::TokType type, char* error_message) {
     Scan::Token current = this->curr();
+    this->advance();
+
     if (current.get_type() == type) {
-        this->advance();
         return &this->current_token;
     }
 

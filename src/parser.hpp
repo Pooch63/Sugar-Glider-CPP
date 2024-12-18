@@ -77,8 +77,8 @@ namespace Parse {
             /* Current token */
             inline Scan::Token curr() const { return this->current_token; };
 
-            /* Returns the current token, then updates it with the next one. */
-            Scan::Token advance();
+            /* Continues forward with one token. */
+            void advance();
 
             // Rule helpers
             /* Returns the rule of the current token. */
@@ -104,8 +104,9 @@ namespace Parse {
                 Meant to be used in situations where tokens are constants, e.g.
                 expecting a ')' in an expression. */
             Scan::Token* expect_symbol(Scan::TokType type);
-            /* If the current token is the given type, advance and return the token.
-                Otherwise, error and return nullptr. */
+            /* If the current token is the given type, return the token.
+                Otherwise, error and return nullptr.
+                Advances no matter what. */
             Scan::Token* expect(Scan::TokType type, char* error_message);
     };
 };
