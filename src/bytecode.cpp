@@ -1,7 +1,6 @@
 #include "bytecode.hpp"
 
 #ifdef DEBUG
-#include <cassert>
 #include <iostream>
 #include <string>
 #endif
@@ -21,84 +20,8 @@ void Chunk::push_unary_op_type(Operations::UnaryOpType type) {
     this->push_small_enum<Operations::UnaryOpType>(type);
 };
 
-void Chunk::push_uint32(uint32_t data) {
-    union {
-        uint32_t payload;
-        /* Don't take for granted the uint32_t. Certain architectures (i.e., Arduino), may not
-            have 4-byte integers. */
-        uint8_t bytes[sizeof(uint32_t)];
-    } reader;
-    reader.payload = data;
-
-    for (uint_fast8_t byte = 0; byte < sizeof(uint32_t); byte += 1) {
-        this->code.push_back(reader.bytes[byte]);
-    }
-};
-
-void Chunk::push_number_value(Value::number_t data) {
-    union {
-        Value::number_t payload;
-        uint8_t bytes[sizeof(Value::number_t)];
-    } reader;
-    reader.payload = data;
-
-    for (uint_fast8_t byte = 0; byte < sizeof(Value::number_t); byte += 1) {
-        this->code.push_back(reader.bytes[byte]);
-    }
-};
-
-
-void Chunk::insert_uint32(uint index, uint32_t data) {
-    #ifdef DEBUG
-    /* Can't insert into an invalid index */
-    assert(this->code.size() >= index + 4 + 1);
-    #endif
-
-    union {
-        uint32_t payload;
-        /* Don't take for granted the uint32_t. Certain architectures (i.e., Arduino), may not
-            have 4-byte integers. */
-        uint8_t bytes[sizeof(uint32_t)];
-    } reader;
-    reader.payload = data;
-
-    for (uint_fast8_t byte = 0; byte < sizeof(uint32_t); byte += 1) {
-        this->code[index + byte] = reader.bytes[byte];
-    }
-};
-
 uint8_t Chunk::read_byte(uint current_byte_index) const {
     return this->code.at(current_byte_index);
-}
-uint32_t Chunk::read_uint32(uint current_byte_index) const {
-    #ifdef _SGCPP_SYSTEM_IS_BIG_ENDIAN
-    #else
-    union {
-        uint32_t data;
-        uint8_t code[sizeof(uint32_t)];
-    } payload;
-
-    for (uint_fast8_t byte_index = 0; byte_index < sizeof(uint32_t); byte_index += 1) {
-        payload.code[byte_index] = this->read_byte(current_byte_index + byte_index);
-    }
-
-    return payload.data;
-    #endif
-}
-Value::number_t Chunk::read_number_value(uint current_byte_index) const {
-    #ifdef _SGCPP_SYSTEM_IS_BIG_ENDIAN
-    #else
-    union {
-        Value::number_t data;
-        uint8_t code[sizeof(Value::number_t)];
-    } payload;
-
-    for (uint_fast8_t byte_index = 0; byte_index < sizeof(Value::number_t); byte_index += 1) {
-        payload.code[byte_index] = this->read_byte(current_byte_index + byte_index);
-    }
-
-    return payload.data;
-    #endif
 }
 
 #ifdef DEBUG
@@ -176,8 +99,8 @@ int Chunk::print_instruction(uint current_byte_index) {
         case OpCode::OP_GOTO:
         case OpCode::OP_POP_JIZ:
         case OpCode::OP_POP_JNZ:
-            output += std::to_string(this->read_uint32(current_byte_index + read_count));
-            read_count += 4;
+            output += std::to_string(this->read_address(current_byte_index + read_count));
+            read_count += sizeof(address_t);
             break;
         case OpCode::OP_BIN:
         {

@@ -8,6 +8,11 @@
 
 #include <vector>
 
+/* Use assert for Chunk template helpers */
+#ifdef DEBUG
+#include <cassert>
+#endif
+
 namespace Instruction {
     enum OpCode {
         /* Pops the top value on the stack.
@@ -66,10 +71,52 @@ namespace Instruction {
         OP_EXIT
     };
 
+    /* The address size that instruction codes use */
+    typedef uint32_t address_t;
+
     typedef std::vector<uint8_t> bytecode_t;
     class Chunk {
         private:
             bytecode_t code = bytecode_t();
+
+            /* Read the value, with the first byte starting at the specified index  */
+            template<typename read_type>
+            read_type read_value(uint current_byte_index) const {
+                #ifdef _SGCPP_SYSTEM_IS_BIG_ENDIAN
+                #else
+                union {
+                    read_type data;
+                    uint8_t code[sizeof(read_type)];
+                } payload;
+
+                for (uint_fast8_t byte_index = 0; byte_index < sizeof(read_type); byte_index += 1) {
+                    payload.code[byte_index] = this->read_byte(current_byte_index + byte_index);
+                }
+
+                return payload.data;
+                #endif
+            }
+
+            /* Insert a value into the code, with the first byte starting at the specified index */
+            template<typename insert_type>
+            void insert_value(uint index, insert_type data) {
+                #ifdef DEBUG
+                /* Can't insert into an invalid index */
+                assert(this->code.size() >= index + sizeof(insert_type) + 1);
+                #endif
+
+                union {
+                    insert_type payload;
+                    /* Don't take for granted the uint32_t. Certain architectures (i.e., Arduino), may not
+                        have 4-byte integers. */
+                    uint8_t bytes[sizeof(insert_type)];
+                } reader;
+                reader.payload = data;
+
+                for (uint_fast8_t byte = 0; byte < sizeof(insert_type); byte += 1) {
+                    this->code[index + byte] = reader.bytes[byte];
+                }
+            }
 
             #ifdef DEBUG
             /* From the current byte index in the code, log the instruction
@@ -84,25 +131,52 @@ namespace Instruction {
             void push_small_enum(enum_t value) {
                 this->code.push_back(get_bottom_byte<enum_t>(value));
             }
-            /* Push the first byte of an opcode. */
-            void push_opcode(OpCode code);
+            /* Push necessary enum functions. Separate them, because if
+                they eventually grow to over one byte, we'll need to push
+                more than one byte. */
+            void push_opcode(OpCode code);           
             void push_bin_op_type(Operations::BinOpType type);
             void push_unary_op_type(Operations::UnaryOpType type);
 
+            template<typename push_type>
+            void push_value(push_type data) {
+                union {
+                    push_type payload;
+                    uint8_t bytes[sizeof(push_type)];
+                } reader;
+                reader.payload = data;
+
+                for (uint_fast8_t byte = 0; byte < sizeof(push_type); byte += 1) {
+                    this->code.push_back(reader.bytes[byte]);
+                }
+            }
+            
+
             /* Push a uint32 into the code in individual bytes. */
-            void push_uint32(uint32_t data);
+            inline void push_uint32(uint32_t data) {
+                this->push_value<uint32_t>(data);
+            };
             /* Push a number of type Value::number_t into the code in individual bytes */
-            void push_number_value(Value::number_t data);
+            inline void push_number_value(Value::number_t data) {
+                this->push_value<Value::number_t>(data);
+            };
 
-            /* Read a single unsigned byte at the specified index */
+            /* Read helpers, read a value of the specified type,
+                with the first byte starting at the specified index  */
             uint8_t read_byte(uint index) const;
-            /* Read a uint32, starting from the specified index */
-            uint32_t read_uint32(uint current_byte_index) const;
-            /* Read a value of type number_t, starting from the specified index */
-            Value::number_t read_number_value(uint current_byte_index) const;
+            inline uint32_t read_uint32(uint current_byte_index) const {
+                return this->read_value<uint32_t>(current_byte_index);
+            };
+            inline Value::number_t read_number_value(uint current_byte_index) const {
+                return this->read_value<Value::number_t>(current_byte_index);
+            };
+            inline address_t read_address(uint current_byte_index) const {
+                return this->read_value<address_t>(current_byte_index);
+            }
 
-            /* Insert a uint32 into the code, with the first byte starting at the specified index */
-            void insert_uint32(uint index, uint32_t data);
+            inline void insert_address(uint index, address_t data) {
+                this->insert_value<address_t>(index, data);
+            };
 
             /* Get the current number of instructions
                 Made public so that the compiler can reserve code space, and then use the instruction count

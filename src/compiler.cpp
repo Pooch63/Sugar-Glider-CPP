@@ -51,14 +51,14 @@ void Compiler::compile_ternary_op(AST::TernaryOp* node) {
     /* Insert the jump argument if the condition was false.
         Add 1 so that */
     uint32_t false_jump_start = this->main_chunk.code_byte_count();
-    this->main_chunk.insert_uint32(false_jump_arg_start, false_jump_start);
+    this->main_chunk.insert_address(false_jump_arg_start, false_jump_start);
 
     /* Compile value if it's false. */
     this->compile_node(node->get_false_value());
 
     /* Insert the address to jump to after completing the if_true block */
     size_t block_end = this->main_chunk.code_byte_count();
-    this->main_chunk.insert_uint32(ending_true_goto_arg_start, block_end);
+    this->main_chunk.insert_address(ending_true_goto_arg_start, block_end);
 }
 
 void Compiler::compile_node(AST::Node* node) {
