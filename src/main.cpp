@@ -1,5 +1,6 @@
 #include "ast.hpp"
-#include "bytecode.hpp"
+#include "IR/bytecode.hpp"
+#include "IR/intermediate.hpp"
 #include "compiler.hpp"
 #include "errors.hpp"
 #include "lexer.hpp"
@@ -10,7 +11,7 @@
 int main() {
     Parse::Parser::initialize_parse_rules();
 
-    std::string prog = "3 + 4 ? 34 / 4 + 7 * 9 / 75 : 4 * 7 / 7 + 78";
+    std::string prog = "1 ? 2 + 4 : 3";
     Scan::Scanner lexer(prog);
 
     Output output(prog);
@@ -18,17 +19,26 @@ int main() {
     Parse::Parser parser(lexer, output);
     AST::Node* node = parser.parse_precedence(-1);
 
+    auto block = Intermediate::Block();
+    // block.add_instruction(Intermediate::Instruction(Intermediate::INSTR_GOTO, 1));
+    // block.add_instruction(Intermediate::Instruction(Intermediate::INSTR_GOTO, 2));
+    // block.log_block();
+
     /* If there was a parse error, there will be some null pointers, so DO NOT
         actually compile. */
     if (output.had_error()) return -1;
 
-    using namespace Instruction;
+    using namespace Bytecode;
     Chunk chunk = Chunk();
 
-    Compiler compiler(chunk);
+    // Compiler compiler(chunk);
+    Compiler compiler(block);
     compiler.compile(node);
 
-    chunk.print_code();
+    // chunk.print_code();
+    block.log_block();
+
+
     delete node;
 
     return 0;
