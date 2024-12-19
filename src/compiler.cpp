@@ -1,4 +1,4 @@
-#include "bytecode.hpp"
+#include "IR/bytecode.hpp"
 #include "compiler.hpp"
 #include "globals.hpp"
 
@@ -6,64 +6,53 @@
 #include <cassert>
 #endif
 
-using namespace Instruction;
+using namespace Bytecode;
+using Intermediate::ir_instruction_arg_t;
 
-Compiler::Compiler(Instruction::Chunk& chunk) : main_chunk(chunk) {};
+Compiler::Compiler(Intermediate::Block& chunk) : main_chunk(chunk) {};
 
 void Compiler::compile_number(AST::Number* node) {
-    this->main_chunk.push_opcode(Instruction::OpCode::OP_NUMBER);
-    /* Push the number */
-    this->main_chunk.push_number_value(node->get_number());
+    this->main_chunk.add_instruction(Intermediate::Instruction(node->get_number()));
 }
 void Compiler::compile_bin_op(AST::BinOp* node) {
-    /* Push the arguments. First the left operand, and then the right one. */
+    // /* Push the arguments. First the left operand, and then the right one. */
     this->compile_node(node->get_left());
     this->compile_node(node->get_right());
 
-    /* Now, push the operation */
-    this->main_chunk.push_opcode(OpCode::OP_BIN);
-    this->main_chunk.push_bin_op_type(node->get_type());
+    // /* Now, push the operation */
+    this->main_chunk.add_instruction(Intermediate::Instruction(Intermediate::INSTR_BIN_OP, node->get_type()));
 }
 void Compiler::compile_unary_op(AST::UnaryOp* node) {
     /* Push the argument. */
     this->compile_node(node->get_argument());
 
     /* Now, push the operation */
-    this->main_chunk.push_opcode(OpCode::OP_UNARY);
-    this->main_chunk.push_unary_op_type(node->get_type());
+    this->main_chunk.add_instruction(Intermediate::Instruction(Intermediate::INSTR_UNARY_OP, node->get_type()));
 }
 void Compiler::compile_ternary_op(AST::TernaryOp* node) {
-    /* Compile condition. */
+//     /* Compile condition. */
     this->compile_node(node->get_condition());
 
-    /* If the condition is false, jump to the false value */
-    this->main_chunk.push_opcode(OpCode::OP_POP_JIZ);
-    /* Reserve space for the address to jump to.
-        We'll insert it after compiling the true value. */
-    size_t false_jump_arg_start = this->main_chunk.code_byte_count();
-    this->main_chunk.push_uint32(0);
+    /* Get next label */
+    uint next = this->main_chunk.label_count();
+    this->main_chunk.add_instruction(Intermediate::Instruction(Intermediate::INSTR_POP_JIZ, next));
 
-    /* Compile value if it's true. */
+    /* Compile the value if true */
     this->compile_node(node->get_true_value());
 
-    /* After executing the true value, jump to the end of the block. */
-    this->main_chunk.push_opcode(OpCode::OP_GOTO);
-    /* Reserve space for the address to jump to.
-        We'll insert it after compiling the false value. */
-    size_t ending_true_goto_arg_start = this->main_chunk.code_byte_count();
-    this->main_chunk.push_address(0);
+    /* Jump to the end. Add 1 to account for the false label. */
+    int end = this->main_chunk.label_count() + 1;
+    this->main_chunk.add_instruction(Intermediate::Instruction(Intermediate::INSTR_GOTO, end));
 
-    /* Insert the jump argument if the condition was false.
-        Add 1 so that */
-    uint32_t false_jump_start = this->main_chunk.code_byte_count();
-    this->main_chunk.insert_address(false_jump_arg_start, false_jump_start);
-
-    /* Compile value if it's false. */
+    /* Compile the false value */
+    // Add a label for it
+    this->main_chunk.new_label();
     this->compile_node(node->get_false_value());
 
-    /* Insert the address to jump to after completing the if_true block */
-    size_t block_end = this->main_chunk.code_byte_count();
-    this->main_chunk.insert_address(ending_true_goto_arg_start, block_end);
+    this->main_chunk.add_instruction(Intermediate::Instruction(Intermediate::INSTR_GOTO, end));
+
+    /* And now, exit the whole control flow if false */
+    this->main_chunk.new_label();
 }
 
 void Compiler::compile_node(AST::Node* node) {
@@ -91,5 +80,5 @@ void Compiler::compile_node(AST::Node* node) {
 }
 void Compiler::compile(AST::Node* node) {
     this->compile_node(node);
-    this->main_chunk.push_opcode(OpCode::OP_EXIT);
+    this->main_chunk.add_instruction(Intermediate::Instruction(Intermediate::INSTR_EXIT));
 }

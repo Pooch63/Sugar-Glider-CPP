@@ -2,12 +2,12 @@
 #define _SGCPP_COMPILER_CPP
 
 #include "ast.hpp"
-#include "bytecode.hpp"
+#include "IR/intermediate.hpp"
 
 class Compiler {
     private:
         /* A reference to the main chunk we'll compiling into at the moment */
-        Instruction::Chunk& main_chunk;
+        Intermediate::Block& main_chunk;
 
         /* All the compilation functions for specific nodes */
         void compile_number(AST::Number* node);
@@ -18,7 +18,7 @@ class Compiler {
         /* Compile a node into the chunk */
         void compile_node(AST::Node* node);
     public:
-        Compiler(Instruction::Chunk& main_chunk);
+        Compiler(Intermediate::Block& main_chunk);
 
         /* Compile the whole program, and then add an exit instruction. */
         void compile(AST::Node* node);

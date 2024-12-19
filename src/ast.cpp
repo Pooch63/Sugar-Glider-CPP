@@ -56,11 +56,9 @@ Number::Number(Values::number_t number) :
     this->number = number;
 }
 
-
 BinOp::BinOp(Operations::BinOpType type, Node* left, Node* right) :
     Node(NodeType::NODE_BINOP, node_wrapper_t{ .bin_op = this }),
     type(type), left(left), right(right) {};
-
 void BinOp::free() {
     delete this->left;
     delete this->right;

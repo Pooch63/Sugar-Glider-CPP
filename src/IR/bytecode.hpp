@@ -1,10 +1,10 @@
 #ifndef _SGCPP_BYTECODE_HPP
 #define _SGCPP_BYTECODE_HPP
 
-#include "bit-converter.hpp"
-#include "globals.hpp"
-#include "operations.hpp"
-#include "value.hpp"
+#include "../bit-converter.hpp"
+#include "../globals.hpp"
+#include "../operations.hpp"
+#include "../value.hpp"
 
 #include <vector>
 
@@ -13,7 +13,7 @@
 #include <cassert>
 #endif
 
-namespace Instruction {
+namespace Bytecode {
     enum OpCode {
         /* Pops the top value on the stack.
         0 arguments */

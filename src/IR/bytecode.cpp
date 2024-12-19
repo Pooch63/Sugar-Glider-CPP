@@ -1,11 +1,12 @@
 #include "bytecode.hpp"
+#include "../utils.hpp"
 
 #ifdef DEBUG
 #include <iostream>
 #include <string>
 #endif
 
-using namespace Instruction;
+using namespace Bytecode;
 
 void Chunk::push_opcode(OpCode code) {
     this->push_small_enum<OpCode>(code);
@@ -25,19 +26,6 @@ uint8_t Chunk::read_byte(uint current_byte_index) const {
 }
 
 #ifdef DEBUG
-/* Get the number of digits in a decimal number */
-static uint get_digits(uint number) {
-    return number < 10 ? 1 :
-            number < 100 ? 2 :
-            number < 1'000 ? 3 :
-            number < 10'000 ? 4 :
-            number < 100'000 ? 5 :
-            number < 1'000'000 ? 6 :
-            number < 10'000'000 ? 7 :
-            number < 100'000'000 ? 8 : 9;
-}
-
-#include "operations.hpp"
 
 /* How long the area for the instruction name should be when we're logging */
 static int INSTRUCTION_NAME_LENGTH = 30;
