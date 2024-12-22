@@ -33,6 +33,18 @@ TernaryOp* Node::as_ternary_op() const {
     #endif
     return this->node.ternary_op;
 }
+VarDefinition* Node::as_variable_definition() const {
+    #ifdef DEBUG
+    assert(this->node_type == NodeType::NODE_VAR_DEFINITION);
+    #endif
+    return this->node.var_definition;
+}
+VarValue* Node::as_variable_value() const {
+    #ifdef DEBUG
+    assert(this->node_type == NodeType::NODE_VAR_VALUE);
+    #endif
+    return this->node.var_value;
+};
 
 Node::~Node() {
     switch (this->node_type) {
@@ -47,6 +59,11 @@ Node::~Node() {
         case NODE_TERNARY_OP:
             this->node.ternary_op->free();
             break;
+        case NODE_VAR_DEFINITION:
+            this->node.var_definition->free();
+            break;
+        case NODE_VAR_VALUE:
+            this->node.var_value->free();
     }
 };
 
@@ -60,22 +77,39 @@ BinOp::BinOp(Operations::BinOpType type, Node* left, Node* right) :
     Node(NodeType::NODE_BINOP, node_wrapper_t{ .bin_op = this }),
     type(type), left(left), right(right) {};
 void BinOp::free() {
-    delete this->left;
-    delete this->right;
+    if (this->left != nullptr) delete this->left;
+    if (this->right != nullptr) delete this->right;
 }
 
 UnaryOp::UnaryOp(Operations::UnaryOpType type, Node* argument) :
     Node(NodeType::NODE_UNARYOP, node_wrapper_t{ .unary_op = this }),
     type(type), argument(argument) {};
 void UnaryOp::free() {
-    delete this->argument;
+    if (this->argument != nullptr) delete this->argument;
 }
 
 TernaryOp::TernaryOp(Node* condition, Node* true_value, Node* false_value) :
     Node(NodeType::NODE_TERNARY_OP, node_wrapper_t{ .ternary_op = this }),
     condition(condition), true_value(true_value), false_value(false_value) {};
 void TernaryOp::free() {
-    delete this->condition;
-    delete this->true_value;
-    delete this->false_value;
+    if (this->condition != nullptr) delete this->condition;
+    if (this->true_value != nullptr) delete this->true_value;
+    if (this->false_value != nullptr) delete this->false_value;
+}
+
+VarDefinition::VarDefinition(std::string* name, Node* value) :
+    Node(NodeType::NODE_VAR_DEFINITION, node_wrapper_t{ .var_definition = this }),
+    name(name), value(value) {};
+void VarDefinition::free() {
+    /* If there is a bug with the name being freed, START HERE. The runtime doesn't need it... for now. */
+    if (this->name != nullptr) delete this->name;
+    if (this->value != nullptr) delete this->value;
+
+    std::cout << "HEY THERE" << std::endl;
+}
+
+VarValue::VarValue(std::string* name) :
+    Node(NodeType::NODE_VAR_VALUE, node_wrapper_t{ .var_value = this }) {};
+void VarValue::free() {
+    if (this->name != nullptr) delete this->name;
 }

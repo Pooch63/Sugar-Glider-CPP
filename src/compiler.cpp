@@ -1,4 +1,4 @@
-#include "IR/bytecode.hpp"
+#include "ir/bytecode.hpp"
 #include "compiler.hpp"
 #include "globals.hpp"
 
@@ -54,6 +54,17 @@ void Compiler::compile_ternary_op(AST::TernaryOp* node) {
     /* And now, exit the whole control flow if false */
     this->main_chunk.new_label();
 }
+void Compiler::compile_variable_definition(AST::VarDefinition* def) {
+    this->compile_node(def->get_value());
+
+    this->main_chunk.add_instruction(
+        Intermediate::Instruction(
+            Intermediate::INSTR_STORE,
+            Intermediate::Variable{ .name = def->get_name() }
+        )
+    );
+}
+void Compiler::compile_variable_value(AST::VarValue* node) {};
 
 void Compiler::compile_node(AST::Node* node) {
     /* The parser may create a null node pointer if there was an error
@@ -75,6 +86,13 @@ void Compiler::compile_node(AST::Node* node) {
             break;
         case AST::NodeType::NODE_TERNARY_OP:
             this->compile_ternary_op(node->as_ternary_op());
+            break;
+
+        case AST::NodeType::NODE_VAR_DEFINITION:
+            this->compile_variable_definition(node->as_variable_definition());
+            break;
+        case AST::NodeType::NODE_VAR_VALUE:
+            this->compile_variable_value(node->as_variable_value());
             break;
     }
 }

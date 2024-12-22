@@ -2,7 +2,7 @@
 #define _SGCPP_COMPILER_CPP
 
 #include "ast.hpp"
-#include "IR/intermediate.hpp"
+#include "ir/intermediate.hpp"
 
 class Compiler {
     private:
@@ -14,6 +14,8 @@ class Compiler {
         void compile_bin_op(AST::BinOp* node);
         void compile_unary_op(AST::UnaryOp* node);
         void compile_ternary_op(AST::TernaryOp* node);
+        void compile_variable_definition(AST::VarDefinition* node);
+        void compile_variable_value(AST::VarValue* node);
 
         /* Compile a node into the chunk */
         void compile_node(AST::Node* node);

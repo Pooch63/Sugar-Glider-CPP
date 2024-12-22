@@ -10,13 +10,18 @@ namespace AST {
 
         NODE_BINOP,
         NODE_UNARYOP,
-        NODE_TERNARY_OP
+        NODE_TERNARY_OP,
+
+        NODE_VAR_DEFINITION,
+        NODE_VAR_VALUE
     };
 
     class Number;
     class BinOp;
     class UnaryOp;
     class TernaryOp;
+    class VarDefinition;
+    class VarValue;
 
     /* A collection of pointers to all the possible nodes
         that the node could be wrapping. While this COULD be
@@ -26,12 +31,19 @@ namespace AST {
         BinOp* bin_op;
         UnaryOp* unary_op;
         TernaryOp* ternary_op;
+        VarDefinition* var_definition;
+        VarValue* var_value;
     };
 
+    // @REVIEW: Don't free until end of compilation.
+    // Also, nodes have to check if their properties are nullptr before freeing,
+    // because a parse error might add a nullptr
     class Node {
         private:
             NodeType node_type;
             node_wrapper_t node;
+
+            TokenPosition position;
 
         public:
             Node(NodeType type, node_wrapper_t node);
@@ -44,6 +56,8 @@ namespace AST {
             BinOp* as_bin_op() const;
             UnaryOp* as_unary_op() const;
             TernaryOp* as_ternary_op() const;
+            VarDefinition* as_variable_definition() const;
+            VarValue* as_variable_value() const;
 
             /* Frees the node payload depending on its type. */
             ~Node();
@@ -94,6 +108,31 @@ namespace AST {
             inline Node* get_condition() const { return this->condition; }
             inline Node* get_true_value() const { return this->true_value; }
             inline Node* get_false_value() const { return this->false_value; }
+
+            void free();
+    };
+
+    /* E.g., var x = 3; */
+    class VarDefinition : public Node {
+        private:
+            std::string* name;
+            Node* value;
+        public:
+            VarDefinition(std::string* name, Node* value);
+
+            inline std::string* get_name() const { return this->name; };
+            inline Node* get_value() const { return this->value; };
+
+            void free();
+    };
+    /* A reference to a variable, e.g. x */
+    class VarValue : public Node {
+        private:
+            std::string* name;
+        public:
+            VarValue(std::string* name);
+
+            inline std::string* get_name() const { return this->name; };
 
             void free();
     };
