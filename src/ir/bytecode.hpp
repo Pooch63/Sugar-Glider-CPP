@@ -63,8 +63,15 @@ namespace Bytecode {
 
         /* Push the constant at this index in the constant array onto the stack.
             Constant must be a value of unknown size at runtime, so not a boolean, null, nor number.
-    OpCode        Argument is 4 bytes, uint32_t. */
+            Argument is 4 bytes, uint32_t. */
         OP_LOAD_CONST,
+
+        /* Push the value of the variable at the specified index on top of the stack.
+            Argument is sizeof(variable_index_t) bytes long, the variable index */
+        OP_LOAD,
+        /* Store the topmost value on the stack into the specified variable index.
+            Argument is sizeof(variable_index_t) bytes long, the variable index. */
+        OP_STORE,
 
         /* Exit the program,
             0 arguments */
@@ -73,6 +80,8 @@ namespace Bytecode {
 
     /* The address size that instruction codes use */
     typedef uint32_t address_t;
+    /* The index to store variables */
+    typedef uint32_t variable_index_t;
 
     typedef std::vector<uint8_t> bytecode_t;
     class Chunk {
