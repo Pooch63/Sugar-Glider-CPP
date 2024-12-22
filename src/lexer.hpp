@@ -5,6 +5,7 @@
 #include "globals.hpp"
 #include "value.hpp"
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -12,7 +13,12 @@ using Position::TokenPosition;
 
 namespace Scan {
     enum TokType {
+        // Values >
         NUMBER,
+        STRING,
+        // < Values
+
+        IDENTIFIER,
 
         /* The rest of the token types are constants.
             Their value will always be the same. (e.g., +, *, /, ], etc.) */
@@ -23,15 +29,19 @@ namespace Scan {
         SLASH,
         PERCENT,
 
+        // =
+        EQUALS,
+
         // (
         LPAREN,
         // )
         RPAREN,
-
         // ?
         QUESTION_MARK,
         // :
         COLON,
+        // ;
+        SEMICOLON,
         // < Operators
 
         // Keywords >
@@ -44,38 +54,76 @@ namespace Scan {
         /* Not a real token type. Instead, it is returned when there is a lexer error
             and we can't return a real token. */
         ERROR,
+        /* Not a real token type. Used by the parser as padding at the start */
+        START_DELIMETER,
 
         /* Just a value at the end to get the number of token types */
         NUM_TOKEN_TYPES
     };
     union token_payload_t {
         Values::number_t num;
+        /* Used for identifiers or strings */
+        std::string* string_;
     };
+    const char* tok_type_to_string(TokType type);
 
     class Token {
         /* Payload is only valid if the type calls for it. E.g, if the token type is PLUS,
             that value is a constant, so the payload's number can be anything.
             Do not read members of the payload if the token type is a constant (e.g., +, *, (, ]). */
         private:
+        public:
             TokType type;
             token_payload_t payload;
             TokenPosition position;
+            /* Whether or not we should free the payload. */
+            bool free_payload = true;
+
+            inline bool has_string_payload() const {
+                return this->type == TokType::IDENTIFIER || this->type == TokType::STRING;
+            };
         public:
             /* Use this constructor if the token type is a constant and does not need a payload. */
             Token(TokType type, TokenPosition position);
-            /* Use this constructor if the token type is a number. The token type will automatically be set. */
+            /* Use this constructor if the token type is a number. The token type will automatically be set to number. */
             Token(Values::number_t number, TokenPosition position);
+            /* Use this constructor if the token type is a string. Used for identifiers or strings. */
+            Token(TokType type, std::string* str_, TokenPosition position);
+
+            // Token(const Token& token);
+            // Token operator =(const Token& token) {
+            //     if (token.has_string_payload()) {
+            //         this->payload.string_ = token.payload.string_;
+            //     }
+            //     else if (token.type == TokType::NUMBER) {
+            //         this->payload.num = token.payload.num;
+            //     }
+            //     this->type = token.type;
+            //     this->position = token.position;
+            //     this->free_payload = token.free_payload;
+
+            //     return *this;
+            // };
 
             inline TokType get_type() const { return this->type; };
             inline TokenPosition get_position() const { return this->position; };
+
             Values::number_t get_number() const;
+            std::string* get_string() const;
 
             #ifdef DEBUG
             std::string to_string() const;
             #endif
-    };
 
-    const char* tok_type_to_string(TokType type);
+            /* The free method WILL free the payload, unless you call this method.
+                Used to reserve things like tokens with string payloads that need to be moved. */
+            inline void mark_payload() { this->free_payload = false; };
+
+            void free();
+            // ~Token();
+    };
+    const Token start = Token(TokType::START_DELIMETER, TokenPosition{ .line = 0, .col = 0, .length = 0 });
+
     /* Use std::string because we don't know how long it could be */
     std::string tok_to_concise_string(Token token);
 
@@ -107,8 +155,8 @@ namespace Scan {
             TokenPosition make_single_line_position(int length) const;
 
             // Other helpers
-            // Skip all whitespace characters, leaving the index at the next instance of
-            // a non-whitespace character
+            /* Skip all whitespace characters, leaving the index at the next instance of
+                a non-whitespace character */
             void skip_whitespace();
 
             std::string& str;

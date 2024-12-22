@@ -1,6 +1,8 @@
 #include "lexer.hpp"
 #include "globals.hpp"
 
+#include <unordered_map> // Keyword map
+
 #ifdef DEBUG
     #include <cassert>
 #endif
@@ -11,6 +13,9 @@ using Position::TokenPosition;
 const char* Scan::tok_type_to_string(TokType type) {
     switch (type) {
         case NUMBER: return "number";
+        case STRING: return "string";
+
+        case IDENTIFIER: return "identifier";
 
         case PLUS: return "+";
         case MINUS: return "-";
@@ -18,13 +23,20 @@ const char* Scan::tok_type_to_string(TokType type) {
         case SLASH: return "/";
         case PERCENT: return "%";
 
+        case EQUALS: return "=";
+
         case LPAREN: return "(";
         case RPAREN: return ")";
 
         case QUESTION_MARK: return "?";
         case COLON: return ":";
+        case SEMICOLON: return ";";
+
+        case VAR: return "var";
 
         case EOI: return "end of file";
+
+        case START_DELIMETER: return "INTERNAL(start_delimeter)";
 
         default:
             /* We should not have to convert any other token to a string */
@@ -36,6 +48,7 @@ const char* Scan::tok_type_to_string(TokType type) {
 std::string Scan::tok_to_concise_string(Token token) {
     switch (token.get_type()) {
         case NUMBER: return std::to_string(token.get_number());
+        case IDENTIFIER: return *token.get_string();
         default: return std::string(tok_type_to_string(token.get_type()));
     }
 };
@@ -43,14 +56,50 @@ std::string Scan::tok_to_concise_string(Token token) {
 Token::Token(TokType type, TokenPosition position) : type(type), position(position) {};
 Token::Token(Values::number_t number, TokenPosition position) :
     type(TokType::NUMBER),
-    payload(token_payload_t{ .num = number }),
-    position(position) {};
+    position(position)
+{
+    this->payload.num = number;
+};
+Token::Token(TokType type, std::string* str_, TokenPosition position) :
+    type(type),
+    position(position)
+{
+    this->payload.string_ = str_;
+};
+
+// Token::Token(const Token& token) {
+//     this->type = token.type;
+//     this->position = token.position;
+//     this->free_payload = token.free_payload;
+
+//     if (token.has_string_payload()) {
+//         this->payload.string_ = token.get_string();
+//     }
+//     else if(token.type == TokType::NUMBER) {
+//         this->payload.num = token.get_number();
+//     }
+// };
+
+void Token::free() {
+    if (!this->free_payload) return;
+
+    if (this->has_string_payload()) {
+        printf("DEBUG freed string(%p)\n", this->get_string());
+        delete this->get_string();
+    }
+}
 
 Values::number_t Token::get_number() const {
     #ifdef DEBUG
     assert(this->type == TokType::NUMBER);
     #endif
     return this->payload.num;
+}
+std::string* Token::get_string() const {
+    #ifdef DEBUG
+    assert(this->has_string_payload());
+    #endif
+    return this->payload.string_;
 }
 #ifdef DEBUG
 std::string Token::to_string() const {
@@ -65,6 +114,17 @@ namespace {
 
     bool is_hex_digit(char c) { return is_digit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }
     bool is_octal_digit(char c) { return c >= '0' && c <= '7'; }
+
+    bool is_identifier_start(char c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
+    }
+    /* Can it go after the starting character in an identifier */
+    bool is_identifier_middle(char c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
+    }
+    static std::unordered_map<std::string, TokType> keywords = {
+        { "var", TokType::VAR }
+    };
 };
 
 Scanner::Scanner(std::string& str) : str(str) {};
@@ -140,11 +200,14 @@ Token Scanner::next_token() {
         case '/': one_char_type = TokType::SLASH; break;
         case '%': one_char_type = TokType::PERCENT; break;
 
+        case '=': one_char_type = TokType::EQUALS; break;
+
         case '(': one_char_type = TokType::LPAREN; break;
         case ')': one_char_type = TokType::RPAREN; break;
 
         case '?': one_char_type = TokType::QUESTION_MARK; break;
         case ':': one_char_type = TokType::COLON; break;
+        case ';': one_char_type = TokType::SEMICOLON; break;
     };
     if (one_char_type != TokType::ERROR) {
         this->advance();
@@ -187,4 +250,38 @@ Token Scanner::next_token() {
 
         return Token(number, this->make_single_line_position(length));
     }
+
+    // Identifier or keyword
+    if ( is_identifier_start(curr) ) {
+        // Start the string with the identifier start
+        std::string* identifier = new std::string(1, curr);
+
+        int start_line = this->line,
+            start_col = this->col,
+            start_ind = this->ind;
+
+        this->advance();
+
+        while ( !this->at_EOF() && is_identifier_middle(this->current()) ) {
+            identifier->append(1, this->advance());
+        }
+
+        TokenPosition position = TokenPosition{
+                .line = start_line, .col = start_col,
+                .length = static_cast<int>(this->ind) - start_ind };
+
+        auto keyword = keywords.find(*identifier);
+        if (keyword != keywords.end()) {
+            /* We don't need the string object anymore */
+            delete identifier;
+            return Token(keyword->second, position);
+        }
+
+        /* If it wasn't a keyword, it must have been an identifier */
+        Token tok = Token(TokType::IDENTIFIER, identifier, position);
+        return tok;
+    }
+
+    /* If there was an unknown token, error and then  */
+    std::cout << "ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR" << std::endl;
 }
