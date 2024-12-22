@@ -31,8 +31,8 @@ namespace Parse {
         /* The parser will advance to the next token before calling the led or nud function,
             so these functions do not have to and SHOULD NOT.
             E.g., a number nud function does not have to advance past the number token. */
-        typedef AST::Node *(*nud_func_t)(Scan::Token current, Parser* parser);
-        typedef AST::Node *(*led_func_t)(Scan::Token current, AST::Node* left, Parser* parser);
+        typedef AST::Node *(*nud_func_t)(Scan::Token &current, Parser* parser);
+        typedef AST::Node *(*led_func_t)(Scan::Token &current, AST::Node* left, Parser* parser);
 
         struct ParseRule {
             /* These are the functions used as a parse rule in a Pratt top-down parser.
@@ -48,11 +48,13 @@ namespace Parse {
         extern std::array<ParseRule, Scan::NUM_TOKEN_TYPES> rules;
 
         /* Rule functions */
-        AST::Node* number(Scan::Token current, Parser* parser);
-        AST::Node* unary_op(Scan::Token current, Parser* parser);
-        AST::Node* binary_op(Scan::Token current, AST::Node* left, Parser* parser);
-        AST::Node* ternary_op(Scan::Token current, AST::Node* left, Parser* parser);
-        AST::Node* paren_group(Scan::Token current, Parser* parser);
+        AST::Node* number(Scan::Token &current, Parser* parser);
+        AST::Node* unary_op(Scan::Token &current, Parser* parser);
+        AST::Node* binary_op(Scan::Token &current, AST::Node* left, Parser* parser);
+        AST::Node* ternary_op(Scan::Token &current, AST::Node* left, Parser* parser);
+        AST::Node* paren_group(Scan::Token &current, Parser* parser);
+
+        AST::Node* var_value(Scan::Token &current, Parser* parser);
     };
 
     class Parser {
@@ -65,49 +67,65 @@ namespace Parse {
             static void initialize_parse_rules();
 
         private:
+            /* Whether or not we're on our first token. If we are,  */
+
             /* The scanner we'll get our tokens from */
             Scan::Scanner& scanner;
             /* The output class we use to error and warn. */
             Output& output;
 
+            Scan::Token previous_token;
             /* Will be set to the first token of the stream */
             Scan::Token current_token;
 
             // Token helpers
             /* Current token */
-            inline Scan::Token curr() const { return this->current_token; };
+            inline Scan::Token& curr() { return this->current_token; };
+            /* Previous token */
+            inline Scan::Token& previous() { return this->previous_token; };
 
             /* Continues forward with one token. */
             void advance();
 
             // Rule helpers
             /* Returns the rule of the current token. */
-            Rules::ParseRule get_parse_rule() const;
+            Rules::ParseRule get_parse_rule();
             /* Returns the nud function of the current token. (Could be null) */
-            Rules::nud_func_t get_nud() const;
+            Rules::nud_func_t get_nud();
             /* Returns the led function of the current token. (Could be null) */
-            Rules::led_func_t get_led() const;
+            Rules::led_func_t get_led();
         
             /* Panic until we find a syncronizing token */
             void synchronize();
+
+            void skip_semicolons();
         public:
             Parser(Scan::Scanner& scanner, Output& output);
 
             /* Pratt top-down parse expressions with this precedence or higher. */
             AST::Node* parse_precedence(int prec);
 
+            /* Parsing functions. These do not consume the semicolon, even if it is necessary.
+                That is the job of the caller. */
+            AST::Node* parse_expression();
+            AST::Node* parse_var_statement();
+
+            AST::Node* parse_statement();
+
             // Error helpers (public so that the parsing functions can access them)
             // None of the expect functions enter panic mode.
-            /* If the current token is the given type, advance and return the token.
-                Otherwise, don't advance, error, and return nullptr.
+            /* If the current token is the given type, advance and return true.
+                Otherwise, DO NOT advance, error, and return false.
                 Generates an error based on the token types.
-                Meant to be used in situations where tokens are constants, e.g.
-                expecting a ')' in an expression. */
-            Scan::Token* expect_symbol(Scan::TokType type);
-            /* If the current token is the given type, return the token.
-                Otherwise, error and return nullptr.
+                Meant to be used in situations where it's not absolutely necessary
+                for the token to be there. */
+            bool expect_symbol(Scan::TokType type);
+            /* Same as expect_symbol with just the type, but a custom error message is provided. */
+            bool expect_symbol(Scan::TokType type, char* error_message);
+            /* If the current token is the given type, return true.
+                Otherwise, error and return false.
                 Advances no matter what. */
-            Scan::Token* expect(Scan::TokType type, char* error_message);
+            bool expect(Scan::TokType type, char* error_message);
     };
 };
 
