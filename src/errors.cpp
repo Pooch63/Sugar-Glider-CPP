@@ -26,9 +26,10 @@ void Output::error(Position::TokenPosition position, std::string error) {
     this->errored = true;
 
     // Log the line information
-    std::string location = std::to_string(position.line);
+    // Add one to line and column since they're both 0-indexed
+    std::string location = std::to_string(position.line + 1);
     location += ':';
-    location += std::to_string(position.col);
+    location += std::to_string(position.col + 1);
     location += " |  ";
 
     Colors::set_color(Colors::YELLOW);
@@ -38,9 +39,10 @@ void Output::error(Position::TokenPosition position, std::string error) {
     int line_start = this->get_line_end(position.line - 1) + 1;
     int line_end = this->get_line_end(position.line) - 1;
 
+    int start_col = max(position.col - Output::MAX_LEFT_CHARACTERS, 0);
     /* The index of the place in the program where we'll start logging
         to the left of the error. We have to log characters on the same line. */
-    int left_start = max(line_start + position.col - Output::MAX_LEFT_CHARACTERS, line_start);
+    int left_start = line_start + start_col;
     /* The index of the start of the error section. */
     int error_start = line_start + position.col;
 
@@ -70,7 +72,7 @@ void Output::error(Position::TokenPosition position, std::string error) {
     std::cout << '\n';
 
     /* Add spaces until we get underneath the error start */
-    for (uint space = 0; space < location.size() + error_start; space += 1) {
+    for (uint space = 0; space < location.size() + position.col - start_col; space += 1) {
         std::cout << ' ';
     }
     /* Add the carats */
