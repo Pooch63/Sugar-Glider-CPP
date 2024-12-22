@@ -13,9 +13,11 @@ Instruction::Instruction(InstrCode code, Operations::BinOpType type) :
     code(code), payload(ir_instruction_arg_t{ .bin_op = type }) {};
 Instruction::Instruction(InstrCode code, Operations::UnaryOpType type) :
     code(code), payload(ir_instruction_arg_t{ .unary_op = type }) {};
+Instruction::Instruction(InstrCode code, Variable variable) :
+    code(code), payload(ir_instruction_arg_t{ .variable = variable }) {};
+
 Instruction::Instruction(Values::number_t number) :
     code(Intermediate::INSTR_NUMBER), payload(ir_instruction_arg_t{ .number = number }) {};
-
 
 
 const char* Intermediate::instr_type_to_string(InstrCode code) {
@@ -25,9 +27,9 @@ const char* Intermediate::instr_type_to_string(InstrCode code) {
         case InstrCode::INSTR_GOTO:
             return "GOTO";
         case InstrCode::INSTR_POP_JIZ:
-            return "OP_POP_JIZ";
+            return "POP_JIZ";
         case InstrCode::INSTR_POP_JNZ:
-            return "OP_POP_JNZ";
+            return "POP_JNZ";
         case InstrCode::INSTR_BIN_OP:
             return "BIN_OP";
         case InstrCode::INSTR_UNARY_OP:
@@ -40,6 +42,8 @@ const char* Intermediate::instr_type_to_string(InstrCode code) {
             return "INSTR_NULL";
         case InstrCode::INSTR_NUMBER:
             return "INSTR_NUMBER";
+        case InstrCode::INSTR_STORE:
+            return "STORE";
         case InstrCode::INSTR_EXIT:
             return "EXIT";
         default:
@@ -88,6 +92,11 @@ static void log_instruction(Instruction instr) {
         case InstrCode::INSTR_NUMBER:
         {
             std::cout << instr.payload.number;
+        }
+            break;
+        case InstrCode::INSTR_STORE:
+        {
+            std::cout << *instr.payload.variable.name;
         }
             break;
         default: break;

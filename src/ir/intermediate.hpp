@@ -17,7 +17,7 @@ namespace Intermediate {
     enum InstrCode {
         INSTR_POP,
 
-        /* These IR commands have an address they point to */
+        /* These intermediate representation commands have an address they point to */
         INSTR_POP_JNZ,
         INSTR_POP_JIZ,
         INSTR_GOTO,
@@ -32,6 +32,8 @@ namespace Intermediate {
         INSTR_NULL,
         INSTR_NUMBER,
 
+        INSTR_STORE,
+
         INSTR_EXIT
     };
 
@@ -39,12 +41,17 @@ namespace Intermediate {
     const char* instr_type_to_string(InstrCode code);
     #endif
 
+    struct Variable {
+        std::string* name;
+    };
     union ir_instruction_arg_t {
         /* For jump commands */
         address_t label;
         Operations::BinOpType bin_op;
         Operations::UnaryOpType unary_op;
         Values::number_t number;
+
+        Variable variable;
     };
 
     struct Instruction {
@@ -55,6 +62,7 @@ namespace Intermediate {
         Instruction(Intermediate::InstrCode code, address_t label);
         Instruction(Intermediate::InstrCode code, Operations::BinOpType bin_op);
         Instruction(Intermediate::InstrCode code, Operations::UnaryOpType unary_op);
+        Instruction(InstrCode code, Variable variable);
         /* There is only one instruction that takes this number. */
         Instruction(Values::number_t number);
     };
