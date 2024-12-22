@@ -8,7 +8,6 @@ OBJS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRC_FILES))
 
 
 main: $(OBJS)
-	echo $(SRC_FILES)
 	$(CC) -o main.exe $(OBJS)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
