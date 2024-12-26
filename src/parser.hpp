@@ -123,6 +123,8 @@ namespace Parse {
 
             AST::Node* parse_statement();
 
+            AST::Body* parse();
+
             // Error helpers (public so that the parsing functions can access them)
             // None of the expect functions enter panic mode.
             /* If the current token is the given type, advance and return true.

@@ -361,3 +361,11 @@ AST::Node* Parser::parse_statement() {
     
     return node;
 }
+
+AST::Body* Parser::parse() {
+    AST::Body* body = new AST::Body();
+
+    while (!this->at_EOF()) body->add_statement(this->parse_statement());
+
+    return body;
+}

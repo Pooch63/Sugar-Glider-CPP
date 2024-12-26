@@ -12,13 +12,13 @@
 int main() {
     Parse::Parser::initialize_parse_rules();
 
-    std::string prog = "while (1 + 2 - 3) { 4; var g = -true + true; }";
+    std::string prog = "8 + 4;";
     Scan::Scanner lexer(prog);
 
     Output output(prog);
 
     Parse::Parser parser(lexer, output);
-    AST::Node* node = parser.parse_statement();
+    AST::Node* node = parser.parse();
 
     std::cout << "DID PARSING WORK?" << std::endl;
 
