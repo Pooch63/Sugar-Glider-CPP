@@ -1,6 +1,11 @@
 #include "value.hpp"
 
+#include <bits/stdc++.h>
 #include <limits>
+
+namespace Math {
+    #include <math.h>
+}
 
 #ifdef DEBUG
 #include <cassert>
@@ -29,13 +34,25 @@ Values::number_t Value::to_number() const {
     }
 }
 
-// Calculate a % b. Get the number you must subtract from a in order to make
-// a a multiple of b.
-static Values::number_t mod(Values::number_t a, Values::number_t b) {
-    if (b == 0) return std::numeric_limits<double>::infinity();
-    if (a < 0) return b - mod(abs(a), b);
+// Calculate a / b
+static Values::number_t div(Values::number_t a, Values::number_t b) {
+    if (b == 0) {
+        if ((a > 0) ^ (b > 0)) return -std::numeric_limits<double>::infinity();
+        return std::numeric_limits<double>::infinity();
+    }
 
-    return abs(a) % abs(b);
+    return a / b;
+}
+// Calculate a % b. Get the number you must subtract from "a" in order to make
+// "a" a multiple of b.
+static Values::number_t mod(Values::number_t a, Values::number_t b) {
+    if (b == 0) {
+        if ((a > 0) ^ (b > 0)) return -std::numeric_limits<double>::infinity();
+        return std::numeric_limits<double>::infinity();
+    }
+    if (a < 0) return b - fmod(Math::fabs(a), b);
+
+    return fmod(a, b);
 }
 
 Value* Values::bin_op(Operations::BinOpType type, Value a, Value b) {
@@ -63,7 +80,7 @@ Value* Values::bin_op(Operations::BinOpType type, Value a, Value b) {
         case BinOpType::BINOP_MUL:
             return new Value(ValueType::NUMBER, first * second);
         case BinOpType::BINOP_DIV:
-            return new Value(ValueType::NUMBER, first / second);
+            return new Value(ValueType::NUMBER, div(first, second));
         case BinOpType::BINOP_MOD:
             return new Value(ValueType::NUMBER, mod(first, second));
         default:
