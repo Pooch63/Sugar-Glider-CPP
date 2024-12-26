@@ -12,7 +12,7 @@
 int main() {
     Parse::Parser::initialize_parse_rules();
 
-    std::string prog = "while (true) { var x = 8; }";
+    std::string prog = "var x = 8; while (true) { var z = 3; x = 7 / -(5 - 5); }";
     Scan::Scanner lexer(prog);
 
     Output output(prog);
@@ -43,12 +43,8 @@ int main() {
         return -1;
     }
 
-    printf("Finished before optimization\n");
-
     auto optimized = Intermediate::Block();
     optimize_labels(block, optimized);
-
-    printf("Finished after optimization\n");
 
     block.log_block();
     std::cout << std::endl;

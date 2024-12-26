@@ -46,6 +46,7 @@
         "iostream": "cpp",
         "istream": "cpp",
         "cassert": "cpp",
-        "map": "cpp"
+        "map": "cpp",
+        "any": "cpp"
     }
 }
