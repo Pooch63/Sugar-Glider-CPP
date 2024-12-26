@@ -14,6 +14,9 @@ namespace Operations {
     enum UnaryOpType {
         UNARY_NEGATE
     };
+
+    bool bin_op_is_bitwise_operator(BinOpType type);
+    bool unary_is_bitwise_operator(UnaryOpType type);
     
     #ifdef DEBUG
     const char* bin_op_to_string(BinOpType type);

@@ -32,6 +32,7 @@ namespace Intermediate {
         INSTR_NULL,
         INSTR_NUMBER,
 
+        INSTR_LOAD,
         INSTR_STORE,
 
         INSTR_EXIT
@@ -65,6 +66,29 @@ namespace Intermediate {
         Instruction(InstrCode code, Variable variable);
         /* There is only one instruction that takes this number. */
         Instruction(Values::number_t number);
+
+        bool is_truthy_constant() const;
+        bool is_constant() const;
+        inline bool is_jump() const {
+            return this->code == InstrCode::INSTR_GOTO ||
+                this->code == InstrCode::INSTR_POP_JIZ ||
+                this->code == InstrCode::INSTR_POP_JNZ; };
+        
+        inline bool has_number_payload() const { return this->code == InstrCode::INSTR_NUMBER; };
+        // inline bool has_string_payload() const { return this->code == InstrCode::INSTR_STRING; };
+        
+
+        Values::number_t        get_number() const;
+        address_t               get_address() const;
+        Operations::BinOpType   get_bin_op() const;
+        Operations::UnaryOpType get_unary_op() const;
+
+        /* Convert payload to a value object. Only call if it CAN be converted, e.g.
+            if it's a number, true, false, null, etc. */
+        Values::Value payload_to_value() const;
+
+        /* Convert a value to an instruction that loads it onto the stack. */
+        static Instruction value_to_instruction(Values::Value value);
     };
 
     typedef std::vector<Intermediate::Instruction> intermediate_set_t;
@@ -77,11 +101,16 @@ namespace Intermediate {
             Block();
 
             void new_label();
+            intermediate_set_t &get_label(uint index);
             inline size_t label_count() const { return this->labels.size(); };
 
+            /* Add an instruction to the last label. If there are no labels, one will be created. */
             void add_instruction(Intermediate::Instruction instruction);
 
             void log_block() const;
+
+            inline auto begin() const { return this->labels.begin(); };
+            inline auto end() const { return this->labels.end(); };
     };
 };
 
