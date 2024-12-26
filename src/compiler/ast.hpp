@@ -2,7 +2,7 @@
 #define _SGCPP_AST_HPP
 
 #include "lexer.hpp"
-#include "operations.hpp"
+#include "../operations.hpp"
 #include "scopes.hpp"
 
 namespace AST {

@@ -1,5 +1,5 @@
 #include "lexer.hpp"
-#include "globals.hpp"
+#include "../globals.hpp"
 
 #include <unordered_map> // Keyword map
 

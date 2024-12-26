@@ -1,5 +1,5 @@
 #include "ast.hpp"
-#include "globals.hpp"
+#include "../globals.hpp"
 
 #ifdef DEBUG
 #include <cassert>

@@ -2,9 +2,9 @@
 #define _SGCPP_PARSER_HPP
 
 #include "ast.hpp"
-#include "errors.hpp"
 #include "lexer.hpp"
-#include "operations.hpp"
+#include "../errors.hpp"
+#include "../operations.hpp"
 
 #include <array>
 

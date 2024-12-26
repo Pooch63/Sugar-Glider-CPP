@@ -2,8 +2,8 @@
 #define _SGCPP_COMPILER_CPP
 
 #include "ast.hpp"
-#include "errors.hpp"
-#include "ir/intermediate.hpp"
+#include "../errors.hpp"
+#include "../ir/intermediate.hpp"
 #include "scopes.hpp"
 
 class Compiler {

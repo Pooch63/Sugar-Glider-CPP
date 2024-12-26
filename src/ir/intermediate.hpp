@@ -5,7 +5,7 @@
 
 #include "bytecode.hpp"
 #include "../globals.hpp"
-#include "../scopes.hpp"
+#include "../compiler/scopes.hpp"
 
 #include <vector>
 

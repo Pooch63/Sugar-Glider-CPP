@@ -1,9 +1,9 @@
 #ifndef _SGCPP_LEXER_HPP
 #define _SGCPP_LEXER_HPP
 
-#include "errors.hpp"
-#include "globals.hpp"
-#include "value.hpp"
+#include "../errors.hpp"
+#include "../globals.hpp"
+#include "../value.hpp"
 
 #include <memory>
 #include <string>

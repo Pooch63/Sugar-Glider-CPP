@@ -1,6 +1,6 @@
-#include "ir/bytecode.hpp"
 #include "compiler.hpp"
-#include "globals.hpp"
+#include "../globals.hpp"
+#include "../ir/bytecode.hpp"
 
 #ifdef DEBUG
 #include <cassert>

@@ -69,7 +69,8 @@ Value* Values::bin_op(Operations::BinOpType type, Value a, Value b) {
 
     if (Operations::bin_op_is_bitwise_operator(type)) {
         /* Make sure the numbers are both integers. */
-        
+        firstI = floor(first);
+        secondI = floor(second);
     }
 
     switch (type) {
@@ -98,11 +99,11 @@ Value* Values::unary_op(Operations::UnaryOpType type, Value arg) {
 
     Values::number_t num = arg.to_number();
 
-    int firstI, secondI;
+    int argI;
 
     if (Operations::unary_is_bitwise_operator(type)) {
-        /* Make sure the numbers are both integers. */
-        
+        /* Make sure the numbers is an integer. */
+        argI = floor(num);
     }
 
     switch (type) {

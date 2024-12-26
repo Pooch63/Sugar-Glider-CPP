@@ -1,6 +1,6 @@
-#include "globals.hpp"
 #include "parser.hpp"
 #include "scopes.hpp"
+#include "../globals.hpp"
 
 #ifdef DEBUG
     #include <cassert>

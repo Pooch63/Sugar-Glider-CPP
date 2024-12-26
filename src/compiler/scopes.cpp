@@ -1,5 +1,5 @@
-#include "globals.hpp"
 #include "scopes.hpp"
+#include "../globals.hpp"
 
 #ifdef DEBUG_ASSERT
 #include <cassert>
