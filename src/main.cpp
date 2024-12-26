@@ -1,19 +1,19 @@
-#include "ast.hpp"
+#include "compiler/ast.hpp"
 #include "ir/bytecode.hpp"
 #include "ir/intermediate.hpp"
-#include "compiler.hpp"
+#include "compiler/compiler.hpp"
 #include "errors.hpp"
-#include "lexer.hpp"
+#include "compiler/lexer.hpp"
 #include "optimizer/label-intermediate.hpp"
-#include "parser.hpp"
+#include "compiler/parser.hpp"
 
 #include <iostream>
 
 int main() {
     Parse::Parser::initialize_parse_rules();
 
-    std::string prog = "var x = 8; while (true) { var z = 3; x = 7 / -(5 - 5); }";
-    
+    std::string prog = "var x = 8; while (true) { var z = 3; x = (0 / 0) / 0; }";
+
     Output output(prog);
     Scan::Scanner lexer(prog);
 

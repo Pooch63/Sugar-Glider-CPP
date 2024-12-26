@@ -19,6 +19,7 @@ namespace AST {
         NODE_VAR_VALUE,
         NODE_VAR_ASSIGNMENT,
 
+        NODE_IF,
         NODE_WHILE,
 
         NODE_BODY
@@ -35,6 +36,7 @@ namespace AST {
     class VarDefinition;
     class VarValue;
     class VarAssignment;
+    class If;
     class While;
     class Body;
 
@@ -62,6 +64,7 @@ namespace AST {
             VarDefinition* as_variable_definition();
             VarValue* as_variable_value();
             VarAssignment* as_variable_assignment();
+            If* as_if_statement();
             While* as_while_loop();
             Body* as_body();
 
@@ -167,6 +170,18 @@ namespace AST {
             ~VarAssignment();
     };
 
+    class If : public Node {
+        private:
+            AST::Node* condition;
+            AST::Node* block;
+        public:
+            If(AST::Node* condition, AST::Node* block);
+
+            inline AST::Node* get_condition() const { return this->condition; };
+            inline AST::Node* get_block() const { return this->block; };
+
+            ~If();
+    };
     class While : public Node {
         private:
             AST::Node* condition;

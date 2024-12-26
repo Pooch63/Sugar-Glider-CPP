@@ -49,6 +49,7 @@ namespace Scan {
         // < Operators
 
         // Keywords >
+        IF,
         WHILE,
         CONST,
         VAR,

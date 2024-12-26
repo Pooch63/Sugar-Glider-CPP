@@ -121,6 +121,7 @@ namespace Parse {
                 That is the job of the caller. */
             AST::Node* parse_expression();
             AST::VarDefinition* parse_var_statement();
+            AST::If* parse_if_statement();
             AST::While* parse_while_statement();
 
             AST::Node* parse_statement();

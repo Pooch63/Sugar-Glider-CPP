@@ -168,6 +168,7 @@ void Parser::initialize_parse_rules() {
 // < Rule functions
 /* < Parse rule initialization */
 
+
 Parser::Parser(Scan::Scanner& scanner, Output& output) :
     scanner(scanner),
     output(output),
@@ -348,6 +349,16 @@ AST::VarDefinition* Parser::parse_var_statement() {
         name,
         value,
         position) : nullptr;
+}
+
+AST::If* Parser::parse_if_statement() {
+    // Go through if token
+    this->advance();
+
+    AST::Node* condition = this->parse_parenthesized_expression();
+    AST::Node* block = this->parse_optionally_inlined_block();
+
+    return new AST::If(condition, block);
 }
 AST::While* Parser::parse_while_statement() {
     // Go through while token

@@ -150,6 +150,19 @@ void Compiler::compile_variable_assignment(AST::VarAssignment* node) {
     }
 };
 
+void Compiler::compile_if_statement(AST::If* node) {
+    // The label following the if-elseif-else chain
+    int end_label = this->main_chunk.label_count();
+
+    this->main_chunk.new_label();
+    this->compile_node(node->get_condition());
+    // this->main_chunk.add_instruction(
+    //     Intermediate::Instruction(
+    //         Intermediate::INSTR_POP_JIZ,
+
+    //     )
+    // );
+}
 void Compiler::compile_while_loop(AST::While* node) {
     /* First, compile the condition. We have to jump back to this
         at the end of the loop, so make a new label. */
@@ -219,6 +232,9 @@ void Compiler::compile_node(AST::Node* node) {
             this->compile_variable_assignment(node->as_variable_assignment());
             break;
 
+        case AST::NodeType::NODE_IF:
+            this->compile_if_statement(node->as_if_statement());
+            break;
         case AST::NodeType::NODE_WHILE:
             this->compile_while_loop(node->as_while_loop());
             break;

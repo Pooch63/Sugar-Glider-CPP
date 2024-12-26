@@ -30,6 +30,7 @@ class Compiler {
         void compile_variable_value(AST::VarValue* node);
         void compile_variable_assignment(AST::VarAssignment* node);
 
+        void compile_if_statement(AST::If* node);
         void compile_while_loop(AST::While* node);
 
         void compile_body(AST::Body* body);

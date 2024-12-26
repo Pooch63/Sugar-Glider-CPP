@@ -26,55 +26,61 @@ Node::Node(NodeType type) : node_type(type) {};
 Node::Node(NodeType type, TokenPosition position) : node_type(type), position(position) {};
 
 Number* Node::as_number() {
-    #ifdef DEBUG
+    #ifdef DEBUG_ASSERT
     assert(this->node_type == NodeType::NODE_NUMBER);
     #endif
     return dynamic_cast<Number*>(this);
 }
 BinOp* Node::as_bin_op() {
-    #ifdef DEBUG
+    #ifdef DEBUG_ASSERT
     assert(this->node_type == NodeType::NODE_BINOP);
     #endif
     return dynamic_cast<BinOp*>(this);
 }
 UnaryOp* Node::as_unary_op() {
-    #ifdef DEBUG
+    #ifdef DEBUG_ASSERT
     assert(this->node_type == NodeType::NODE_UNARYOP);
     #endif
     return dynamic_cast<UnaryOp*>(this);
 }
 TernaryOp* Node::as_ternary_op() {
-    #ifdef DEBUG
+    #ifdef DEBUG_ASSERT
     assert(this->node_type == NodeType::NODE_TERNARY_OP);
     #endif
     return dynamic_cast<TernaryOp*>(this);
 }
 VarDefinition* Node::as_variable_definition() {
-    #ifdef DEBUG
+    #ifdef DEBUG_ASSERT
     assert(this->node_type == NodeType::NODE_VAR_DEFINITION);
     #endif
     return dynamic_cast<VarDefinition*>(this);
 }
 VarValue* Node::as_variable_value() {
-    #ifdef DEBUG
+    #ifdef DEBUG_ASSERT
     assert(this->node_type == NodeType::NODE_VAR_VALUE);
     #endif
     return dynamic_cast<VarValue*>(this);
 };
 VarAssignment* Node::as_variable_assignment() {
-    #ifdef DEBUG
+    #ifdef DEBUG_ASSERT
     assert(this->node_type == NodeType::NODE_VAR_ASSIGNMENT);
     #endif
     return dynamic_cast<VarAssignment*>(this);
 };
+If* Node::as_if_statement() {
+    #ifdef DEBUG_ASSERT
+    assert(this->node_type == NodeType::NODE_IF);
+    #endif
+    return dynamic_cast<If*>(this);
+};
 While* Node::as_while_loop() {
-    #ifdef DEBUG
+    #ifdef DEBUG_ASSERT
     assert(this->node_type == NodeType::NODE_WHILE);
     #endif
     return dynamic_cast<While*>(this);
 }
 Body* Node::as_body() {
-    #ifdef DEBUG
+    #ifdef DEBUG_ASSERT
     assert(this->node_type == NodeType::NODE_BODY);
     #endif
     return dynamic_cast<Body*>(this);
@@ -130,6 +136,13 @@ True::True() : Node(NodeType::NODE_TRUE) {};
 
 False::False() : Node(NodeType::NODE_FALSE) {};
 
+If::If(AST::Node* condition, AST::Node* block) :
+    Node(NodeType::NODE_IF),
+    condition(condition), block(block) {};
+If::~If() {
+    if (this->condition != nullptr) delete this->condition;
+    if (this->block != nullptr) delete this->block;
+}
 While::While(AST::Node* condition, AST::Node* block) :
     Node(NodeType::NODE_WHILE),
     condition(condition), block(block) {};
