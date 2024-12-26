@@ -12,7 +12,7 @@
 int main() {
     Parse::Parser::initialize_parse_rules();
 
-    std::string prog = "8 + 4;";
+    std::string prog = "while (true) { var x = 8; }";
     Scan::Scanner lexer(prog);
 
     Output output(prog);
@@ -34,11 +34,21 @@ int main() {
     Chunk chunk = Chunk();
     auto block = Intermediate::Block();
 
-    Compiler compiler(block);
-    compiler.compile(node);
+    Compiler compiler(block, output);
+    bool compile_success = compiler.compile(node);
+
+    /* If there was a compiler error, don't continue. */
+    if (!compile_success) {
+        delete node;
+        return -1;
+    }
+
+    printf("Finished before optimization\n");
 
     auto optimized = Intermediate::Block();
     optimize_labels(block, optimized);
+
+    printf("Finished after optimization\n");
 
     block.log_block();
     std::cout << std::endl;

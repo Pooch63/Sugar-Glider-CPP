@@ -94,7 +94,7 @@ AST::Node* Parse::Rules::ternary_op(Scan::Token& current, AST::Node* left, Parse
 AST::Node* Parse::Rules::var_value(Scan::Token &current, Parser* parser) {
     // Make sure to stop the variable name from automatically being freed
     current.mark_payload();
-    return new AST::VarValue(current.get_string());
+    return new AST::VarValue(current.get_string(), current.get_position());
 };
 
 bool Parser::rules_initialized = false;
@@ -314,10 +314,12 @@ AST::VarDefinition* Parser::parse_var_statement() {
     bool got_identifier = this->expect_symbol(TokType::IDENTIFIER, "Expected identifier after var keyword");
 
     std::string* name = nullptr;
+    TokenPosition position;
 
     /* Make sure to keep the identifier, so mark it if it exists. */
     if (got_identifier) {
         name = this->previous_token.get_string();
+        position = this->previous_token.get_position();
         this->previous_token.mark_payload();
     }
     
@@ -325,7 +327,7 @@ AST::VarDefinition* Parser::parse_var_statement() {
 
     AST::Node* value = this->parse_expression();
     
-    return new AST::VarDefinition(name, value);
+    return got_identifier ? new AST::VarDefinition(name, value, position) : nullptr;
 }
 AST::While* Parser::parse_while_statement() {
     // Go through while token
@@ -365,7 +367,10 @@ AST::Node* Parser::parse_statement() {
 AST::Body* Parser::parse() {
     AST::Body* body = new AST::Body();
 
-    while (!this->at_EOF()) body->add_statement(this->parse_statement());
+    while (!this->at_EOF()) {
+        AST::Node* statement = this->parse_statement();
+        if (statement != nullptr) body->add_statement(statement);
+    }
 
     return body;
 }

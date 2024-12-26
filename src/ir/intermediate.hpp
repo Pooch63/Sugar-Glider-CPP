@@ -5,6 +5,7 @@
 
 #include "bytecode.hpp"
 #include "../globals.hpp"
+#include "../scopes.hpp"
 
 #include <vector>
 
@@ -42,9 +43,6 @@ namespace Intermediate {
     const char* instr_type_to_string(InstrCode code);
     #endif
 
-    struct Variable {
-        std::string* name;
-    };
     union ir_instruction_arg_t {
         /* For jump commands */
         address_t label;
@@ -52,7 +50,7 @@ namespace Intermediate {
         Operations::UnaryOpType unary_op;
         Values::number_t number;
 
-        Variable variable;
+        Scopes::Variable variable;
     };
 
     struct Instruction {
@@ -63,7 +61,7 @@ namespace Intermediate {
         Instruction(Intermediate::InstrCode code, address_t label);
         Instruction(Intermediate::InstrCode code, Operations::BinOpType bin_op);
         Instruction(Intermediate::InstrCode code, Operations::UnaryOpType unary_op);
-        Instruction(InstrCode code, Variable variable);
+        Instruction(InstrCode code, Scopes::Variable variable);
         /* There is only one instruction that takes this number. */
         Instruction(Values::number_t number);
 

@@ -2,12 +2,18 @@
 #define _SGCPP_COMPILER_CPP
 
 #include "ast.hpp"
+#include "errors.hpp"
 #include "ir/intermediate.hpp"
+#include "scopes.hpp"
 
 class Compiler {
     private:
+        bool error = false;
+
         /* A reference to the main chunk we'll compiling into at the moment */
         Intermediate::Block& main_chunk;
+        Output &output;
+        Scopes::ScopeManager scopes = Scopes::ScopeManager();
 
         /* All the compilation functions for specific nodes */
         void compile_number(AST::Number* node);
@@ -26,10 +32,11 @@ class Compiler {
         /* Compile a node into the chunk */
         void compile_node(AST::Node* node);
     public:
-        Compiler(Intermediate::Block& main_chunk);
+        Compiler(Intermediate::Block& main_chunk, Output &output);
 
-        /* Compile the whole program, and then add an exit instruction. */
-        void compile(AST::Node* node);
+        /* Compile the whole program, and then add an exit instruction.
+            Returns true if the program was compiled successfully. */
+        bool compile(AST::Node* node);
 };
 
 #endif

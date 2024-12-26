@@ -9,7 +9,7 @@ Instruction::Instruction(InstrCode code, Operations::BinOpType type) :
     code(code), payload(ir_instruction_arg_t{ .bin_op = type }) {};
 Instruction::Instruction(InstrCode code, Operations::UnaryOpType type) :
     code(code), payload(ir_instruction_arg_t{ .unary_op = type }) {};
-Instruction::Instruction(InstrCode code, Variable variable) :
+Instruction::Instruction(InstrCode code, Scopes::Variable variable) :
     code(code), payload(ir_instruction_arg_t{ .variable = variable }) {};
 
 Instruction::Instruction(Values::number_t number) :
@@ -168,6 +168,7 @@ static void log_instruction(Instruction instr) {
         case InstrCode::INSTR_STORE:
         {
             std::cout << *instr.payload.variable.name;
+            log_number_as_subscript(instr.payload.variable.scope);
         }
             break;
         default: break;

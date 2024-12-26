@@ -23,6 +23,8 @@ bool AST::node_is_expression(NodeType type) {
 };
 
 Node::Node(NodeType type, node_wrapper_t node) : node_type(type), node(node) {};
+Node::Node(NodeType type, TokenPosition position, node_wrapper_t node) :
+    node_type(type), position(position), node(node) {};
 
 Number* Node::as_number() const {
     #ifdef DEBUG
@@ -133,8 +135,8 @@ void TernaryOp::free() {
     if (this->false_value != nullptr) delete this->false_value;
 }
 
-VarDefinition::VarDefinition(std::string* name, Node* value) :
-    Node(NodeType::NODE_VAR_DEFINITION, node_wrapper_t{ .var_definition = this }),
+VarDefinition::VarDefinition(std::string* name, Node* value, TokenPosition position) :
+    Node(NodeType::NODE_VAR_DEFINITION, position, node_wrapper_t{ .var_definition = this }),
     name(name), value(value) {};
 void VarDefinition::free() {
     /* If there is a bug with the name being freed, START HERE. The runtime doesn't need it... for now. */
@@ -142,8 +144,8 @@ void VarDefinition::free() {
     if (this->value != nullptr) delete this->value;
 }
 
-VarValue::VarValue(std::string* name) :
-    Node(NodeType::NODE_VAR_VALUE, node_wrapper_t{ .var_value = this }),
+VarValue::VarValue(std::string* name, TokenPosition pos) :
+    Node(NodeType::NODE_VAR_VALUE, pos, node_wrapper_t{ .var_value = this }),
     name(name) {};
 void VarValue::free() {
     if (this->name != nullptr) delete this->name;

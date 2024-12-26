@@ -57,14 +57,16 @@ namespace AST {
     class Node {
         private:
             NodeType node_type;
-            node_wrapper_t node;
 
             TokenPosition position;
+            node_wrapper_t node;
 
         public:
             Node(NodeType type, node_wrapper_t node);
+            Node(NodeType type, TokenPosition position, node_wrapper_t node);
 
-            inline NodeType get_type() const { return this->node_type; };
+            inline NodeType      get_type() const { return this->node_type; };
+            inline TokenPosition get_position() const { return this->position; };
 
             /* Return pointers to nodes depending on the type you specify.
                 The wrapper type MUST be the same as the node type. */
@@ -145,7 +147,7 @@ namespace AST {
             std::string* name;
             Node* value;
         public:
-            VarDefinition(std::string* name, Node* value);
+            VarDefinition(std::string* name, Node* value, TokenPosition pos);
 
             inline std::string* get_name() const { return this->name; };
             inline Node* get_value() const { return this->value; };
@@ -157,7 +159,7 @@ namespace AST {
         private:
             std::string* name;
         public:
-            VarValue(std::string* name);
+            VarValue(std::string* name, TokenPosition pos);
 
             inline std::string* get_name() const { return this->name; };
 

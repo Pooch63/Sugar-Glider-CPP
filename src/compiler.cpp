@@ -9,7 +9,7 @@
 using namespace Bytecode;
 using Intermediate::ir_instruction_arg_t;
 
-Compiler::Compiler(Intermediate::Block& chunk) : main_chunk(chunk) {};
+Compiler::Compiler(Intermediate::Block& chunk, Output &output) : main_chunk(chunk), output(output) {};
 
 void Compiler::compile_number(AST::Number* node) {
     this->main_chunk.add_instruction(Intermediate::Instruction(node->get_number()));
@@ -64,18 +64,39 @@ void Compiler::compile_ternary_op(AST::TernaryOp* node) {
 void Compiler::compile_variable_definition(AST::VarDefinition* def) {
     this->compile_node(def->get_value());
 
+    /* Make sure the variable can be declared. */
+    if (this->scopes.last_scope_has_variable(def->get_name())) {
+        char error[100];
+        snprintf(error, 100, "Variable \"%s\" has already been declared in this scope.", def->get_name()->c_str());
+        this->output.error(def->get_position(), error);
+        this->error = true;
+        return;
+    }
+
+    /* Add the variable to scopes */
+    Scopes::Variable variable = this->scopes.add_variable(def->get_name());
+
     this->main_chunk.add_instruction(
         Intermediate::Instruction(
             Intermediate::INSTR_STORE,
-            Intermediate::Variable{ .name = def->get_name() }
+            variable
         )
     );
 }
 void Compiler::compile_variable_value(AST::VarValue* node) {
+    /* Make sure the variable exists */
+    if (!this->scopes.variable_exists(node->get_name())) {
+        char error[100];
+        snprintf(error, 100, "Variable \"%s\" does not exist.", node->get_name()->c_str());
+        this->output.error(node->get_position(), error);
+        this->error = true;
+        return;
+    }
+
     this->main_chunk.add_instruction(
         Intermediate::Instruction(
             Intermediate::INSTR_LOAD,
-            Intermediate::Variable{ .name = node->get_name() }
+            Scopes::Variable{ .name = node->get_name() }
         )
     );
 };
@@ -96,6 +117,8 @@ void Compiler::compile_while_loop(AST::While* node) {
 }
 
 void Compiler::compile_body(AST::Body* body) {
+    scopes.new_scope();
+
     for (AST::Node* statement : *body) {
         this->compile_node(statement);
         /* If it's an expression, e.g. 4;, then we need the pop the result (in this case,
@@ -104,6 +127,8 @@ void Compiler::compile_body(AST::Body* body) {
             this->main_chunk.add_instruction(Intermediate::Instruction(Intermediate::INSTR_POP));
         }
     }
+
+    scopes.pop_scope();
 }
 
 void Compiler::compile_node(AST::Node* node) {
@@ -149,8 +174,9 @@ void Compiler::compile_node(AST::Node* node) {
             this->compile_body(node->as_body());
     }
 }
-void Compiler::compile(AST::Node* node) {
+bool Compiler::compile(AST::Node* node) {
     this->compile_node(node);
     this->main_chunk.new_label();
     this->main_chunk.add_instruction(Intermediate::Instruction(Intermediate::INSTR_EXIT));
+    return !this->error;
 }
