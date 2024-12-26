@@ -38,54 +38,34 @@ namespace AST {
     class While;
     class Body;
 
-    /* A collection of pointers to all the possible nodes
-        that the node could be wrapping. While this COULD be
-        a void* instead, this is preferred to avoid memory bugs. */
-    union node_wrapper_t {
-        Number* number;
-        True* true_value;
-        False* false_value;
-        BinOp* bin_op;
-        UnaryOp* unary_op;
-        TernaryOp* ternary_op;
-        VarDefinition* var_definition;
-        VarValue* var_value;
-        VarAssignment* var_assignment;
-        While* while_node;
-        Body* body;
-    };
-
     // @REVIEW: Don't free until end of compilation.
     // Also, nodes have to check if their properties are nullptr before freeing,
     // because a parse error might add a nullptr
     class Node {
         private:
             NodeType node_type;
-
             TokenPosition position;
-            node_wrapper_t node;
 
         public:
-            Node(NodeType type, node_wrapper_t node);
-            Node(NodeType type, TokenPosition position, node_wrapper_t node);
+            Node(NodeType type);
+            Node(NodeType type, TokenPosition position);
 
             inline NodeType      get_type() const { return this->node_type; };
             inline TokenPosition get_position() const { return this->position; };
 
             /* Return pointers to nodes depending on the type you specify.
                 The wrapper type MUST be the same as the node type. */
-            Number* as_number() const;
-            BinOp* as_bin_op() const;
-            UnaryOp* as_unary_op() const;
-            TernaryOp* as_ternary_op() const;
-            VarDefinition* as_variable_definition() const;
-            VarValue* as_variable_value() const;
-            VarAssignment* as_variable_assignment() const;
-            While* as_while_loop() const;
-            Body* as_body() const;
+            Number* as_number();
+            BinOp* as_bin_op();
+            UnaryOp* as_unary_op();
+            TernaryOp* as_ternary_op();
+            VarDefinition* as_variable_definition();
+            VarValue* as_variable_value();
+            VarAssignment* as_variable_assignment();
+            While* as_while_loop();
+            Body* as_body();
 
-            /* Frees the node payload depending on its type. */
-            ~Node();
+            virtual ~Node() = default;
     };
 
     class Number : public Node {
@@ -117,7 +97,7 @@ namespace AST {
             inline Node* get_left() const { return this->left; };
             inline Node* get_right() const { return this->right; };
 
-            void free();
+            ~BinOp();
     };
     class UnaryOp : public Node {
         private:
@@ -129,7 +109,7 @@ namespace AST {
             inline Operations::UnaryOpType get_type() const { return this->type; }
             inline Node* get_argument() const { return this->argument; }
 
-            void free();
+            ~UnaryOp();
     };
     class TernaryOp : public Node {
         private:
@@ -143,7 +123,7 @@ namespace AST {
             inline Node* get_true_value() const { return this->true_value; }
             inline Node* get_false_value() const { return this->false_value; }
 
-            void free();
+            ~TernaryOp();
     };
 
     /* E.g., var x = 3; */
@@ -159,7 +139,7 @@ namespace AST {
             inline Node*                get_value() const { return this->value; };
             inline Scopes::VariableType get_variable_type() const { return this->variable_type; };
 
-            void free();
+            ~VarDefinition();
     };
     /* A reference to a variable, e.g. x */
     class VarValue : public Node {
@@ -170,7 +150,7 @@ namespace AST {
 
             inline std::string* get_name() const { return this->name; };
 
-            void free();
+            ~VarValue();
     };
     /* An assignment to a variable, e.g., x = 3 */
     class VarAssignment : public Node {
@@ -184,7 +164,7 @@ namespace AST {
             inline Node* get_variable() const { return this->variable; };
             inline Node* get_value() const { return this->value; };
 
-            void free();
+            ~VarAssignment();
     };
 
     class While : public Node {
@@ -197,7 +177,7 @@ namespace AST {
             inline AST::Node* get_condition() const { return this->condition; };
             inline AST::Node* get_block() const { return this->block; };
 
-            void free();
+            ~While();
     };
 
     class Body : public Node {
@@ -211,7 +191,7 @@ namespace AST {
 
             void add_statement(Node* statement);
 
-            void free();
+            ~Body();
     };
 }
 

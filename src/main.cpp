@@ -13,9 +13,9 @@ int main() {
     Parse::Parser::initialize_parse_rules();
 
     std::string prog = "var x = 8; while (true) { var z = 3; x = 7 / -(5 - 5); }";
-    Scan::Scanner lexer(prog);
-
+    
     Output output(prog);
+    Scan::Scanner lexer(prog);
 
     Parse::Parser parser(lexer, output);
     AST::Node* node = parser.parse();
@@ -30,7 +30,6 @@ int main() {
     }
 
     using Bytecode::Chunk;
-
     Chunk chunk = Chunk();
     auto block = Intermediate::Block();
 
@@ -51,6 +50,5 @@ int main() {
     optimized.log_block();
 
     delete node;
-
     return 0;
 }

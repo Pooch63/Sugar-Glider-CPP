@@ -22,171 +22,137 @@ bool AST::node_is_expression(NodeType type) {
     }
 };
 
-Node::Node(NodeType type, node_wrapper_t node) : node_type(type), node(node) {};
-Node::Node(NodeType type, TokenPosition position, node_wrapper_t node) :
-    node_type(type), position(position), node(node) {};
+Node::Node(NodeType type) : node_type(type) {};
+Node::Node(NodeType type, TokenPosition position) : node_type(type), position(position) {};
 
-Number* Node::as_number() const {
+Number* Node::as_number() {
     #ifdef DEBUG
     assert(this->node_type == NodeType::NODE_NUMBER);
     #endif
-    return this->node.number;
+    return dynamic_cast<Number*>(this);
 }
-BinOp* Node::as_bin_op() const {
+BinOp* Node::as_bin_op() {
     #ifdef DEBUG
     assert(this->node_type == NodeType::NODE_BINOP);
     #endif
-    return this->node.bin_op;
+    return dynamic_cast<BinOp*>(this);
 }
-UnaryOp* Node::as_unary_op() const {
+UnaryOp* Node::as_unary_op() {
     #ifdef DEBUG
     assert(this->node_type == NodeType::NODE_UNARYOP);
     #endif
-    return this->node.unary_op;
+    return dynamic_cast<UnaryOp*>(this);
 }
-TernaryOp* Node::as_ternary_op() const {
+TernaryOp* Node::as_ternary_op() {
     #ifdef DEBUG
     assert(this->node_type == NodeType::NODE_TERNARY_OP);
     #endif
-    return this->node.ternary_op;
+    return dynamic_cast<TernaryOp*>(this);
 }
-VarDefinition* Node::as_variable_definition() const {
+VarDefinition* Node::as_variable_definition() {
     #ifdef DEBUG
     assert(this->node_type == NodeType::NODE_VAR_DEFINITION);
     #endif
-    return this->node.var_definition;
+    return dynamic_cast<VarDefinition*>(this);
 }
-VarValue* Node::as_variable_value() const {
+VarValue* Node::as_variable_value() {
     #ifdef DEBUG
     assert(this->node_type == NodeType::NODE_VAR_VALUE);
     #endif
-    return this->node.var_value;
+    return dynamic_cast<VarValue*>(this);
 };
-VarAssignment* Node::as_variable_assignment() const {
+VarAssignment* Node::as_variable_assignment() {
     #ifdef DEBUG
     assert(this->node_type == NodeType::NODE_VAR_ASSIGNMENT);
     #endif
-    return this->node.var_assignment;
+    return dynamic_cast<VarAssignment*>(this);
 };
-While* Node::as_while_loop() const {
+While* Node::as_while_loop() {
     #ifdef DEBUG
     assert(this->node_type == NodeType::NODE_WHILE);
     #endif
-    return this->node.while_node;
+    return dynamic_cast<While*>(this);
 }
-Body* Node::as_body() const {
+Body* Node::as_body() {
     #ifdef DEBUG
     assert(this->node_type == NodeType::NODE_BODY);
     #endif
-    return this->node.body;
+    return dynamic_cast<Body*>(this);
 }
 
-Node::~Node() {
-    switch (this->node_type) {
-        case NODE_NUMBER:
-        case NODE_TRUE:
-        case NODE_FALSE:
-            break;
-        case NODE_BINOP:
-            this->node.bin_op->free();
-            break;
-        case NODE_UNARYOP:
-            this->node.unary_op->free();
-            break;
-        case NODE_TERNARY_OP:
-            this->node.ternary_op->free();
-            break;
-        case NODE_VAR_DEFINITION:
-            this->node.var_definition->free();
-            break;
-        case NODE_VAR_VALUE:
-            this->node.var_value->free();
-            break;
-        case NODE_VAR_ASSIGNMENT:
-            this->node.var_assignment->free();
-            break;
-        case NODE_WHILE:
-            this->node.while_node->free();
-            break;
-        case NODE_BODY:
-            this->node.body->free();
-            break;
-    }
-};
-
 Number::Number(Values::number_t number) :
-    Node(NodeType::NODE_NUMBER, node_wrapper_t{ .number = this })
+    Node(NodeType::NODE_NUMBER)
 {
     this->number = number;
 }
 
 BinOp::BinOp(Operations::BinOpType type, Node* left, Node* right) :
-    Node(NodeType::NODE_BINOP, node_wrapper_t{ .bin_op = this }),
+    Node(NodeType::NODE_BINOP),
     type(type), left(left), right(right) {};
-void BinOp::free() {
+BinOp::~BinOp() {
     if (this->left != nullptr) delete this->left;
     if (this->right != nullptr) delete this->right;
 }
 
 UnaryOp::UnaryOp(Operations::UnaryOpType type, Node* argument) :
-    Node(NodeType::NODE_UNARYOP, node_wrapper_t{ .unary_op = this }),
+    Node(NodeType::NODE_UNARYOP),
     type(type), argument(argument) {};
-void UnaryOp::free() {
+UnaryOp::~UnaryOp() {
     if (this->argument != nullptr) delete this->argument;
 }
 
 TernaryOp::TernaryOp(Node* condition, Node* true_value, Node* false_value) :
-    Node(NodeType::NODE_TERNARY_OP, node_wrapper_t{ .ternary_op = this }),
+    Node(NodeType::NODE_TERNARY_OP),
     condition(condition), true_value(true_value), false_value(false_value) {};
-void TernaryOp::free() {
+TernaryOp::~TernaryOp() {
     if (this->condition != nullptr) delete this->condition;
     if (this->true_value != nullptr) delete this->true_value;
     if (this->false_value != nullptr) delete this->false_value;
 }
 
 VarDefinition::VarDefinition(Scopes::VariableType variable_type, std::string* name, Node* value, TokenPosition position) :
-    Node(NodeType::NODE_VAR_DEFINITION, position, node_wrapper_t{ .var_definition = this }),
+    Node(NodeType::NODE_VAR_DEFINITION, position),
     name(name), value(value), variable_type(variable_type) {};
-void VarDefinition::free() {
+VarDefinition::~VarDefinition() {
     /* If there is a bug with the name being freed, START HERE. The runtime doesn't need it... for now. */
     if (this->name != nullptr) delete this->name;
     if (this->value != nullptr) delete this->value;
 }
 
 VarValue::VarValue(std::string* name, TokenPosition pos) :
-    Node(NodeType::NODE_VAR_VALUE, pos, node_wrapper_t{ .var_value = this }),
+    Node(NodeType::NODE_VAR_VALUE, pos),
     name(name) {};
-void VarValue::free() {
+VarValue::~VarValue() {
     if (this->name != nullptr) delete this->name;
 }
 
-True::True() : Node(NodeType::NODE_TRUE, node_wrapper_t{ .true_value = this }) {};
+True::True() : Node(NodeType::NODE_TRUE) {};
 
-False::False() : Node(NodeType::NODE_FALSE, node_wrapper_t{ .false_value = this }) {};
+False::False() : Node(NodeType::NODE_FALSE) {};
 
 While::While(AST::Node* condition, AST::Node* block) :
-    Node(NodeType::NODE_WHILE, node_wrapper_t{ .while_node = this }),
+    Node(NodeType::NODE_WHILE),
     condition(condition), block(block) {};
-void While::free() {
+While::~While() {
     if (this->condition != nullptr) delete this->condition;
     if (this->block != nullptr) delete this->block;
 }
 
 
-Body::Body() : Node(NodeType::NODE_BODY, node_wrapper_t{ .body = this }) {};
+Body::Body() : Node(NodeType::NODE_BODY) {};
 void Body::add_statement(Node* statement) {
     this->statements.push_back(statement);
 };
-void Body::free() {
+Body::~Body() {
     for (Node* statement : this->statements) {
         if (statement != nullptr) delete statement;
     }
 }
 
 VarAssignment::VarAssignment(Node* variable, Node* value, TokenPosition position) :
-    Node(NodeType::NODE_VAR_ASSIGNMENT, position, node_wrapper_t{ .var_assignment = this }),
+    Node(NodeType::NODE_VAR_ASSIGNMENT, position),
     variable(variable), value(value) {};
-void VarAssignment::free() {
+VarAssignment::~VarAssignment() {
     if (this->variable != nullptr) delete this->variable;
     if (this->value != nullptr) delete this->value;
 }
