@@ -6,6 +6,7 @@
 #endif
 
 using namespace Parse;
+using Scan::TokType;
 using Rules::nud_func_t, Rules::led_func_t;
 
 /* Parse rule initialization > */
@@ -15,10 +16,22 @@ std::array<Rules::ParseRule, Scan::NUM_TOKEN_TYPES> Rules::rules = {};
 AST::Node* Parse::Rules::number(Scan::Token& current, Parser* parser) {
     return new AST::Number(current.get_number());
 }
+AST::Node* Parse::Rules::keyword_constant(Scan::Token &current, Parser* parser) {
+    switch (current.get_type()) {
+        case TokType::TRUE: return new AST::True();
+        case TokType::FALSE: return new AST::False();
+        default:
+            #ifdef DEBUG
+            // We somehow got a token that was not a keyword constant
+            assert(false);
+            #endif
+    }
+}
+
 AST::Node* Parse::Rules::unary_op(Scan::Token& current, Parser* parser) {
     Operations::UnaryOpType type;
     switch (current.get_type()) {
-        case Scan::TokType::MINUS:
+        case TokType::MINUS:
             type = Operations::UNARY_NEGATE;
             break;
         default:
@@ -35,23 +48,23 @@ AST::Node* Parse::Rules::binary_op(Scan::Token& current, AST::Node* left, Parser
     Precedence prec;
 
     switch (current.get_type()) {
-        case Scan::TokType::PLUS:
+        case TokType::PLUS:
             type = Operations::BINOP_ADD;
             prec = Precedence::PREC_TERM;
             break;
-        case Scan::TokType::MINUS:
+        case TokType::MINUS:
             type = Operations::BINOP_SUB;
             prec = Precedence::PREC_TERM;
             break;
-        case Scan::TokType::STAR:
+        case TokType::STAR:
             type = Operations::BINOP_MUL;
             prec = Precedence::PREC_FACTOR;
             break;
-        case Scan::TokType::SLASH:
+        case TokType::SLASH:
             type = Operations::BINOP_DIV;
             prec = Precedence::PREC_FACTOR;
             break;
-        case Scan::TokType::PERCENT:
+        case TokType::PERCENT:
             type = Operations::BINOP_MOD;
             prec = Precedence::PREC_FACTOR;
             break;
@@ -66,65 +79,73 @@ AST::Node* Parse::Rules::binary_op(Scan::Token& current, AST::Node* left, Parser
 }
 AST::Node* Parse::Rules::paren_group(Scan::Token& current, Parser* parser) {
     AST::Node* expression = parser->parse_precedence((int)Precedence::PREC_NONE);
-    parser->expect_symbol(Scan::TokType::RPAREN);
+    parser->expect_symbol(TokType::RPAREN);
 
     return expression;
 };
 AST::Node* Parse::Rules::ternary_op(Scan::Token& current, AST::Node* left, Parser* parser) {
     AST::Node* if_true = parser->parse_precedence((int)Precedence::PREC_NONE);
-    parser->expect_symbol(Scan::TokType::COLON);
+    parser->expect_symbol(TokType::COLON);
     AST::Node* if_false = parser->parse_precedence((int)Precedence::PREC_NONE);
 
     return new AST::TernaryOp(left, if_true, if_false);
 };
 
 AST::Node* Parse::Rules::var_value(Scan::Token &current, Parser* parser) {
+    // Make sure to stop the variable name from automatically being freed
+    current.mark_payload();
     return new AST::VarValue(current.get_string());
 };
 
 bool Parser::rules_initialized = false;
 void Parser::initialize_parse_rules() {
     using Rules::rules, Rules::ParseRule;
-    rules[Scan::TokType::NUMBER] = ParseRule{
+    rules[TokType::NUMBER] = ParseRule{
         .nud = Rules::number,
         .led = nullptr,
         .precedence = Precedence::PREC_NONE
     };
-    rules[Scan::TokType::PLUS] = ParseRule{
+    rules[TokType::TRUE] =
+        rules[TokType::FALSE] = ParseRule {
+        .nud = Rules::keyword_constant,
+        .led = nullptr,
+        .precedence = Precedence::PREC_NONE
+    };
+    rules[TokType::IDENTIFIER] = ParseRule{
+        .nud = Rules::var_value,
+        .led = nullptr,
+        .precedence = Precedence::PREC_NONE
+    };
+
+    rules[TokType::PLUS] = ParseRule{
             .nud = nullptr,
             .led = Rules::binary_op,
             .precedence = Precedence::PREC_TERM
         };
-    rules[Scan::TokType::MINUS] = ParseRule{
+    rules[TokType::MINUS] = ParseRule{
         .nud = Rules::unary_op,
         .led = Rules::binary_op,
         .precedence = Precedence::PREC_TERM
     };
 
-    rules[Scan::TokType::STAR] =
-        rules[Scan::TokType::SLASH] = rules[Scan::TokType::PERCENT] =
+    rules[TokType::STAR] =
+        rules[TokType::SLASH] = rules[TokType::PERCENT] =
         ParseRule{
             .nud = nullptr,
             .led = Rules::binary_op,
             .precedence = Precedence::PREC_FACTOR
         };
 
-    rules[Scan::TokType::LPAREN] = ParseRule{
+    rules[TokType::LPAREN] = ParseRule{
         .nud = Rules::paren_group,
         .led = nullptr,
         .precedence = Precedence::PREC_NONE
     };
 
-    rules[Scan::TokType::QUESTION_MARK] = ParseRule{
+    rules[TokType::QUESTION_MARK] = ParseRule{
         .nud = nullptr,
         .led = Rules::ternary_op,
         .precedence = Precedence::PREC_ASSIGNMENT_OR_TERNARY
-    };
-
-    rules[Scan::TokType::IDENTIFIER] = ParseRule{
-        .nud = Rules::var_value,
-        .led = nullptr,
-        .precedence = Precedence::PREC_NONE
     };
 
     Parser::rules_initialized = true;
@@ -144,13 +165,15 @@ Parser::Parser(Scan::Scanner& scanner, Output& output) :
     #endif
 }
 
-void Parser::advance() {
-    this->previous_token.free();
+void Parser::advance() {this->previous_token.free();
     this->previous_token = this->current_token;
     this->current_token = this->scanner.next_token();
 }
+bool Parser::at_EOF() const {
+    return this->current_token.get_type() == TokType::EOI;
+}
 
-bool Parser::expect_symbol(Scan::TokType type) {
+bool Parser::expect_symbol(TokType type) {
     Scan::Token curr = this->curr();
     if (curr.get_type() == type) {
         this->advance();
@@ -167,7 +190,7 @@ bool Parser::expect_symbol(Scan::TokType type) {
     this->output.error(curr.get_position(), error_message);
     return false;
 };
-bool Parser::expect_symbol(Scan::TokType type, char* error_message) {
+bool Parser::expect_symbol(TokType type, char* error_message) {
     Scan::Token curr = this->curr();
     if (curr.get_type() == type) {
         this->advance();
@@ -177,7 +200,7 @@ bool Parser::expect_symbol(Scan::TokType type, char* error_message) {
     this->output.error(curr.get_position(), error_message);
     return false;
 };
-bool Parser::expect(Scan::TokType type, char* error_message) {
+bool Parser::expect(TokType type, char* error_message) {
     Scan::Token current = this->curr();
     this->advance();
 
@@ -189,7 +212,7 @@ bool Parser::expect(Scan::TokType type, char* error_message) {
 }
 
 void Parser::skip_semicolons() {
-    while (this->curr().get_type() == Scan::TokType::SEMICOLON) {
+    while (this->curr().get_type() == TokType::SEMICOLON) {
         this->advance();
     }
 }
@@ -219,6 +242,31 @@ led_func_t Parser::get_led() {
     return this->get_parse_rule().led;
 }
 
+AST::Node* Parser::parse_parenthesized_expression() {
+    this->expect_symbol(TokType::LPAREN);
+    AST::Node* expression = this->parse_expression();
+    this->expect_symbol(TokType::RPAREN);
+
+    return expression;
+};
+AST::Node* Parser::parse_optionally_inlined_block() {
+    if (this->curr().get_type() != TokType::LBRACKET) return this->parse_expression();
+
+    // Go through {
+    this->advance();
+
+    AST::Body* body = new AST::Body();
+
+    while (this->curr().get_type() != TokType::RBRACKET && !this->at_EOF()) {
+        body->add_statement(this->parse_statement());
+    }
+
+    // Expect the }
+    this->expect_symbol(TokType::RBRACKET);
+
+    return body;
+}
+
 AST::Node* Parser::parse_precedence(int prec) {
     nud_func_t nud = this->get_nud();
 
@@ -235,12 +283,9 @@ AST::Node* Parser::parse_precedence(int prec) {
         return nullptr;
     }
 
-
     /* Save the start because we have to advance before calling nud. */
-    Scan::Token start = this->curr();
     this->advance();
-
-    AST::Node* left = nud(start, this);
+    AST::Node* left = nud(this->previous_token, this);
 
     while (this->get_parse_rule().precedence >= prec) {
         led_func_t led = this->get_led();
@@ -261,11 +306,12 @@ AST::Node* Parser::parse_precedence(int prec) {
 AST::Node* Parser::parse_expression() {
     return this->parse_precedence(Precedence::PREC_NONE);
 }
-AST::Node* Parser::parse_var_statement() {
+
+AST::VarDefinition* Parser::parse_var_statement() {
     // Go through var token
     this->advance();
 
-    bool got_identifier = this->expect_symbol(Scan::TokType::IDENTIFIER, "Expected identifier after var keyword");
+    bool got_identifier = this->expect_symbol(TokType::IDENTIFIER, "Expected identifier after var keyword");
 
     std::string* name = nullptr;
 
@@ -275,32 +321,43 @@ AST::Node* Parser::parse_var_statement() {
         this->previous_token.mark_payload();
     }
     
-    this->expect_symbol(Scan::TokType::EQUALS, "Expected equals sign after variable definition.");
+    this->expect_symbol(TokType::EQUALS, "Expected equals sign after variable definition.");
 
     AST::Node* value = this->parse_expression();
     
-    return name == nullptr || value == nullptr ?
-        nullptr :
-        new AST::VarDefinition(name, value);
+    return new AST::VarDefinition(name, value);
+}
+AST::While* Parser::parse_while_statement() {
+    // Go through while token
+    this->advance();
+
+    AST::Node* condition = this->parse_parenthesized_expression();
+    AST::Node* block = this->parse_optionally_inlined_block();
+
+    return new AST::While(condition, block);
 }
 
 AST::Node* Parser::parse_statement() {
+    // Skip over redundant semicolons
     this->skip_semicolons();
 
     AST::Node* node;
     switch (this->curr().get_type()) {
-        case Scan::TokType::EOI:
+        case TokType::EOI:
             node = nullptr;
             break;
-        case Scan::TokType::VAR:
+        case TokType::VAR:
             node = this->parse_var_statement();
+            this->expect_symbol(TokType::SEMICOLON);
+            break;
+        case TokType::WHILE:
+            node = this->parse_while_statement();
             break;
         default:
             node = this->parse_expression();
+            this->expect_symbol(TokType::SEMICOLON);
             break;
     }
-
-    this->expect_symbol(Scan::TokType::SEMICOLON);
-
+    
     return node;
 }

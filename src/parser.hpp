@@ -49,6 +49,9 @@ namespace Parse {
 
         /* Rule functions */
         AST::Node* number(Scan::Token &current, Parser* parser);
+        // E.g., true, false, and null
+        AST::Node* keyword_constant(Scan::Token &current, Parser* parser);
+
         AST::Node* unary_op(Scan::Token &current, Parser* parser);
         AST::Node* binary_op(Scan::Token &current, AST::Node* left, Parser* parser);
         AST::Node* ternary_op(Scan::Token &current, AST::Node* left, Parser* parser);
@@ -83,9 +86,10 @@ namespace Parse {
             inline Scan::Token& curr() { return this->current_token; };
             /* Previous token */
             inline Scan::Token& previous() { return this->previous_token; };
-
             /* Continues forward with one token. */
             void advance();
+            /* Returns whether or not there are only EOF tokens in the stream */
+            bool at_EOF() const;
 
             // Rule helpers
             /* Returns the rule of the current token. */
@@ -99,6 +103,12 @@ namespace Parse {
             void synchronize();
 
             void skip_semicolons();
+
+            /* Parses an expression within parentheses (()) */
+            AST::Node* parse_parenthesized_expression();
+            /* Parse either a block (code surrounded by {}), OR if that's not possible,
+                parse a single statement. */
+            AST::Node* parse_optionally_inlined_block();
         public:
             Parser(Scan::Scanner& scanner, Output& output);
 
@@ -108,7 +118,8 @@ namespace Parse {
             /* Parsing functions. These do not consume the semicolon, even if it is necessary.
                 That is the job of the caller. */
             AST::Node* parse_expression();
-            AST::Node* parse_var_statement();
+            AST::VarDefinition* parse_var_statement();
+            AST::While* parse_while_statement();
 
             AST::Node* parse_statement();
 

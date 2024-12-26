@@ -11,11 +11,17 @@ class Compiler {
 
         /* All the compilation functions for specific nodes */
         void compile_number(AST::Number* node);
+        void compile_true_value();
+        void compile_false_value();
         void compile_bin_op(AST::BinOp* node);
         void compile_unary_op(AST::UnaryOp* node);
         void compile_ternary_op(AST::TernaryOp* node);
         void compile_variable_definition(AST::VarDefinition* node);
         void compile_variable_value(AST::VarValue* node);
+
+        void compile_while_loop(AST::While* node);
+
+        void compile_body(AST::Body* body);
 
         /* Compile a node into the chunk */
         void compile_node(AST::Node* node);

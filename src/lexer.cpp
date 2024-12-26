@@ -27,12 +27,17 @@ const char* Scan::tok_type_to_string(TokType type) {
 
         case LPAREN: return "(";
         case RPAREN: return ")";
+        case LBRACKET: return "{";
+        case RBRACKET: return "}";
 
         case QUESTION_MARK: return "?";
         case COLON: return ":";
         case SEMICOLON: return ";";
 
+        case WHILE: return "while";
         case VAR: return "var";
+        case TRUE: return "true";
+        case FALSE: return "false";
 
         case EOI: return "end of file";
 
@@ -84,7 +89,7 @@ void Token::free() {
     if (!this->free_payload) return;
 
     if (this->has_string_payload()) {
-        printf("DEBUG freed string(%p)\n", this->get_string());
+        printf("DEBUG freed string \"%s\" (%p)\n", this->get_string()->c_str(), this->get_string());
         delete this->get_string();
     }
 }
@@ -123,7 +128,10 @@ namespace {
         return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
     }
     static std::unordered_map<std::string, TokType> keywords = {
-        { "var", TokType::VAR }
+        { "while", TokType::WHILE },
+        { "var", TokType::VAR },
+        { "true", TokType::TRUE },
+        { "false", TokType::FALSE }
     };
 };
 
@@ -182,10 +190,12 @@ Token Scanner::next_token() {
     /* If we're at the end of the file, just return an EOI.
         Make the length 1 so that errors saying they expected another
         token at the end of the file have a carat. */
-    if (this->current() == '\0') return Token(
-        TokType::EOI,
-        TokenPosition{ .line = this->line, col = this->col, .length = 1 }
-    );
+    if (this->current() == '\0') {
+        return Token(
+            TokType::EOI,
+            TokenPosition{ .line = this->line, col = this->col, .length = 1 }
+        );
+    }
 
     char curr = this->current();
 
@@ -204,6 +214,8 @@ Token Scanner::next_token() {
 
         case '(': one_char_type = TokType::LPAREN; break;
         case ')': one_char_type = TokType::RPAREN; break;
+        case '{': one_char_type = TokType::LBRACKET; break;
+        case '}': one_char_type = TokType::RBRACKET; break;
 
         case '?': one_char_type = TokType::QUESTION_MARK; break;
         case ':': one_char_type = TokType::COLON; break;

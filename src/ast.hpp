@@ -7,32 +7,48 @@
 namespace AST {
     enum NodeType {
         NODE_NUMBER,
+        NODE_TRUE,
+        NODE_FALSE,
 
         NODE_BINOP,
         NODE_UNARYOP,
         NODE_TERNARY_OP,
 
         NODE_VAR_DEFINITION,
-        NODE_VAR_VALUE
+        NODE_VAR_VALUE,
+
+        NODE_WHILE,
+
+        NODE_BODY
     };
 
+    bool node_is_expression(NodeType type);
+
     class Number;
+    class True;
+    class False;
     class BinOp;
     class UnaryOp;
     class TernaryOp;
     class VarDefinition;
     class VarValue;
+    class While;
+    class Body;
 
     /* A collection of pointers to all the possible nodes
         that the node could be wrapping. While this COULD be
         a void* instead, this is preferred to avoid memory bugs. */
     union node_wrapper_t {
         Number* number;
+        True* true_value;
+        False* false_value;
         BinOp* bin_op;
         UnaryOp* unary_op;
         TernaryOp* ternary_op;
         VarDefinition* var_definition;
         VarValue* var_value;
+        While* while_node;
+        Body* body;
     };
 
     // @REVIEW: Don't free until end of compilation.
@@ -58,6 +74,8 @@ namespace AST {
             TernaryOp* as_ternary_op() const;
             VarDefinition* as_variable_definition() const;
             VarValue* as_variable_value() const;
+            While* as_while_loop() const;
+            Body* as_body() const;
 
             /* Frees the node payload depending on its type. */
             ~Node();
@@ -71,6 +89,15 @@ namespace AST {
 
             inline Values::number_t get_number() const { return this->number; };
     };
+    class True : public Node {
+        public:
+            True();
+    };
+    class False : public Node {
+        public:
+            False();
+    };
+
     class BinOp : public Node {
         private:
             Operations::BinOpType type;
@@ -133,6 +160,33 @@ namespace AST {
             VarValue(std::string* name);
 
             inline std::string* get_name() const { return this->name; };
+
+            void free();
+    };
+
+    class While : public Node {
+        private:
+            AST::Node* condition;
+            AST::Node* block;
+        public:
+            While(AST::Node* condition, AST::Node* block);
+
+            inline AST::Node* get_condition() const { return this->condition; };
+            inline AST::Node* get_block() const { return this->block; };
+
+            void free();
+    };
+
+    class Body : public Node {
+        private:
+            std::vector<Node*> statements = std::vector<Node*>();
+        public:
+            Body();
+
+            inline auto begin() const { return this->statements.begin(); };
+            inline auto end() const { return this->statements.end(); };
+
+            void add_statement(Node* statement);
 
             void free();
     };

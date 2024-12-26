@@ -36,6 +36,10 @@ namespace Scan {
         LPAREN,
         // )
         RPAREN,
+        // {
+        LBRACKET,
+        // }
+        RBRACKET,
         // ?
         QUESTION_MARK,
         // :
@@ -45,7 +49,10 @@ namespace Scan {
         // < Operators
 
         // Keywords >
+        WHILE,
         VAR,
+        TRUE,
+        FALSE,
         // < Keywords
 
         /* End of input. Signifies that there were no more tokens. */
@@ -72,7 +79,6 @@ namespace Scan {
             that value is a constant, so the payload's number can be anything.
             Do not read members of the payload if the token type is a constant (e.g., +, *, (, ]). */
         private:
-        public:
             TokType type;
             token_payload_t payload;
             TokenPosition position;
@@ -89,21 +95,6 @@ namespace Scan {
             Token(Values::number_t number, TokenPosition position);
             /* Use this constructor if the token type is a string. Used for identifiers or strings. */
             Token(TokType type, std::string* str_, TokenPosition position);
-
-            // Token(const Token& token);
-            // Token operator =(const Token& token) {
-            //     if (token.has_string_payload()) {
-            //         this->payload.string_ = token.payload.string_;
-            //     }
-            //     else if (token.type == TokType::NUMBER) {
-            //         this->payload.num = token.payload.num;
-            //     }
-            //     this->type = token.type;
-            //     this->position = token.position;
-            //     this->free_payload = token.free_payload;
-
-            //     return *this;
-            // };
 
             inline TokType get_type() const { return this->type; };
             inline TokenPosition get_position() const { return this->position; };

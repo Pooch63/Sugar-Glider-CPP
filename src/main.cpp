@@ -4,6 +4,7 @@
 #include "compiler.hpp"
 #include "errors.hpp"
 #include "lexer.hpp"
+#include "optimizer/label-intermediate.hpp"
 #include "parser.hpp"
 
 #include <iostream>
@@ -11,7 +12,7 @@
 int main() {
     Parse::Parser::initialize_parse_rules();
 
-    std::string prog = "var g = 3; g;";
+    std::string prog = "while (1 + 2 - 3) { 4; var g = -true + true; }";
     Scan::Scanner lexer(prog);
 
     Output output(prog);
@@ -21,10 +22,6 @@ int main() {
 
     std::cout << "DID PARSING WORK?" << std::endl;
 
-    // block.add_instruction(Intermediate::Instruction(Intermediate::INSTR_GOTO, 1));
-    // block.add_instruction(Intermediate::Instruction(Intermediate::INSTR_GOTO, 2));
-    // block.log_block();
-
     /* If there was a parse error, there will be some null pointers, so DO NOT
         actually compile. */
     if (output.had_error()) {
@@ -32,18 +29,20 @@ int main() {
         return -1;
     }
 
+    using Bytecode::Chunk;
+
+    Chunk chunk = Chunk();
     auto block = Intermediate::Block();
 
-    using namespace Bytecode;
-    Chunk chunk = Chunk();
-
-    // Compiler compiler(chunk);
     Compiler compiler(block);
     compiler.compile(node);
 
+    auto optimized = Intermediate::Block();
+    optimize_labels(block, optimized);
 
-    // chunk.print_code();
     block.log_block();
+    std::cout << std::endl;
+    optimized.log_block();
 
     delete node;
 

@@ -74,6 +74,7 @@ int Chunk::print_instruction(uint current_byte_index) {
         case OpCode::OP_EXIT:
             output = "EXIT";
             break;
+        default: break;
     }
 
     // Add spaces
