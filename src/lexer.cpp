@@ -35,6 +35,7 @@ const char* Scan::tok_type_to_string(TokType type) {
         case SEMICOLON: return ";";
 
         case WHILE: return "while";
+        case CONST: return "const";
         case VAR: return "var";
         case TRUE: return "true";
         case FALSE: return "false";
@@ -129,6 +130,7 @@ namespace {
     }
     static std::unordered_map<std::string, TokType> keywords = {
         { "while", TokType::WHILE },
+        { "const", TokType::CONST },
         { "var", TokType::VAR },
         { "true", TokType::TRUE },
         { "false", TokType::FALSE }

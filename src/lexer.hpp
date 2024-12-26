@@ -50,6 +50,7 @@ namespace Scan {
 
         // Keywords >
         WHILE,
+        CONST,
         VAR,
         TRUE,
         FALSE,
