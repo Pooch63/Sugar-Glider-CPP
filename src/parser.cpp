@@ -1,5 +1,6 @@
 #include "globals.hpp"
 #include "parser.hpp"
+#include "scopes.hpp"
 
 #ifdef DEBUG
     #include <cassert>
@@ -96,6 +97,14 @@ AST::Node* Parse::Rules::var_value(Scan::Token &current, Parser* parser) {
     current.mark_payload();
     return new AST::VarValue(current.get_string(), current.get_position());
 };
+AST::Node* Parse::Rules::var_assignment(Scan::Token &current, AST::Node* left, Parser* parser) {
+    if (left->get_type() != AST::NODE_VAR_VALUE) {
+        parser->get_output().error(current.get_position(), "Only a variable may be followed by an equals sign. (=)");
+    }
+
+    AST::Node* value = parser->parse_expression();
+    return new AST::VarAssignment(left, value, current.get_position());
+};
 
 bool Parser::rules_initialized = false;
 void Parser::initialize_parse_rules() {
@@ -145,6 +154,12 @@ void Parser::initialize_parse_rules() {
     rules[TokType::QUESTION_MARK] = ParseRule{
         .nud = nullptr,
         .led = Rules::ternary_op,
+        .precedence = Precedence::PREC_ASSIGNMENT_OR_TERNARY
+    };
+
+    rules[TokType::EQUALS] = ParseRule{
+        .nud = nullptr,
+        .led = Rules::var_assignment,
         .precedence = Precedence::PREC_ASSIGNMENT_OR_TERNARY
     };
 
@@ -218,18 +233,18 @@ void Parser::skip_semicolons() {
 }
 void Parser::synchronize() {
     using namespace Scan;
-    printf("synchronizing\n");
     while (true) {
-        printf("%s\n", tok_type_to_string(this->curr().get_type()));
         switch (this->curr().get_type()) {
+            case TokType::CONST:
+            case TokType::VAR:
+            case TokType::WHILE:
             case TokType::EOI:
-                printf("DEBUG -- returning from synchronization on EOF\n");
                 return;
             default: break;
         }
+        if (this->previous_token.get_type() == TokType::SEMICOLON) return;
         this->advance();
     }
-    printf("got through synchronization\n");
 }
 
 Rules::ParseRule Parser::get_parse_rule() {
@@ -308,7 +323,8 @@ AST::Node* Parser::parse_expression() {
 }
 
 AST::VarDefinition* Parser::parse_var_statement() {
-    // Go through var token
+    // Is it a const or a var?
+    Scan::Token qualifier = this->curr();
     this->advance();
 
     bool got_identifier = this->expect_symbol(TokType::IDENTIFIER, "Expected identifier after var keyword");
@@ -327,7 +343,11 @@ AST::VarDefinition* Parser::parse_var_statement() {
 
     AST::Node* value = this->parse_expression();
     
-    return got_identifier ? new AST::VarDefinition(name, value, position) : nullptr;
+    return got_identifier ? new AST::VarDefinition(
+        qualifier.get_type() == TokType::VAR ? Scopes::VariableType::MUTABLE : Scopes::VariableType::CONSTANT,
+        name,
+        value,
+        position) : nullptr;
 }
 AST::While* Parser::parse_while_statement() {
     // Go through while token
@@ -348,6 +368,7 @@ AST::Node* Parser::parse_statement() {
         case TokType::EOI:
             node = nullptr;
             break;
+        case TokType::CONST:
         case TokType::VAR:
             node = this->parse_var_statement();
             this->expect_symbol(TokType::SEMICOLON);

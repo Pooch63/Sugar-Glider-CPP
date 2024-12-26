@@ -169,6 +169,7 @@ static void log_instruction(Instruction instr) {
         {
             std::cout << *instr.payload.variable.name;
             log_number_as_subscript(instr.payload.variable.scope);
+            std::cout << " (" << (instr.payload.variable.type == Scopes::VariableType::CONSTANT ? "const" : "mut var") << ")";
         }
             break;
         default: break;

@@ -3,6 +3,7 @@
 
 #include "lexer.hpp"
 #include "operations.hpp"
+#include "scopes.hpp"
 
 namespace AST {
     enum NodeType {
@@ -16,6 +17,7 @@ namespace AST {
 
         NODE_VAR_DEFINITION,
         NODE_VAR_VALUE,
+        NODE_VAR_ASSIGNMENT,
 
         NODE_WHILE,
 
@@ -32,6 +34,7 @@ namespace AST {
     class TernaryOp;
     class VarDefinition;
     class VarValue;
+    class VarAssignment;
     class While;
     class Body;
 
@@ -47,6 +50,7 @@ namespace AST {
         TernaryOp* ternary_op;
         VarDefinition* var_definition;
         VarValue* var_value;
+        VarAssignment* var_assignment;
         While* while_node;
         Body* body;
     };
@@ -76,6 +80,7 @@ namespace AST {
             TernaryOp* as_ternary_op() const;
             VarDefinition* as_variable_definition() const;
             VarValue* as_variable_value() const;
+            VarAssignment* as_variable_assignment() const;
             While* as_while_loop() const;
             Body* as_body() const;
 
@@ -146,11 +151,13 @@ namespace AST {
         private:
             std::string* name;
             Node* value;
+            Scopes::VariableType variable_type;
         public:
-            VarDefinition(std::string* name, Node* value, TokenPosition pos);
+            VarDefinition(Scopes::VariableType variable_type, std::string* name, Node* value, TokenPosition pos);
 
-            inline std::string* get_name() const { return this->name; };
-            inline Node* get_value() const { return this->value; };
+            inline std::string*         get_name() const { return this->name; };
+            inline Node*                get_value() const { return this->value; };
+            inline Scopes::VariableType get_variable_type() const { return this->variable_type; };
 
             void free();
     };
@@ -162,6 +169,20 @@ namespace AST {
             VarValue(std::string* name, TokenPosition pos);
 
             inline std::string* get_name() const { return this->name; };
+
+            void free();
+    };
+    /* An assignment to a variable, e.g., x = 3 */
+    class VarAssignment : public Node {
+        private:
+            Node* variable;
+            Node* value;
+        public:
+            /* The position is the equals sign */
+            VarAssignment(Node* variable, Node* value, TokenPosition position);
+
+            inline Node* get_variable() const { return this->variable; };
+            inline Node* get_value() const { return this->value; };
 
             void free();
     };

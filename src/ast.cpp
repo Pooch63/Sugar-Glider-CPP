@@ -62,6 +62,12 @@ VarValue* Node::as_variable_value() const {
     #endif
     return this->node.var_value;
 };
+VarAssignment* Node::as_variable_assignment() const {
+    #ifdef DEBUG
+    assert(this->node_type == NodeType::NODE_VAR_ASSIGNMENT);
+    #endif
+    return this->node.var_assignment;
+};
 While* Node::as_while_loop() const {
     #ifdef DEBUG
     assert(this->node_type == NodeType::NODE_WHILE);
@@ -95,6 +101,9 @@ Node::~Node() {
             break;
         case NODE_VAR_VALUE:
             this->node.var_value->free();
+            break;
+        case NODE_VAR_ASSIGNMENT:
+            this->node.var_assignment->free();
             break;
         case NODE_WHILE:
             this->node.while_node->free();
@@ -135,9 +144,9 @@ void TernaryOp::free() {
     if (this->false_value != nullptr) delete this->false_value;
 }
 
-VarDefinition::VarDefinition(std::string* name, Node* value, TokenPosition position) :
+VarDefinition::VarDefinition(Scopes::VariableType variable_type, std::string* name, Node* value, TokenPosition position) :
     Node(NodeType::NODE_VAR_DEFINITION, position, node_wrapper_t{ .var_definition = this }),
-    name(name), value(value) {};
+    name(name), value(value), variable_type(variable_type) {};
 void VarDefinition::free() {
     /* If there is a bug with the name being freed, START HERE. The runtime doesn't need it... for now. */
     if (this->name != nullptr) delete this->name;
@@ -172,4 +181,12 @@ void Body::free() {
     for (Node* statement : this->statements) {
         if (statement != nullptr) delete statement;
     }
+}
+
+VarAssignment::VarAssignment(Node* variable, Node* value, TokenPosition position) :
+    Node(NodeType::NODE_VAR_ASSIGNMENT, position, node_wrapper_t{ .var_assignment = this }),
+    variable(variable), value(value) {};
+void VarAssignment::free() {
+    if (this->variable != nullptr) delete this->variable;
+    if (this->value != nullptr) delete this->value;
 }

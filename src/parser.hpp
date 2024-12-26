@@ -58,6 +58,8 @@ namespace Parse {
         AST::Node* paren_group(Scan::Token &current, Parser* parser);
 
         AST::Node* var_value(Scan::Token &current, Parser* parser);
+        // Something like x = 3
+        AST::Node* var_assignment(Scan::Token &current, AST::Node* left, Parser* parser);
     };
 
     class Parser {
@@ -139,6 +141,8 @@ namespace Parse {
                 Otherwise, error and return false.
                 Advances no matter what. */
             bool expect(Scan::TokType type, char* error_message);
+
+            inline Output &get_output() const { return this->output; };
     };
 };
 

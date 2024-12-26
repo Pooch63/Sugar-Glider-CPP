@@ -15,6 +15,10 @@ class Compiler {
         Output &output;
         Scopes::ScopeManager scopes = Scopes::ScopeManager();
 
+        /* Try to get variable info from name. Return whether or not it was successful.
+            Error if there was an error. */
+        bool get_variable_info(AST::VarValue* variable, Scopes::Variable &info);
+
         /* All the compilation functions for specific nodes */
         void compile_number(AST::Number* node);
         void compile_true_value();
@@ -24,6 +28,7 @@ class Compiler {
         void compile_ternary_op(AST::TernaryOp* node);
         void compile_variable_definition(AST::VarDefinition* node);
         void compile_variable_value(AST::VarValue* node);
+        void compile_variable_assignment(AST::VarAssignment* node);
 
         void compile_while_loop(AST::While* node);
 

@@ -6,10 +6,14 @@
 #include <cassert>
 #endif
 
+#include <string>
+
 using namespace Bytecode;
 using Intermediate::ir_instruction_arg_t;
 
-Compiler::Compiler(Intermediate::Block& chunk, Output &output) : main_chunk(chunk), output(output) {};
+Compiler::Compiler(Intermediate::Block& chunk, Output &output) : main_chunk(chunk), output(output) {
+    this->scopes.new_scope();
+};
 
 void Compiler::compile_number(AST::Number* node) {
     this->main_chunk.add_instruction(Intermediate::Instruction(node->get_number()));
@@ -61,6 +65,21 @@ void Compiler::compile_ternary_op(AST::TernaryOp* node) {
     /* And now, exit the whole control flow if false */
     this->main_chunk.new_label();
 }
+
+bool Compiler::get_variable_info(AST::VarValue* variable, Scopes::Variable &info) {
+    bool var_found = this->scopes.get_variable(variable->get_name(), info);
+
+    /* Make sure the variable exists */
+    if (!var_found) {
+        char error[100];
+        snprintf(error, 100, "Variable \"%s\" does not exist.", variable->get_name()->c_str());
+        this->output.error(variable->get_position(), error);
+        this->error = true;
+        return false;
+    }
+    return true;
+};
+
 void Compiler::compile_variable_definition(AST::VarDefinition* def) {
     this->compile_node(def->get_value());
 
@@ -74,7 +93,7 @@ void Compiler::compile_variable_definition(AST::VarDefinition* def) {
     }
 
     /* Add the variable to scopes */
-    Scopes::Variable variable = this->scopes.add_variable(def->get_name());
+    Scopes::Variable variable = this->scopes.add_variable(def->get_name(), def->get_variable_type());
 
     this->main_chunk.add_instruction(
         Intermediate::Instruction(
@@ -84,22 +103,53 @@ void Compiler::compile_variable_definition(AST::VarDefinition* def) {
     );
 }
 void Compiler::compile_variable_value(AST::VarValue* node) {
-    /* Make sure the variable exists */
-    if (!this->scopes.variable_exists(node->get_name())) {
-        char error[100];
-        snprintf(error, 100, "Variable \"%s\" does not exist.", node->get_name()->c_str());
-        this->output.error(node->get_position(), error);
-        this->error = true;
-        return;
-    }
+    Scopes::Variable var_info;
+    
+    if (!this->get_variable_info(node, var_info)) return;
 
     this->main_chunk.add_instruction(
         Intermediate::Instruction(
             Intermediate::INSTR_LOAD,
-            Scopes::Variable{ .name = node->get_name() }
+            var_info
         )
     );
 };
+void Compiler::compile_variable_assignment(AST::VarAssignment* node) {
+    this->compile_node(node->get_value());
+
+    AST::Node* variable = node->get_variable();
+
+    switch (variable->get_type()) {
+        case AST::NODE_VAR_VALUE:
+        {
+            Scopes::Variable var_info;
+            
+            if (!this->get_variable_info(node->get_variable()->as_variable_value(), var_info)) return;
+
+            if (var_info.type == Scopes::VariableType::CONSTANT) {
+                std::string error_message = "Cannot assign a value to constant variable \"";
+                error_message += *var_info.name;
+                error_message += "\"";
+                this->output.error(node->get_position(), error_message);
+                this->error = true;
+            }
+
+            this->main_chunk.add_instruction(
+                Intermediate::Instruction(
+                    Intermediate::INSTR_STORE,
+                    var_info
+                )
+            );
+        }
+            break;
+        /* Unknown variable to set */
+        default:
+            #ifdef DEBUG
+            assert(false);
+            #endif
+    }
+};
+
 void Compiler::compile_while_loop(AST::While* node) {
     /* First, compile the condition. We have to jump back to this
         at the end of the loop, so make a new label. */
@@ -164,6 +214,9 @@ void Compiler::compile_node(AST::Node* node) {
             break;
         case AST::NodeType::NODE_VAR_VALUE:
             this->compile_variable_value(node->as_variable_value());
+            break;
+        case AST::NodeType::NODE_VAR_ASSIGNMENT:
+            this->compile_variable_assignment(node->as_variable_assignment());
             break;
 
         case AST::NodeType::NODE_WHILE:

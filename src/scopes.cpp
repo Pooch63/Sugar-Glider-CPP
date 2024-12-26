@@ -1,4 +1,9 @@
+#include "globals.hpp"
 #include "scopes.hpp"
+
+#ifdef DEBUG_ASSERT
+#include <cassert>
+#endif
 
 using namespace Scopes;
 
@@ -31,8 +36,12 @@ bool ScopeManager::get_variable(std::string* name, Variable &info) const {
     }
     return false;
 }
-Variable ScopeManager::add_variable(std::string* name) {
-    Variable info = Variable{ .name = name, .scope = static_cast<int>(this->scopes.size()) - 1 };
+Variable ScopeManager::add_variable(std::string* name, VariableType type) {
+    #ifdef DEBUG_ASSERT
+    assert(this->scopes.size() > 0);
+    #endif
+
+    Variable info = Variable{ .name = name, .type = type, .scope = static_cast<int>(this->scopes.size()) - 1 };
     this->scopes.back().add_variable(name, info);
     return info;
 }

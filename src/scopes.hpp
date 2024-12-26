@@ -6,8 +6,14 @@
 #include <vector>
 
 namespace Scopes {
+    enum VariableType {
+        CONSTANT,
+        MUTABLE
+    };
+
     struct Variable {
         std::string* name;
+        VariableType type;
         int scope;
     };
     class Scope {
@@ -31,7 +37,7 @@ namespace Scopes {
                 Goes up through the scope tree to try to find the variable. */
             bool get_variable(std::string* name, Variable &info) const;
             /* Add a variable to the current scope. */
-            Variable add_variable(std::string* name);
+            Variable add_variable(std::string* name, VariableType type);
 
             bool last_scope_has_variable(std::string* name);
 
