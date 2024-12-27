@@ -3,7 +3,7 @@
 using Intermediate::intermediate_set_t, Intermediate::Instruction, Intermediate::InstrCode;
 
 void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized) {
-    using Intermediate::Label;
+    using Intermediate::Label, Intermediate::label_index_t;
     // Store the labels, then at the end, transfer them to the optimized
     std::vector<Label> labels = std::vector<Label>();
 
@@ -87,6 +87,30 @@ void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized) {
             label.push_back(instr);
         }
     }
+
+    /* Dead code elimination */
+    // This lookup table's keys are the labels that are accessible. Everything else is gone.
+    std::unordered_map<label_index_t, bool> jumped = std::unordered_map<label_index_t, bool>();
+
+    // Gather list of labels that are actually used.
+    // Add first label, since that's the entry point
+    for (uint label_ind = 0; label_ind < labels.size(); label_ind += 1) {
+        Label label = labels[label_ind];
+        if (label_ind == 0) jumped[*label.name] = true;
+
+        for (Instruction instr : label.instructions) {
+            if (!instr.is_jump()) continue;
+
+            jumped[*instr.get_address()] = true;
+        }
+    }
+    // Now, remove the unnused blocks
+    std::vector<Label> dce = std::vector<Label>();
+    for (Label label : labels) {
+        auto jumped_label = jumped.find(*label.name);
+        if (jumped_label != jumped.end()) dce.push_back(label);
+    }
+    labels = dce;
 
     /* Transfer instructions */
     for (Label label : labels) {
