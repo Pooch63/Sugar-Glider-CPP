@@ -2,8 +2,15 @@
 
 #include <iostream>
 
+
+std::string Colors::create_color(Color color) {
+    std::string str = "\x1b[";
+    str += std::to_string(static_cast<int>(color));
+    str += 'm';
+    return str;
+};
 void Colors::set_color(Color color) {
-    std::cout << "\x1b[" << std::to_string(static_cast<int>(color)) << 'm';
+    std::cout << create_color(color);
 }
 
 /* Automatically extracts line ends. */

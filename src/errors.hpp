@@ -8,6 +8,7 @@ namespace Colors {
     enum Color {
         /* Colors */
         RED = 31,
+        GREEN = 32,
         YELLOW = 33,
         BLUE = 34,
         PURPLE = 35,
@@ -16,10 +17,13 @@ namespace Colors {
 
         /* Text styles */
         BOLD = 1,
+        UNDERLINE = 4,
 
         DEFAULT = 0,
     };
 
+    /* Return the string needed to set the terminal to the color */
+    std::string create_color(Color color);
     /* Set the terminal to the color */
     void set_color(Color color);
 };
