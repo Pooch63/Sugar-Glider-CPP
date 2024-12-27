@@ -58,7 +58,7 @@ void Compiler::compile_ternary_op(AST::TernaryOp* node) {
 
     /* Compile the false value */
     // Add a label for it
-    this->main_chunk.new_label();
+    this->main_chunk.new_label(false_label);
     this->compile_node(node->get_false_value());
 
     this->main_chunk.add_instruction(Intermediate::Instruction(Intermediate::INSTR_GOTO, end));
@@ -141,6 +141,15 @@ void Compiler::compile_variable_assignment(AST::VarAssignment* node) {
                     var_info
                 )
             );
+
+            /* In expressions like var g = x = 1, we need to load the value of the variable
+                after calculating it. */
+            this->main_chunk.add_instruction(
+                Intermediate::Instruction(
+                    Intermediate::INSTR_LOAD,
+                    var_info
+                )
+            );
         }
             break;
         /* Unknown variable to set */
@@ -153,16 +162,23 @@ void Compiler::compile_variable_assignment(AST::VarAssignment* node) {
 
 void Compiler::compile_if_statement(AST::If* node) {
     // The label following the if-elseif-else chain
-    int end_label = this->main_chunk.label_count();
+    label_index_t* end_label = this->main_chunk.gen_label_name();
 
     this->main_chunk.new_label();
     this->compile_node(node->get_condition());
-    // this->main_chunk.add_instruction(
-    //     Intermediate::Instruction(
-    //         Intermediate::INSTR_POP_JIZ,
 
-    //     )
-    // );
+    this->main_chunk.add_instruction(
+        Intermediate::Instruction(
+            Intermediate::INSTR_POP_JIZ,
+            end_label ) );
+
+    this->compile_node(node->get_block());
+    this->main_chunk.add_instruction(
+        Intermediate::Instruction(
+            Intermediate::INSTR_GOTO,
+            end_label ) );
+
+    this->main_chunk.new_label(end_label);
 }
 void Compiler::compile_while_loop(AST::While* node) {
     /* First, compile the condition. We have to jump back to this
