@@ -14,10 +14,10 @@ int main() {
     Parse::Parser::initialize_parse_rules();
     Random::initialize_rng();
 
-    std::string prog = "1 ? 2 ? 3 : 4 : 5;";
+    std::string prog = "var g = 1; if (g = 3) { g = g + 4; }";
 
     Output output(prog);
-    Scan::Scanner lexer(prog);
+    Scan::Scanner lexer(prog, output);
 
     Parse::Parser parser(lexer, output);
     AST::Node* node = parser.parse();
