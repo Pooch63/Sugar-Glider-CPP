@@ -183,7 +183,7 @@ Parser::Parser(Scan::Scanner& scanner, Output& output) :
 
 void Parser::advance() {this->previous_token.free();
     this->previous_token = this->current_token;
-    this->current_token = this->scanner.next_token();
+    this->current_token = this->scanner.next_real_token();
 }
 bool Parser::at_EOF() const {
     return this->current_token.get_type() == TokType::EOI;
@@ -239,6 +239,7 @@ void Parser::synchronize() {
             case TokType::CONST:
             case TokType::VAR:
             case TokType::WHILE:
+            case TokType::IF:
             case TokType::EOI:
                 return;
             default: break;
@@ -293,6 +294,8 @@ AST::Node* Parser::parse_precedence(int prec) {
         snprintf(error_message, 100, "Unexpected token type %s", Scan::tok_type_to_string(this->curr().get_type()));
         this->output.error(this->curr().get_position(), error_message);
 
+        // Move past problematic token
+        this->advance();
         // Enter panic mode
         this->synchronize();
         
@@ -386,6 +389,9 @@ AST::Node* Parser::parse_statement() {
             break;
         case TokType::WHILE:
             node = this->parse_while_statement();
+            break;
+        case TokType::IF:
+            node = this->parse_if_statement();
             break;
         default:
             node = this->parse_expression();
