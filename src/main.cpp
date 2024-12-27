@@ -14,7 +14,7 @@ int main() {
     Parse::Parser::initialize_parse_rules();
     Random::initialize_rng();
 
-    std::string prog = "var z = 8 ? 1 ? 2 : 3 : 4;";
+    std::string prog = "1 ? 2 ? 3 : 4 : 5;";
 
     Output output(prog);
     Scan::Scanner lexer(prog);

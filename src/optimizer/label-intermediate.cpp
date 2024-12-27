@@ -3,17 +3,18 @@
 using Intermediate::intermediate_set_t, Intermediate::Instruction, Intermediate::InstrCode;
 
 void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized) {
+    using Intermediate::Label;
     // Store the labels, then at the end, transfer them to the optimized
-    std::vector<intermediate_set_t> labels = std::vector<intermediate_set_t>();
+    std::vector<Label> labels = std::vector<Label>();
 
     /* Constant folding optimizer */
     for (uint label_ind = 0; label_ind < old.label_count(); label_ind += 1) {
-        labels.push_back(intermediate_set_t());
-        intermediate_set_t &label = labels.back();
-        intermediate_set_t &old_label = old.get_label(label_ind);
+        Label &old_label = old.get_label_at_numerical_index(label_ind);
+        labels.push_back(Label(old_label.name));
+        intermediate_set_t &label = labels.back().instructions;
 
-        for (uint index = 0; index < old_label.size(); index += 1) {
-            Instruction instr = old_label.at(index);
+        for (uint index = 0; index < old_label.instructions.size(); index += 1) {
+            Instruction instr = old_label.instructions.at(index);
             if (label.size() == 0) {
                 label.push_back(instr);
                 continue;
@@ -88,9 +89,9 @@ void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized) {
     }
 
     /* Transfer instructions */
-    for (intermediate_set_t label : labels) {
-        optimized.new_label();
-        for (Instruction instr : label) {
+    for (Label label : labels) {
+        optimized.new_label(new std::string(*label.name));
+        for (Instruction instr : label.instructions) {
             optimized.add_instruction(instr);
         }
     }

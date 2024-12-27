@@ -3,8 +3,9 @@
 
 using namespace Intermediate;
 
+// Constructor overloads >
 Instruction::Instruction(InstrCode code) : code(code) {};
-Instruction::Instruction(InstrCode code, address_t label) : code(code), payload(ir_instruction_arg_t{ .label = label }) {};
+Instruction::Instruction(InstrCode code, label_index_t* label) : code(code), payload(ir_instruction_arg_t{ .label = label }) {};
 Instruction::Instruction(InstrCode code, Operations::BinOpType type) :
     code(code), payload(ir_instruction_arg_t{ .bin_op = type }) {};
 Instruction::Instruction(InstrCode code, Operations::UnaryOpType type) :
@@ -14,14 +15,16 @@ Instruction::Instruction(InstrCode code, Scopes::Variable variable) :
 
 Instruction::Instruction(Values::number_t number) :
     code(Intermediate::INSTR_NUMBER), payload(ir_instruction_arg_t{ .number = number }) {};
+// < Constructor overloads
 
+// Getters >
 Values::number_t Instruction::get_number() const {
     #ifdef DEBUG
     assert(this->code == InstrCode::INSTR_NUMBER);
     #endif
     return this->payload.number;
 }
-address_t Instruction::get_address() const {
+label_index_t* Instruction::get_address() const {
     #ifdef DEBUG
     assert(this->is_jump());
     #endif
@@ -39,7 +42,7 @@ Operations::UnaryOpType Instruction::get_unary_op() const {
     #endif
     return this->payload.unary_op;
 }
-
+// < Getters
 
 bool Instruction::is_truthy_constant() const {
     return this->code == InstrCode::INSTR_TRUE || this->code == InstrCode::INSTR_FALSE ||
@@ -135,7 +138,7 @@ const char* Intermediate::instr_type_to_string(InstrCode code) {
 /* Length of instruction name in the console */
 static uint INSTRUCTION_NAME_LENGTH = 30;
 /* Space given to argument before logging the comment */
-static uint ARGUMENT_SPACE = 15;
+static uint ARGUMENT_SPACE = IR_LABEL_LENGTH + 5;
 
 static void log_instruction(Instruction instr) {
     std::string type = Intermediate::instr_type_to_string(instr.code);
@@ -159,7 +162,7 @@ static void log_instruction(Instruction instr) {
         case InstrCode::INSTR_POP_JNZ:
         {
             argument = ".L";
-            argument += std::to_string(instr.payload.label);
+            argument += *instr.payload.label;
             std::cout << label_c << argument;
             argument_length = argument.size();
         }
@@ -235,7 +238,7 @@ Block::Block() {
 }
 void Block::log_block() const {
     size_t size = 0;
-    for (intermediate_set_t set : this->labels) size += set.size();
+    for (Label set : this->labels) size += set.instructions.size();
 
     uint code_count_length = get_digits(size);
 
@@ -245,11 +248,12 @@ void Block::log_block() const {
     std::cout << "                          IR                           \n";
     // Don't increment the loop, because print instruction always increases it by at least one
     for (uint set_count = 0; set_count < this->labels.size(); set_count += 1) {
+        Label label = this->labels.at(set_count);
         std::cout << '\n';
-        std::cout << label_c << ".L" << set_count << ":\n";
+        std::cout << label_c << ".L" << *label.name << ":\n";
         set_color(Colors::DEFAULT);
 
-        for (Instruction instr : this->labels.at(set_count)) {
+        for (Instruction instr : label.instructions) {
             /* Log instruction number */
             uint index_length = get_digits(instr_number);
             for (uint space = 0; space < code_count_length - index_length; space += 1) {
@@ -267,37 +271,46 @@ void Block::log_block() const {
 
 #endif
 
-intermediate_set_t &Block::get_label(uint index) { return this->labels.at(index); }
+Intermediate::Label::Label(label_index_t* index) : name(index) {};
 
+Label &Block::get_label_at_numerical_index(uint index) {
+    return this->labels.at(index);
+}
 
 // Label name generation >
 std::uniform_int_distribution<uint32_t> Block::label_generator =
                 std::uniform_int_distribution<uint32_t>(0, CHAR_LABEL_COUNT);
 static char label_chars[CHAR_LABEL_COUNT] = {
-    '-', '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
     'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
+    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    '-', '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
 };
-std::string Block::gen_label_name() const {
-    std::string label = "";
-    for (uint i = 0; i < 20; i += 1) {
-        label += label_chars[Block::label_generator(Random::rng)];
+label_index_t* Block::gen_label_name() const {
+    label_index_t* label = new label_index_t("");
+    for (uint i = 0; i < IR_LABEL_LENGTH; i += 1) {
+        label->append(1, label_chars[Block::label_generator(Random::rng)]);
     }
-    return label;
-}
-std::string Block::new_label_name() const {
-    std::string label = this->gen_label_name();
-
     return label;
 }
 // < Label name generation
 
-void Block::new_label() {
-    this->labels.push_back(intermediate_set_t());
+label_index_t* Block::new_label() {
+    label_index_t* index = this->gen_label_name();
+    this->labels.push_back(Label(index));
+    return index;
+}
+void Block::new_label(label_index_t* index) {
+    this->labels.push_back(Label(index));
 }
 void Block::add_instruction(Intermediate::Instruction instruction) {
     if (this->labels.size() == 0) this->new_label();
-    this->labels.back().push_back(instruction);
+    this->labels.back().instructions.push_back(instruction);
+}
+
+Block::~Block() {
+    for (Label label : this->labels) {
+        delete label.name;
+    }
 }

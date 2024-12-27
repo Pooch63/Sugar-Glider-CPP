@@ -9,7 +9,7 @@
 #include <string>
 
 using namespace Bytecode;
-using Intermediate::ir_instruction_arg_t;
+using Intermediate::ir_instruction_arg_t, Intermediate::label_index_t;
 
 Compiler::Compiler(Intermediate::Block& chunk, Output &output) : main_chunk(chunk), output(output) {
     this->scopes.new_scope();
@@ -44,15 +44,16 @@ void Compiler::compile_ternary_op(AST::TernaryOp* node) {
 //     /* Compile condition. */
     this->compile_node(node->get_condition());
 
-    /* Get next label */
-    uint next = this->main_chunk.label_count();
-    this->main_chunk.add_instruction(Intermediate::Instruction(Intermediate::INSTR_POP_JIZ, next));
+    label_index_t* end = this->main_chunk.gen_label_name();
+
+    /* Jump past true value if condition was false */
+    label_index_t* false_label = this->main_chunk.gen_label_name();
+    this->main_chunk.add_instruction(Intermediate::Instruction(Intermediate::INSTR_POP_JIZ, false_label));
 
     /* Compile the value if true */
     this->compile_node(node->get_true_value());
 
-    /* Jump to the end. Add 1 to account for the false label. */
-    int end = this->main_chunk.label_count() + 1;
+    /* Jump to the end. */
     this->main_chunk.add_instruction(Intermediate::Instruction(Intermediate::INSTR_GOTO, end));
 
     /* Compile the false value */
@@ -63,7 +64,7 @@ void Compiler::compile_ternary_op(AST::TernaryOp* node) {
     this->main_chunk.add_instruction(Intermediate::Instruction(Intermediate::INSTR_GOTO, end));
 
     /* And now, exit the whole control flow if false */
-    this->main_chunk.new_label();
+    this->main_chunk.new_label(end);
 }
 
 bool Compiler::get_variable_info(AST::VarValue* variable, Scopes::Variable &info) {
@@ -166,17 +167,16 @@ void Compiler::compile_if_statement(AST::If* node) {
 void Compiler::compile_while_loop(AST::While* node) {
     /* First, compile the condition. We have to jump back to this
         at the end of the loop, so make a new label. */
-    int condition_label = this->main_chunk.label_count();
-    this->main_chunk.new_label();
+    label_index_t* condition = this->main_chunk.new_label();
     this->compile_node(node->get_condition());
     /* If the condition is false, jump to the end */
-    this->main_chunk.add_instruction(Intermediate::Instruction(Intermediate::INSTR_POP_JIZ, condition_label + 2));
+    this->main_chunk.add_instruction(Intermediate::Instruction(Intermediate::INSTR_POP_JIZ, condition));
 
     /* Now put the body in a new label. */
     this->main_chunk.new_label();
     this->compile_node(node->get_block());
     // Add a goto command to evaluate the condition afterway
-    this->main_chunk.add_instruction(Intermediate::Instruction(Intermediate::INSTR_GOTO, condition_label));
+    this->main_chunk.add_instruction(Intermediate::Instruction(Intermediate::INSTR_GOTO, condition));
 }
 
 void Compiler::compile_body(AST::Body* body) {

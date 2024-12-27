@@ -4,8 +4,9 @@
 #define _SGCPP_CHUNK_HPP
 
 #include "bytecode.hpp"
-#include "../globals.hpp"
 #include "../compiler/scopes.hpp"
+#include "../globals.hpp"
+#include "../utils.hpp"
 
 #include <vector>
 
@@ -15,7 +16,7 @@
    in a row and being stricken by lightning 19 times after. */
 #define CHAR_LABEL_COUNT 64
 
-using Bytecode::address_t, Bytecode::OpCode;
+using Bytecode::OpCode;
 
 namespace Intermediate {
     /* Many of these op codes are exactly the same as the ones in the
@@ -49,9 +50,11 @@ namespace Intermediate {
     const char* instr_type_to_string(InstrCode code);
     #endif
 
+    typedef std::string label_index_t;
+
     union ir_instruction_arg_t {
         /* For jump commands */
-        address_t label;
+        label_index_t* label;
         Operations::BinOpType bin_op;
         Operations::UnaryOpType unary_op;
         Values::number_t number;
@@ -64,7 +67,7 @@ namespace Intermediate {
         ir_instruction_arg_t payload;
 
         Instruction(Intermediate::InstrCode code);
-        Instruction(Intermediate::InstrCode code, address_t label);
+        Instruction(Intermediate::InstrCode code, label_index_t* label);
         Instruction(Intermediate::InstrCode code, Operations::BinOpType bin_op);
         Instruction(Intermediate::InstrCode code, Operations::UnaryOpType unary_op);
         Instruction(InstrCode code, Scopes::Variable variable);
@@ -83,7 +86,7 @@ namespace Intermediate {
         
 
         Values::number_t        get_number() const;
-        address_t               get_address() const;
+        label_index_t*          get_address() const;
         Operations::BinOpType   get_bin_op() const;
         Operations::UnaryOpType get_unary_op() const;
 
@@ -96,23 +99,34 @@ namespace Intermediate {
     };
 
     typedef std::vector<Intermediate::Instruction> intermediate_set_t;
+
+    struct Label {
+        label_index_t* name;
+        intermediate_set_t instructions = intermediate_set_t();
+
+        Label(label_index_t* name);
+    };
+
     class Block {
         private:
             /* Used to generate label names */
             static std::uniform_int_distribution<uint32_t> label_generator;
 
             /* Labels. Once we leave a label, we can no longer compile into it.
-                We can also only compile into one label at once. */
-            std::vector<intermediate_set_t> labels = std::vector<intermediate_set_t>();
-
-            /* Generate a valid label name, but it DOES NOT guarantee that this label
-                name is not already a label name. */
-            std::string gen_label_name() const;
+                We can also only compile into one label at once.
+                Thus, we don't need a hashmap. Even though the keys are strings,
+                we don't*/
+            std::vector<Label> labels = std::vector<Label>();
         public:
             Block();
 
-            void new_label();
-            intermediate_set_t &get_label(uint index);
+            /* Generate a new label with a randomly-generated index. */
+            label_index_t* new_label();
+            /* Generate a new label with a given index. */
+            void new_label(label_index_t* index);
+            /* Get the label in the vector at the specified numerical index.
+                NOT the label index. */
+            Label &get_label_at_numerical_index(uint index);
             inline size_t label_count() const { return this->labels.size(); };
 
             /* Add an instruction to the last label. If there are no labels, one will be created. */
@@ -123,9 +137,13 @@ namespace Intermediate {
             inline auto begin() const { return this->labels.begin(); };
             inline auto end() const { return this->labels.end(); };
 
-            /* Generate a valid label name that is GUARANTEED to be unique from
-                every other label. */
-            std::string new_label_name() const;
+            /* Generate a valid label name. It DOES NOT guarantee that this label
+                name is not already a label name, but it basically is.
+                Dynamically allocates the index, so if you do not add a label with this name,
+                YOU are responsible for freeing the memory. */
+            label_index_t* gen_label_name() const;
+
+            ~Block();
     };
 };
 
