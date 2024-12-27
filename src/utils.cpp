@@ -1,5 +1,7 @@
 #include "utils.hpp"
 
+#include <chrono>
+
 #ifdef DEBUG
 #include <cassert>
 #include <iostream>
@@ -29,14 +31,40 @@ static const char subscripts[10][4] = {
     "\u2089"
 };
 
-void log_number_as_subscript(uint num) {
+#ifdef DEBUG
+std::string number_as_subscript(uint num) {
     std::string str = std::to_string(num);
+    std::string output = "";
 
     for (char c : str) {
         uint subscript_ind = c - '0';
-        // If it's not a digit, assert false
+        // If it's not a digit, throw
         if (subscript_ind >= 10) assert(false);
 
-        std::cout << subscripts[subscript_ind];
+        output += subscripts[subscript_ind];
     }
+
+    return output;
 };
+#endif
+
+/* Count code points in a UTF-8 string.
+    Proudly stolen from Marcelo Cantos on https://stackoverflow.com/questions/4063146/getting-the-actual-length-of-a-utf-8-encoded-stdstring. */
+uint get_string_length_as_utf32(std::string str) {
+    const char *s = str.c_str();
+    int len = 0;
+    while (*s) len += (*s++ & 0xc0) != 0x80;
+    return len;
+}
+
+uint64_t time_in_millis() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::high_resolution_clock::now().time_since_epoch()
+    ).count();
+}
+
+Random::RNG Random::rng;
+
+void Random::initialize_rng() {
+    rng.seed(time_in_millis());
+}

@@ -9,6 +9,12 @@
 
 #include <vector>
 
+/* The number of characters that can be used in a random label name.
+    Generating two identical 20-character labels from these 64 codepoints 
+   is astronomically unlikely -- less than winning the Mega Millions 5 times 
+   in a row and being stricken by lightning 19 times after. */
+#define CHAR_LABEL_COUNT 64
+
 using Bytecode::address_t, Bytecode::OpCode;
 
 namespace Intermediate {
@@ -92,9 +98,16 @@ namespace Intermediate {
     typedef std::vector<Intermediate::Instruction> intermediate_set_t;
     class Block {
         private:
+            /* Used to generate label names */
+            static std::uniform_int_distribution<uint32_t> label_generator;
+
             /* Labels. Once we leave a label, we can no longer compile into it.
                 We can also only compile into one label at once. */
             std::vector<intermediate_set_t> labels = std::vector<intermediate_set_t>();
+
+            /* Generate a valid label name, but it DOES NOT guarantee that this label
+                name is not already a label name. */
+            std::string gen_label_name() const;
         public:
             Block();
 
@@ -109,6 +122,10 @@ namespace Intermediate {
 
             inline auto begin() const { return this->labels.begin(); };
             inline auto end() const { return this->labels.end(); };
+
+            /* Generate a valid label name that is GUARANTEED to be unique from
+                every other label. */
+            std::string new_label_name() const;
     };
 };
 
