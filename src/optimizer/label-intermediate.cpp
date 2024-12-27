@@ -79,7 +79,7 @@ void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized) {
                 continue;
             }
             /* Unnecessary constant folding */
-            if (last.is_constant() && instr.code == InstrCode::INSTR_POP) {
+            if (last.is_static_flow_load() && instr.code == InstrCode::INSTR_POP) {
                 label.pop_back();
                 continue;
             }
@@ -89,6 +89,8 @@ void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized) {
     }
 
     /* Dead code elimination */
+
+    /* REMOVE all labels that are literally never used. */
     // This lookup table's keys are the labels that are accessible. Everything else is gone.
     std::unordered_map<label_index_t, bool> jumped = std::unordered_map<label_index_t, bool>();
 
