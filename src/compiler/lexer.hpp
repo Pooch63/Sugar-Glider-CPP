@@ -152,12 +152,16 @@ namespace Scan {
                 a non-whitespace character */
             void skip_whitespace();
 
-            std::string& str;
+            std::string &str;
+            Output &output;
 
         public:
-            Scanner(std::string& str);
+            Scanner(std::string& str, Output &output);
 
             Token next_token();
+            /* Get the next actual token, since next_token will return a ghost "error" token
+                if it encounters a non-recoverable input error. */
+            Token next_real_token();
     };
 }
 

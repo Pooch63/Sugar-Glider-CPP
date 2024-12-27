@@ -139,7 +139,7 @@ namespace {
     };
 };
 
-Scanner::Scanner(std::string& str) : str(str) {};
+Scanner::Scanner(std::string &str, Output &output) : str(str), output(output) {};
 
 char Scanner::current() const {
     if (this->ind >= this->str.length()) return '\0';
@@ -299,5 +299,16 @@ Token Scanner::next_token() {
     }
 
     /* If there was an unknown token, error and then  */
-    std::cout << "ERROR ERROR ERROR ERROR ERROR ERROR ERROR ERROR" << std::endl;
+    char error_message[50];
+    snprintf(error_message, 50, "Unknown character '%c'", curr);
+    this->output.error(TokenPosition{ .line = this->line, .col = this->col, .length = 1 }, error_message);
+
+    this->advance();
+    return Token(TokType::ERROR, TokenPosition{ .line = -1, .col = -1, .length = -1 });
+}
+Token Scanner::next_real_token() {
+    while (true) {
+        Token token = this->next_token();
+        if (token.get_type() != TokType::ERROR) return token;
+    }
 }
