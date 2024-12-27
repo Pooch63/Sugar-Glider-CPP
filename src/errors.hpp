@@ -12,6 +12,7 @@ namespace Colors {
         YELLOW = 33,
         BLUE = 34,
         PURPLE = 35,
+        CYAN = 36,
         WHITE = 37,
         MAGENTA = 95,
 
