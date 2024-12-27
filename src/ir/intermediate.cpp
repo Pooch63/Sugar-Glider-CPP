@@ -54,6 +54,10 @@ bool Instruction::is_constant() const {
         this->code == InstrCode::INSTR_NULL ||
         this->code == InstrCode::INSTR_NUMBER;
 }
+bool Instruction::is_static_flow_load() const {
+    if (this->code == InstrCode::INSTR_LOAD) return true;
+    return this->is_constant();
+}
 
 Values::Value Instruction::payload_to_value() const {
     switch (this->code) {
@@ -96,6 +100,7 @@ Instruction Instruction::value_to_instruction(Values::Value value) {
 using namespace Colors;
 std::string instruction_name_c = create_color(Color::PURPLE);
 std::string number_c = create_color(Color::YELLOW);
+std::string operation_c = create_color(Color::CYAN);
 std::string label_c = create_color(Color::BLUE) + create_color(Color::BOLD);
 std::string variable_c = create_color(Color::RED) + create_color(Color::UNDERLINE);
 std::string comment_c = create_color(Color::GREEN);
@@ -164,7 +169,6 @@ static void log_instruction(Instruction instr) {
             argument = ".L";
             argument += *instr.payload.label;
             std::cout << label_c << argument;
-            argument_length = argument.size();
         }
             break;
         case InstrCode::INSTR_BIN_OP:
@@ -175,8 +179,7 @@ static void log_instruction(Instruction instr) {
             argument += Operations::bin_op_to_string(type);
             argument += ')';
             
-            std::cout << argument;
-            argument_length = argument.size();
+            std::cout << operation_c << argument;
         }
             break;
         case InstrCode::INSTR_UNARY_OP:
@@ -187,8 +190,7 @@ static void log_instruction(Instruction instr) {
             argument += Operations::unary_op_to_string(type);
             argument += ')';
 
-            std::cout << argument;
-            argument_length = argument.size();
+            std::cout << operation_c << argument;
         }
             break;
         case InstrCode::INSTR_NUMBER:
@@ -298,10 +300,26 @@ label_index_t* Block::gen_label_name() const {
 
 label_index_t* Block::new_label() {
     label_index_t* index = this->gen_label_name();
-    this->labels.push_back(Label(index));
+    this->new_label(index);
     return index;
 }
 void Block::new_label(label_index_t* index) {
+    /* If there is no terminating goto command at the end, that is undefined.
+        Add it automatically. */
+    if (this->labels.size() > 0) {
+        Label last = this->labels.back();
+        // Add a GOTO if there's no terminating jump, or if it's an empty label.
+        if (
+            last.instructions.size() == 0 ||
+            this->labels.back().instructions.back().code != InstrCode::INSTR_GOTO
+        ) {
+            this->labels.back().instructions.push_back(
+                Intermediate::Instruction(
+                    Intermediate::INSTR_GOTO,
+                    index ) );
+        }
+    }
+
     this->labels.push_back(Label(index));
 }
 void Block::add_instruction(Intermediate::Instruction instruction) {

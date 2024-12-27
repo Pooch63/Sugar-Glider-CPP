@@ -76,6 +76,8 @@ namespace Intermediate {
 
         bool is_truthy_constant() const;
         bool is_constant() const;
+        /* Is this instruction a static flow instruction that loads a value onto the stack? */
+        bool is_static_flow_load() const;
         inline bool is_jump() const {
             return this->code == InstrCode::INSTR_GOTO ||
                 this->code == InstrCode::INSTR_POP_JIZ ||
@@ -115,7 +117,16 @@ namespace Intermediate {
             /* Labels. Once we leave a label, we can no longer compile into it.
                 We can also only compile into one label at once.
                 Thus, we don't need a hashmap. Even though the keys are strings,
-                we don't*/
+                we don't enter a label after closing it.
+                After each label, a GOTO statement must bring it to another label.
+                E.g.,
+                    .L0:
+                        ...
+                        GOTO .L1
+                    .L1:
+                        ...
+                Adding a label will automatically add a goto to advance it if this is not
+                done automatically. */
             std::vector<Label> labels = std::vector<Label>();
         public:
             Block();
