@@ -76,19 +76,6 @@ Token::Token(TokType type, std::string* str_, TokenPosition position) :
     this->payload.string_ = str_;
 };
 
-// Token::Token(const Token& token) {
-//     this->type = token.type;
-//     this->position = token.position;
-//     this->free_payload = token.free_payload;
-
-//     if (token.has_string_payload()) {
-//         this->payload.string_ = token.get_string();
-//     }
-//     else if(token.type == TokType::NUMBER) {
-//         this->payload.num = token.get_number();
-//     }
-// };
-
 void Token::free() {
     if (!this->free_payload) return;
 
@@ -119,9 +106,6 @@ std::string Token::to_string() const {
 
 // Lexer helpers
 namespace {
-    inline bool is_digit(char c) { return c >= '0' && c <= '9'; }
-
-    bool is_hex_digit(char c) { return is_digit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }
     bool is_octal_digit(char c) { return c >= '0' && c <= '7'; }
 
     bool is_identifier_start(char c) {
@@ -171,7 +155,6 @@ char Scanner::peek(int skip_count) const {
 bool Scanner::at_EOF() const {
     return this->ind >= this->str.length();
 }
-
 void Scanner::skip_whitespace() {
     char curr = this->current();
 
@@ -191,6 +174,117 @@ void Scanner::skip_whitespace() {
 TokenPosition Scanner::make_single_line_position(int length) const {
     return TokenPosition{ .line = this->line, .col = this->col - length, .length = length };
 };
+
+std::string* Scanner::parse_string() {
+    char delimeter = this->advance();
+
+    std::string* str = new std::string();
+
+    bool continue_loop = true;
+
+    while (continue_loop && this->current() != delimeter) {
+        char curr = this->advance();
+
+        char char_to_append;
+
+        switch (curr) {
+            case '\\':
+            {
+                char next = this->advance();
+                if (next == '\0') {
+                    this->output.error(
+                        TokenPosition{ .line = this->line, .col = this->col, .length = 1 },
+                        "Expected additional input after escape character '\\'.");
+                    continue_loop = false;
+                    break;
+                }
+                switch (next) {
+                    case 'a': char_to_append = '\a'; break;
+                    case 'b': char_to_append = '\b'; break;
+                    case 'f': char_to_append = '\f'; break;
+                    case 'n': char_to_append = '\n'; break;
+                    case 'r': char_to_append = '\r'; break;
+                    case 't': char_to_append = '\t'; break;
+                    case 'v': char_to_append = '\v'; break;
+                    case '\\': char_to_append = '\\'; break;
+                    case '\'': char_to_append = '\''; break;
+                    case '"': char_to_append = '"'; break;
+                    // This is used to avoid trigraphs
+                    case '?': char_to_append = '?'; break;
+
+                    // Octal escape sequence
+                    case '0':
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    {
+                        char octal[3] = { 0 };
+                        octal[0] = next;
+                        
+                        int length = 1;
+                        while (length < 3) {
+                            char next = this->current();
+                            if (!is_octal_digit(next)) break;
+
+                            // Max is \317, so make sure it's not greater than that
+                            if (octal[0] > '3') break;
+                            if (length == 1 && octal[0] == '3' && next > '1') break;
+                            // Also, it can't have a leading zero
+                            if (octal[0] == '0') break;
+
+                            octal[length] = next;
+
+                            this->advance();
+                            length += 1;
+                        }
+
+                        uint8_t byte = 0;
+                        for (int digit = 0; digit < length; digit += 1) {
+                            byte += (octal[digit] - '0') * (1 << (3 * (length - digit - 1)));
+                        }
+                        char_to_append = static_cast<char>(byte);
+                    }
+                    break;
+                    case 'x':
+                    {
+                        char_to_append = this->parse_hex<2>("A \\x escape sequence requires two hexadecimal digits");
+                        break;
+                    }
+
+                    default:
+                    {
+                        char warning_message[60];
+                        snprintf(warning_message, 60, "Escape character '\\' has no effect on the character '%c'", next);
+                        this->output.warning(
+                            TokenPosition{ .line = this->line, .col = this->col, .length = 1 },
+                            warning_message);
+                    }
+                        char_to_append = next;
+                        break;
+                }
+            }
+                break;
+
+            default:
+                char_to_append = curr;
+                break;
+        }
+        str->append(1, char_to_append);
+    }
+
+    char delimiter_end = this->advance();
+    if (delimiter_end == '\0') {
+        this->output.error(
+            TokenPosition{ .line = this->line, .col = this->col, .length = 1 },
+            "Expected ending quote to string" );
+    }
+
+    return str;
+}
 
 Token Scanner::next_token() {
     this->skip_whitespace();
@@ -269,6 +363,15 @@ Token Scanner::next_token() {
         };
 
         return Token(number, this->make_single_line_position(length));
+    }
+
+    // String
+    if ( curr == '"' ) {
+        int start_ind = static_cast<uint>(this->ind),
+            start_col = this->col,
+            start_line = this->line;
+        std::string* str = this->parse_string();
+        return Token(TokType::STRING, str, TokenPosition{ .line = start_line, .col = start_col, .length = static_cast<int>(this->ind) - start_ind });
     }
 
     // Identifier or keyword

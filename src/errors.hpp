@@ -72,6 +72,10 @@ class Output {
         /* Automatically extract line inds. */
         Output(std::string& prog);
 
+        void output_line(Position::TokenPosition position, Colors::Color problem_color);
+
+        /* Write a warning to the console */
+        void warning(Position::TokenPosition position, std::string warning);
         /* Write an error to the console */
         void error(Position::TokenPosition position, std::string error);
 

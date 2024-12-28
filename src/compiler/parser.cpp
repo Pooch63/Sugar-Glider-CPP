@@ -173,7 +173,7 @@ Parser::Parser(Scan::Scanner& scanner, Output& output) :
     scanner(scanner),
     output(output),
     previous_token(Scan::start),
-    current_token(scanner.next_token())
+    current_token(scanner.next_real_token())
 {
     #ifdef DEBUG
     /* You ABSOLUTELY CAN NOT initialize a parser without initializing the rules */

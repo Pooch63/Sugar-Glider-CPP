@@ -5,11 +5,29 @@
 #include "../globals.hpp"
 #include "../value.hpp"
 
+#ifdef DEBUG_ASSERT
+#include <cassert>
+#endif
+
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 using Position::TokenPosition;
+
+inline bool is_digit(char c) { return c >= '0' && c <= '9'; }
+static bool is_hex_digit(char c) { return is_digit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); };
+static uint8_t hex_digit_to_number(char c) {
+    if (is_digit(c)) return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+
+    #ifdef DEBUG_ASSERT
+    assert(false &&
+            "unknown hexadecimal digit");
+    #endif
+}
 
 namespace Scan {
     enum TokType {
@@ -20,7 +38,7 @@ namespace Scan {
 
         IDENTIFIER,
 
-        /* The rest of the token types are constants.
+        /* The rest of the token types are constants.message_on_error
             Their value will always be the same. (e.g., +, *, /, ], etc.) */
         // Operators >
         PLUS,
@@ -154,13 +172,51 @@ namespace Scan {
                 a non-whitespace character */
             void skip_whitespace();
 
+            template<int num_hex_digits>
+            using hex_payload = typename std::conditional<
+                num_hex_digits <= 2,
+                char,
+                typename std::conditional<
+                    num_hex_digits <= 4,
+                    char16_t,
+                    char32_t
+                >::type  
+                >::type;
+            /* Read in the specified number of hex digits and return the number. */
+            template<uint num_hex_digits>
+            hex_payload<num_hex_digits> parse_hex(std::string message_on_error) {
+                uint64_t payload = 0;
+
+                for (uint hex_ind = 0; hex_ind < num_hex_digits; hex_ind += 1) {
+                    char curr = this->current();
+
+                     if (!is_hex_digit(curr)) {
+                        this->output.error(
+                            TokenPosition{ .line = this->line, .col = this->col, .length = static_cast<int>(num_hex_digits - hex_ind) },
+                            message_on_error
+                        );
+                        return 0;
+                    }
+
+                    payload |= static_cast<uint64_t>(hex_digit_to_number(curr)) << (4 * hex_ind);
+                    this->advance();
+                }
+
+                return static_cast<hex_payload<num_hex_digits>>(payload);
+            }
+
+            /* Should be called while the current character is the delimeter,
+                e.g., current is "" or ' */
+            std::string* parse_string();
+
             std::string &str;
             Output &output;
+
+            Token next_token();
 
         public:
             Scanner(std::string& str, Output &output);
 
-            Token next_token();
             /* Get the next actual token, since next_token will return a ghost "error" token
                 if it encounters a non-recoverable input error. */
             Token next_real_token();

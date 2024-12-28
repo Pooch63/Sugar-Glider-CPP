@@ -27,7 +27,7 @@ void Output::extract_line_ends() {
 int Output::get_line_end(int line) const {
     return line == -1 ? -1 : this->line_ends.at(line);
 }
-void Output::error(Position::TokenPosition position, std::string error) {
+void Output::output_line(Position::TokenPosition position, Colors::Color problem_color) {
     using std::max, std::min;
 
     this->errored = true;
@@ -48,7 +48,7 @@ void Output::error(Position::TokenPosition position, std::string error) {
 
     int start_col = max(position.col - Output::MAX_LEFT_CHARACTERS, 0);
     /* The index of the place in the program where we'll start logging
-        to the left of the error. We have to log characters on the same line. */
+        to the left of the message. We have to log characters on the same line. */
     int left_start = line_start + start_col;
     /* The index of the start of the error section. */
     int error_start = line_start + position.col;
@@ -58,8 +58,8 @@ void Output::error(Position::TokenPosition position, std::string error) {
     for (int ind = left_start; ind < error_start; ind += 1) {
         std::cout << this->prog.at(ind);
     }
-    /* Now, log the red error. */
-    Colors::set_color(Colors::RED);
+    /* Now, log the area color. */
+    Colors::set_color(problem_color);
     // An EOF token goes past the program length, so make sure not to go too far
     for (int ind = error_start; ind < min(
             static_cast<int>(this->prog.size()), error_start + position.length
@@ -88,6 +88,9 @@ void Output::error(Position::TokenPosition position, std::string error) {
         std::cout << '^';
     }
     std::cout << '\n';
+};
+void Output::error(Position::TokenPosition position, std::string error) {
+    this->output_line(position, Colors::RED);
 
     Colors::set_color(Colors::BOLD);
     Colors::set_color(Colors::RED);
@@ -98,4 +101,16 @@ void Output::error(Position::TokenPosition position, std::string error) {
 
 
     std::cout << '\n' << std::endl;
-};
+}
+void Output::warning(Position::TokenPosition position, std::string warning) {
+    this->output_line(position, Colors::YELLOW);
+
+    Colors::set_color(Colors::BOLD);
+    Colors::set_color(Colors::MAGENTA);
+    std::cout << "warning: ";
+
+    Colors::set_color(Colors::DEFAULT);
+    std::cout << warning;
+
+    std::cout << '\n' << std::endl;
+}
