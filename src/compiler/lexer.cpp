@@ -185,7 +185,37 @@ std::string* Scanner::parse_string() {
     while (continue_loop && this->current() != delimeter) {
         char curr = this->advance();
 
-        char char_to_append;
+        /* Check and warn for trigraphs */
+        if (curr == '?' && this->current() == '?') {
+            // If this is still \0, that means that we didn't find a trigraph
+            // and didn't have to warn the user
+            char trigraph = '\0';
+            switch (this->peek(1)) {
+                case '=':  trigraph = '#';  break;
+                case '/':  trigraph = '\\'; break;
+                case '\'': trigraph = '^';  break;
+                case '!':  trigraph = '|';  break;
+                case '-':  trigraph = '~';  break;
+                case '(':  trigraph = '[';  break;
+                case ')':  trigraph = ']';  break;
+                case '<':  trigraph = '{';  break;
+                case '>':  trigraph = '}';  break;
+            }
+
+            if (trigraph != '\0') {
+                char warning[100];
+                snprintf(warning, 100, "Trigraphs are not supported. Write '%c' instead.", trigraph);
+                this->output.warning(
+                    TokenPosition{ .line = this->line, .col = this->col - 1, .length = 3 },
+                    warning
+                );
+            }
+        }
+
+        // This should be updated depending on the place in the string.
+        // If it remains the null-terminating character, it is assumed that there
+        // was an error. The character is then not appended.
+        char char_to_append = '\0';
 
         switch (curr) {
             case '\\':
@@ -233,8 +263,6 @@ std::string* Scanner::parse_string() {
                             // Max is \317, so make sure it's not greater than that
                             if (octal[0] > '3') break;
                             if (length == 1 && octal[0] == '3' && next > '1') break;
-                            // Also, it can't have a leading zero
-                            if (octal[0] == '0') break;
 
                             octal[length] = next;
 
@@ -247,6 +275,9 @@ std::string* Scanner::parse_string() {
                             byte += (octal[digit] - '0') * (1 << (3 * (length - digit - 1)));
                         }
                         char_to_append = static_cast<char>(byte);
+
+                        // Go past 
+                        for (int advance = 0; advance < length - 1; advance += 1) this->advance();
                     }
                     break;
                     case 'x':
@@ -273,7 +304,7 @@ std::string* Scanner::parse_string() {
                 char_to_append = curr;
                 break;
         }
-        str->append(1, char_to_append);
+        if (char_to_append != '\0') str->append(1, char_to_append);
     }
 
     char delimiter_end = this->advance();
