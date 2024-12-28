@@ -68,3 +68,28 @@ Random::RNG Random::rng;
 void Random::initialize_rng() {
     rng.seed(time_in_millis());
 }
+
+int utf32_codepoint_to_char_buffer(uint32_t codepoint, char buffer[4]) {
+    if (codepoint < 0x80) {
+        buffer[0] = codepoint;
+        return 1;
+    }
+    else if (codepoint < 0x800) {   // 00000yyy yyxxxxxx
+        buffer[0] = (0b11000000 | (codepoint >> 6));
+        buffer[1] = (0b10000000 | (codepoint & 0x3f));
+        return 2;
+    }
+    else if (codepoint < 0x10000) {  // zzzzyyyy yyxxxxxx
+        buffer[0] = (0b11100000 | (codepoint >> 12));         // 1110zzz
+        buffer[1] = (0b10000000 | ((codepoint >> 6) & 0x3f)); // 10yyyyy
+        buffer[2] = (0b10000000 | (codepoint & 0x3f));        // 10xxxxx
+        return 3;
+    }
+    else if (codepoint < 0x200000) { // 000uuuuu zzzzyyyy yyxxxxxx
+        buffer[0] = (0b11110000 | (codepoint >> 18));          // 11110uuu
+        buffer[1] = (0b10000000 | ((codepoint >> 12) & 0x3f)); // 10uuzzzz
+        buffer[2] = (0b10000000 | ((codepoint >> 6) & 0x3f)); // 10yyyyyy
+        buffer[3] = (0b10000000 | (codepoint & 0x3f));         // 10xxxxxx
+        return 4;
+    }
+}
