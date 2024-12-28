@@ -123,6 +123,7 @@ namespace Parse {
             AST::VarDefinition* parse_var_statement();
             AST::If* parse_if_statement();
             AST::While* parse_while_statement();
+            AST::Break* parse_break_statement();
 
             AST::Node* parse_statement();
 

@@ -294,8 +294,6 @@ AST::Node* Parser::parse_precedence(int prec) {
         snprintf(error_message, 100, "Unexpected token type %s", Scan::tok_type_to_string(this->curr().get_type()));
         this->output.error(this->curr().get_position(), error_message);
 
-        // Move past problematic token
-        this->advance();
         // Enter panic mode
         this->synchronize();
         
@@ -348,7 +346,7 @@ AST::VarDefinition* Parser::parse_var_statement() {
     AST::Node* value = this->parse_expression();
     
     return got_identifier ? new AST::VarDefinition(
-        qualifier.get_type() == TokType::VAR ? Scopes::VariableType::MUTABLE : Scopes::VariableType::CONSTANT,
+        qualifier.get_type() == TokType::VAR ? Intermediate::VariableType::MUTABLE : Intermediate::VariableType::CONSTANT,
         name,
         value,
         position) : nullptr;
@@ -373,6 +371,14 @@ AST::While* Parser::parse_while_statement() {
     return new AST::While(condition, block);
 }
 
+AST::Break* Parser::parse_break_statement() {
+    // Go through break statement
+    this->advance();
+    Scan::Token break_= this->previous_token;
+
+    return new AST::Break(break_.get_position());
+}
+
 AST::Node* Parser::parse_statement() {
     // Skip over redundant semicolons
     this->skip_semicolons();
@@ -389,6 +395,10 @@ AST::Node* Parser::parse_statement() {
             break;
         case TokType::WHILE:
             node = this->parse_while_statement();
+            break;
+        case TokType::BREAK:
+            node = this->parse_break_statement();
+            this->expect_symbol(TokType::SEMICOLON);
             break;
         case TokType::IF:
             node = this->parse_if_statement();

@@ -34,12 +34,13 @@ const char* Scan::tok_type_to_string(TokType type) {
         case COLON: return ":";
         case SEMICOLON: return ";";
 
-        case IF: return "if";
-        case WHILE: return "while";
+        case BREAK: return "break";
         case CONST: return "const";
-        case VAR: return "var";
-        case TRUE: return "true";
         case FALSE: return "false";
+        case IF: return "if";
+        case TRUE: return "true";
+        case VAR: return "var";
+        case WHILE: return "while";
 
         case EOI: return "end of file";
 
@@ -130,12 +131,13 @@ namespace {
         return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
     }
     static std::unordered_map<std::string, TokType> keywords = {
-        { "if", TokType::IF },
-        { "while", TokType::WHILE },
+        { "break", TokType::BREAK },
         { "const", TokType::CONST },
-        { "var", TokType::VAR },
+        { "false", TokType::FALSE },
+        { "if", TokType::IF },
         { "true", TokType::TRUE },
-        { "false", TokType::FALSE }
+        { "var", TokType::VAR },
+        { "while", TokType::WHILE },
     };
 };
 

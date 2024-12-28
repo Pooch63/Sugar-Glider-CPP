@@ -17,7 +17,7 @@ class Compiler {
 
         /* Try to get variable info from name. Return whether or not it was successful.
             Error if there was an error. */
-        bool get_variable_info(AST::VarValue* variable, Scopes::Variable &info);
+        bool get_variable_info(AST::VarValue* variable, Intermediate::Variable &info);
 
         /* All the compilation functions for specific nodes */
         void compile_number(AST::Number* node);
@@ -32,6 +32,7 @@ class Compiler {
 
         void compile_if_statement(AST::If* node);
         void compile_while_loop(AST::While* node);
+        void compile_break_statement(AST::Break* node);
 
         void compile_body(AST::Body* body);
 

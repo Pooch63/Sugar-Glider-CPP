@@ -1,30 +1,41 @@
 #ifndef _SGCPP_SCOPES_HPP
 #define _SGCPP_SCOPES_HPP
 
+#include "../ir/intermediate.hpp"
+
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 namespace Scopes {
-    enum VariableType {
-        CONSTANT,
-        MUTABLE
+    enum ScopeType {
+        NORMAL,
+        LOOP
     };
 
-    struct Variable {
-        std::string* name;
-        VariableType type;
-        int scope;
-    };
     class Scope {
         private:
-            std::unordered_map<std::string, Variable> variables = std::unordered_map<std::string, Variable>();
+            ScopeType type;
+            /* Information only used for loops */
+            Intermediate::label_index_t* loop_condition = nullptr;
+            Intermediate::label_index_t* loop_end = nullptr;
+
+            std::unordered_map<std::string, Intermediate::Variable> variables = std::unordered_map<std::string, Intermediate::Variable>();
 
         public:
+            Scope(ScopeType type);
+            /* Used for loops. Given the label names for the start of condition evaluation, and for the label
+                at the end of the loop. */
+            Scope(ScopeType type, Intermediate::label_index_t* condition, Intermediate::label_index_t* end);
+
             bool has_variable(std::string* name) const;
             /* Returns false if there was no instance, otherwise returns true and updates the variable info. */
-            bool get_variable(std::string* name, Variable &info) const;
-            void add_variable(std::string* name, Variable info);
+            bool get_variable(std::string* name, Intermediate::Variable &info) const;
+            void add_variable(std::string* name, Intermediate::Variable info);
+        
+            Intermediate::label_index_t * get_loop_end() const;
+
+            inline ScopeType get_type() const { return this->type; };
     };
 
     class ScopeManager {
@@ -35,14 +46,19 @@ namespace Scopes {
             bool variable_exists(std::string* name) const;
             /* Returns false if there was no instance. Otherwise, returns true and updates the variable info.
                 Goes up through the scope tree to try to find the variable. */
-            bool get_variable(std::string* name, Variable &info) const;
+            bool get_variable(std::string* name, Intermediate::Variable &info) const;
             /* Add a variable to the current scope. */
-            Variable add_variable(std::string* name, VariableType type);
+            Intermediate::Variable add_variable(std::string* name, Intermediate::VariableType type);
 
             bool last_scope_has_variable(std::string* name);
 
-            void new_scope();
+            void new_scope(ScopeType type);
+            void new_scope(ScopeType type, Intermediate::label_index_t* condition, Intermediate::label_index_t* end);
             void pop_scope();
+
+            // Get the end of the loop we're in
+            // Returns nullptr if no loop is available
+            Intermediate::label_index_t* get_loop_end() const;
     };
 }
 

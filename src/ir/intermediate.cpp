@@ -10,7 +10,7 @@ Instruction::Instruction(InstrCode code, Operations::BinOpType type) :
     code(code), payload(ir_instruction_arg_t{ .bin_op = type }) {};
 Instruction::Instruction(InstrCode code, Operations::UnaryOpType type) :
     code(code), payload(ir_instruction_arg_t{ .unary_op = type }) {};
-Instruction::Instruction(InstrCode code, Scopes::Variable variable) :
+Instruction::Instruction(InstrCode code, Variable variable) :
     code(code), payload(ir_instruction_arg_t{ .variable = variable }) {};
 
 Instruction::Instruction(Values::number_t number) :
@@ -212,7 +212,7 @@ void Intermediate::log_instruction(Instruction instr) {
             std::cout << variable_c << argument;
             
             comment = "(";
-            comment += (instr.payload.variable.type == Scopes::VariableType::CONSTANT ? "const" : "mut var");
+            comment += (instr.payload.variable.type == VariableType::CONSTANT ? "const" : "mut var");
             comment += ")";
         }
             break;

@@ -5,7 +5,22 @@
 #include <cassert>
 #endif
 
+using Intermediate::label_index_t, Intermediate::Variable, Intermediate::VariableType;
 using namespace Scopes;
+
+Scope::Scope(ScopeType type) : type(type) {
+    // Make sure that this isn't a scope type that had to give more information
+    #ifdef DEBUG
+    assert(type == ScopeType::NORMAL);
+    #endif
+};
+Scope::Scope(ScopeType type, label_index_t* condition, label_index_t* end) :
+    type(type), loop_condition(condition), loop_end(end) {
+    // Make sure the type is a loop
+    #ifdef DEBUG
+    assert(type == ScopeType::LOOP);
+    #endif
+};
 
 bool Scope::has_variable(std::string* name) const {
     auto variable = this->variables.find(*name);
@@ -21,6 +36,13 @@ bool Scope::get_variable(std::string* name, Variable &info) const {
 };
 void Scope::add_variable(std::string* name, Variable info) {
     this->variables[*name] = info;
+};
+
+label_index_t* Scope::get_loop_end() const {
+    #ifdef DEBUG_ASSERT
+    assert(this->type == ScopeType::LOOP);
+    #endif
+    return this->loop_end;
 };
 
 bool ScopeManager::variable_exists(std::string* name) const {
@@ -49,9 +71,24 @@ bool ScopeManager::last_scope_has_variable(std::string* name) {
     return this->scopes.back().has_variable(name);
 };
 
-void ScopeManager::new_scope() {
-    this->scopes.push_back(Scope());
+void ScopeManager::new_scope(ScopeType type) {
+    this->scopes.push_back(Scope(type));
 }
+void ScopeManager::new_scope(ScopeType type, label_index_t* condition, label_index_t* end) {
+    this->scopes.push_back(Scope(type, condition, end));
+};
 void ScopeManager::pop_scope() {
     this->scopes.pop_back();
+}
+
+label_index_t* ScopeManager::get_loop_end() const {
+    for (uint index = this->scopes.size() - 1; index > 0; index -= 1) {
+        Scope scope = this->scopes.at(index);
+        // Not a loop, but may be inside a loop
+        if (scope.get_type() == ScopeType::NORMAL) continue;
+
+        return scope.get_loop_end();
+
+    }
+    return nullptr;
 }

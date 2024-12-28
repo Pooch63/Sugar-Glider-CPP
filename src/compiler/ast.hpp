@@ -21,6 +21,7 @@ namespace AST {
 
         NODE_IF,
         NODE_WHILE,
+        NODE_BREAK,
 
         NODE_BODY
     };
@@ -38,6 +39,7 @@ namespace AST {
     class VarAssignment;
     class If;
     class While;
+    class Break;
     class Body;
 
     // @REVIEW: Don't free until end of compilation.
@@ -66,6 +68,7 @@ namespace AST {
             VarAssignment* as_variable_assignment();
             If* as_if_statement();
             While* as_while_loop();
+            Break* as_break_statement();
             Body* as_body();
 
             virtual ~Node() = default;
@@ -134,13 +137,13 @@ namespace AST {
         private:
             std::string* name;
             Node* value;
-            Scopes::VariableType variable_type;
+            Intermediate::VariableType variable_type;
         public:
-            VarDefinition(Scopes::VariableType variable_type, std::string* name, Node* value, TokenPosition pos);
+            VarDefinition(Intermediate::VariableType variable_type, std::string* name, Node* value, TokenPosition pos);
 
             inline std::string*         get_name() const { return this->name; };
             inline Node*                get_value() const { return this->value; };
-            inline Scopes::VariableType get_variable_type() const { return this->variable_type; };
+            inline Intermediate::VariableType get_variable_type() const { return this->variable_type; };
 
             ~VarDefinition();
     };
@@ -194,9 +197,17 @@ namespace AST {
 
             ~While();
     };
+    class Break : public Node {
+        public:
+            Break(TokenPosition position);
+    };
 
     class Body : public Node {
         private:
+            /* Whether or not this node should create a scope during compilation.
+                Default is yes. */
+            bool should_create_scope = true;
+
             std::vector<Node*> statements = std::vector<Node*>();
         public:
             Body();
@@ -205,6 +216,11 @@ namespace AST {
             inline auto end() const { return this->statements.end(); };
 
             void add_statement(Node* statement);
+            // Stop the body from creating a scope. Used if the compiler creates
+            // its own, special scope, and doesn't need another.
+            void reject_scope();
+
+            inline bool will_create_scope() const { return this->should_create_scope; };
 
             ~Body();
     };

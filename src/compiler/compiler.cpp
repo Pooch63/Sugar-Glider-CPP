@@ -9,10 +9,11 @@
 #include <string>
 
 using namespace Bytecode;
-using Intermediate::ir_instruction_arg_t, Intermediate::label_index_t;
+using Intermediate::ir_instruction_arg_t, Intermediate::label_index_t, Intermediate::Variable;
+using Scopes::ScopeType;
 
 Compiler::Compiler(Intermediate::Block& chunk, Output &output) : main_chunk(chunk), output(output) {
-    this->scopes.new_scope();
+    this->scopes.new_scope(ScopeType::NORMAL);
 };
 
 void Compiler::compile_number(AST::Number* node) {
@@ -67,7 +68,7 @@ void Compiler::compile_ternary_op(AST::TernaryOp* node) {
     this->main_chunk.new_label(end);
 }
 
-bool Compiler::get_variable_info(AST::VarValue* variable, Scopes::Variable &info) {
+bool Compiler::get_variable_info(AST::VarValue* variable, Intermediate::Variable &info) {
     bool var_found = this->scopes.get_variable(variable->get_name(), info);
 
     /* Make sure the variable exists */
@@ -94,7 +95,7 @@ void Compiler::compile_variable_definition(AST::VarDefinition* def) {
     }
 
     /* Add the variable to scopes */
-    Scopes::Variable variable = this->scopes.add_variable(def->get_name(), def->get_variable_type());
+    Intermediate::Variable variable = this->scopes.add_variable(def->get_name(), def->get_variable_type());
 
     this->main_chunk.add_instruction(
         Intermediate::Instruction(
@@ -104,7 +105,7 @@ void Compiler::compile_variable_definition(AST::VarDefinition* def) {
     );
 }
 void Compiler::compile_variable_value(AST::VarValue* node) {
-    Scopes::Variable var_info;
+    Intermediate::Variable var_info;
     
     if (!this->get_variable_info(node, var_info)) return;
 
@@ -123,11 +124,11 @@ void Compiler::compile_variable_assignment(AST::VarAssignment* node) {
     switch (variable->get_type()) {
         case AST::NODE_VAR_VALUE:
         {
-            Scopes::Variable var_info;
+            Intermediate::Variable var_info;
             
             if (!this->get_variable_info(node->get_variable()->as_variable_value(), var_info)) return;
 
-            if (var_info.type == Scopes::VariableType::CONSTANT) {
+            if (var_info.type == Intermediate::VariableType::CONSTANT) {
                 std::string error_message = "Cannot assign a value to constant variable \"";
                 error_message += *var_info.name;
                 error_message += "\"";
@@ -184,19 +185,47 @@ void Compiler::compile_while_loop(AST::While* node) {
     /* First, compile the condition. We have to jump back to this
         at the end of the loop, so make a new label. */
     label_index_t* condition = this->main_chunk.new_label();
+
+    // The index of the ending label
+    label_index_t* end = this->main_chunk.gen_label_name();
+
     this->compile_node(node->get_condition());
     /* If the condition is false, jump to the end */
-    this->main_chunk.add_instruction(Intermediate::Instruction(Intermediate::INSTR_POP_JIZ, condition));
+    this->main_chunk.add_instruction(Intermediate::Instruction(Intermediate::INSTR_POP_JIZ, end));
 
     /* Now put the body in a new label. */
     this->main_chunk.new_label();
+
+    this->scopes.new_scope(ScopeType::LOOP, condition, end);
+
+    // Block a new scope from being created since we just created a loop one
+    if (node->get_type() == AST::NODE_BODY) node->get_block()->as_body()->reject_scope();
+
     this->compile_node(node->get_block());
     // Add a goto command to evaluate the condition afterway
     this->main_chunk.add_instruction(Intermediate::Instruction(Intermediate::INSTR_GOTO, condition));
+
+    this->scopes.pop_scope();
+
+    // Create the ending label name
+    this->main_chunk.new_label(end);
+}
+void Compiler::compile_break_statement(AST::Break* node) {
+    label_index_t* loop_end = this->scopes.get_loop_end();
+    if (loop_end == nullptr) {
+        this->output.error(node->get_position(), "A break statement may only appear in a loop.");
+        this->error = true;
+        return;
+    }
+
+    this->main_chunk.add_instruction(
+        Intermediate::Instruction(
+            Intermediate::INSTR_GOTO,
+            loop_end ) );
 }
 
 void Compiler::compile_body(AST::Body* body) {
-    scopes.new_scope();
+    if (!body->will_create_scope()) scopes.new_scope(ScopeType::NORMAL);
 
     for (AST::Node* statement : *body) {
         this->compile_node(statement);
@@ -207,7 +236,7 @@ void Compiler::compile_body(AST::Body* body) {
         }
     }
 
-    scopes.pop_scope();
+    if (!body->will_create_scope()) scopes.pop_scope();
 }
 
 void Compiler::compile_node(AST::Node* node) {
@@ -253,6 +282,9 @@ void Compiler::compile_node(AST::Node* node) {
             break;
         case AST::NodeType::NODE_WHILE:
             this->compile_while_loop(node->as_while_loop());
+            break;
+        case AST::NodeType::NODE_BREAK:
+            this->compile_break_statement(node->as_break_statement());
             break;
 
         case AST::NodeType::NODE_BODY:

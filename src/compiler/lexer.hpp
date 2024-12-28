@@ -49,12 +49,13 @@ namespace Scan {
         // < Operators
 
         // Keywords >
-        IF,
-        WHILE,
+        BREAK,
         CONST,
-        VAR,
-        TRUE,
         FALSE,
+        IF,
+        TRUE,
+        VAR,
+        WHILE,
         // < Keywords
 
         /* End of input. Signifies that there were no more tokens. */

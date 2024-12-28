@@ -4,7 +4,6 @@
 #define _SGCPP_CHUNK_HPP
 
 #include "bytecode.hpp"
-#include "../compiler/scopes.hpp"
 #include "../globals.hpp"
 #include "../utils.hpp"
 
@@ -19,6 +18,16 @@
 using Bytecode::OpCode;
 
 namespace Intermediate {
+    enum VariableType {
+        CONSTANT,
+        MUTABLE
+    };
+    struct Variable {
+        std::string* name;
+        VariableType type;
+        int scope;
+    };
+
     /* Many of these op codes are exactly the same as the ones in the
         final bytecode. If an instruction is not explained here,
         go to bytecode.hpp for an explanation. */
@@ -59,7 +68,7 @@ namespace Intermediate {
         Operations::UnaryOpType unary_op;
         Values::number_t number;
 
-        Scopes::Variable variable;
+        Variable variable;
     };
 
     struct Instruction {
@@ -70,7 +79,7 @@ namespace Intermediate {
         Instruction(Intermediate::InstrCode code, label_index_t* label);
         Instruction(Intermediate::InstrCode code, Operations::BinOpType bin_op);
         Instruction(Intermediate::InstrCode code, Operations::UnaryOpType unary_op);
-        Instruction(InstrCode code, Scopes::Variable variable);
+        Instruction(InstrCode code, Variable variable);
         /* There is only one instruction that takes this number. */
         Instruction(Values::number_t number);
 

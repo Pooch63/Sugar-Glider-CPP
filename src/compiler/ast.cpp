@@ -80,6 +80,12 @@ While* Node::as_while_loop() {
     #endif
     return dynamic_cast<While*>(this);
 }
+Break* Node::as_break_statement() {
+    #ifdef DEBUG_ASSERT
+    assert(this->node_type == NodeType::NODE_BREAK);
+    #endif
+    return dynamic_cast<Break*>(this);
+}
 Body* Node::as_body() {
     #ifdef DEBUG_ASSERT
     assert(this->node_type == NodeType::NODE_BODY);
@@ -117,7 +123,7 @@ TernaryOp::~TernaryOp() {
     if (this->false_value != nullptr) delete this->false_value;
 }
 
-VarDefinition::VarDefinition(Scopes::VariableType variable_type, std::string* name, Node* value, TokenPosition position) :
+VarDefinition::VarDefinition(Intermediate::VariableType variable_type, std::string* name, Node* value, TokenPosition position) :
     Node(NodeType::NODE_VAR_DEFINITION, position),
     name(name), value(value), variable_type(variable_type) {};
 VarDefinition::~VarDefinition() {
@@ -152,11 +158,18 @@ While::~While() {
     if (this->block != nullptr) delete this->block;
 }
 
+Break::Break(TokenPosition position) : Node(NodeType::NODE_BREAK, position) {};
+
 
 Body::Body() : Node(NodeType::NODE_BODY) {};
+
 void Body::add_statement(Node* statement) {
     this->statements.push_back(statement);
 };
+void Body::reject_scope() {
+    this->should_create_scope = false;
+}
+
 Body::~Body() {
     for (Node* statement : this->statements) {
         if (statement != nullptr) delete statement;

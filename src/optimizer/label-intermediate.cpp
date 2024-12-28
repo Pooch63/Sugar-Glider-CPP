@@ -1,6 +1,6 @@
 #include "label-intermediate.hpp"
 
-#include <set>
+#include <unordered_map>
 
 using Intermediate::intermediate_set_t, Intermediate::Instruction, Intermediate::InstrCode;
 
