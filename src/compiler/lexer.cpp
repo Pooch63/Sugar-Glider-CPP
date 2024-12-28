@@ -1,5 +1,6 @@
 #include "lexer.hpp"
 #include "../globals.hpp"
+#include "../utils.hpp"
 
 #include <unordered_map> // Keyword map
 
@@ -213,9 +214,12 @@ std::string* Scanner::parse_string() {
         }
 
         // This should be updated depending on the place in the string.
+        // Up to 4 UTF-8 bytes will be inserted, depending on the buffer
         // If it remains the null-terminating character, it is assumed that there
         // was an error. The character is then not appended.
-        char char_to_append = '\0';
+        char buffer[4] = { 0 };
+        // And this is the number of codepoints to be inserted.
+        int length = 0;
 
         switch (curr) {
             case '\\':
@@ -229,18 +233,18 @@ std::string* Scanner::parse_string() {
                     break;
                 }
                 switch (next) {
-                    case 'a': char_to_append = '\a'; break;
-                    case 'b': char_to_append = '\b'; break;
-                    case 'f': char_to_append = '\f'; break;
-                    case 'n': char_to_append = '\n'; break;
-                    case 'r': char_to_append = '\r'; break;
-                    case 't': char_to_append = '\t'; break;
-                    case 'v': char_to_append = '\v'; break;
-                    case '\\': char_to_append = '\\'; break;
-                    case '\'': char_to_append = '\''; break;
-                    case '"': char_to_append = '"'; break;
+                    case 'a':  buffer[0] = '\a'; length = 1; break;
+                    case 'b':  buffer[0] = '\b'; length = 1; break;
+                    case 'f':  buffer[0] = '\f'; length = 1; break;
+                    case 'n':  buffer[0] = '\n'; length = 1; break;
+                    case 'r':  buffer[0] = '\r'; length = 1; break;
+                    case 't':  buffer[0] = '\t'; length = 1; break;
+                    case 'v':  buffer[0] = '\v'; length = 1; break;
+                    case '\\': buffer[0] = '\\'; length = 1; break;
+                    case '\'': buffer[0] = '\''; length = 1; break;
+                    case '"':  buffer[0] = '"';  length = 1; break;
                     // This is used to avoid trigraphs
-                    case '?': char_to_append = '?'; break;
+                    case '?':  buffer[0] = '?';  length = 1; break;
 
                     // Octal escape sequence
                     case '0':
@@ -255,36 +259,42 @@ std::string* Scanner::parse_string() {
                         char octal[3] = { 0 };
                         octal[0] = next;
                         
-                        int length = 1;
-                        while (length < 3) {
+                        int octal_length = 1;
+                        while (octal_length < 3) {
                             char next = this->current();
                             if (!is_octal_digit(next)) break;
 
                             // Max is \317, so make sure it's not greater than that
                             if (octal[0] > '3') break;
-                            if (length == 1 && octal[0] == '3' && next > '1') break;
+                            if (octal_length == 1 && octal[0] == '3' && next > '1') break;
 
-                            octal[length] = next;
+                            octal[octal_length] = next;
 
                             this->advance();
-                            length += 1;
+                            octal_length += 1;
                         }
 
                         uint8_t byte = 0;
-                        for (int digit = 0; digit < length; digit += 1) {
-                            byte += (octal[digit] - '0') * (1 << (3 * (length - digit - 1)));
+                        for (int digit = 0; digit < octal_length; digit += 1) {
+                            byte += (octal[digit] - '0') * (1 << (3 * (octal_length - digit - 1)));
                         }
-                        char_to_append = static_cast<char>(byte);
+                        buffer[0] = static_cast<char>(byte);
+                        length = 1;
 
                         // Go past 
-                        for (int advance = 0; advance < length - 1; advance += 1) this->advance();
+                        for (int advance = 0; advance < octal_length - 1; advance += 1) this->advance();
                     }
                     break;
                     case 'x':
-                    {
-                        char_to_append = this->parse_hex<2>("A \\x escape sequence requires two hexadecimal digits");
+                        buffer[0] = this->parse_hex<2>("A \\x escape sequence requires two hexadecimal digits");
+                        length = 1;
                         break;
+                    case 'u':
+                    {
+                        uint32_t hex = this->parse_hex<4>("A \\u escape sequence requires four hexadecimal digits.");
+                        length = utf32_codepoint_to_char_buffer(hex, buffer);
                     }
+                        break;
 
                     default:
                     {
@@ -294,17 +304,21 @@ std::string* Scanner::parse_string() {
                             TokenPosition{ .line = this->line, .col = this->col, .length = 1 },
                             warning_message);
                     }
-                        char_to_append = next;
+                        buffer[0] = next;
+                        length = 1;
                         break;
                 }
             }
                 break;
 
             default:
-                char_to_append = curr;
+                buffer[0] = curr;
+                length = 1;
                 break;
         }
-        if (char_to_append != '\0') str->append(1, char_to_append);
+        for (int byte_ind = 0; byte_ind < length; byte_ind += 1) {
+            str->append(1, buffer[byte_ind]);
+        }
     }
 
     char delimiter_end = this->advance();

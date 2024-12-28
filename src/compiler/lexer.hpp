@@ -176,12 +176,7 @@ namespace Scan {
             using hex_payload = typename std::conditional<
                 num_hex_digits <= 2,
                 char,
-                typename std::conditional<
-                    num_hex_digits <= 4,
-                    char16_t,
-                    char32_t
-                >::type  
-                >::type;
+                uint32_t >::type;
             /* Read in the specified number of hex digits and return the number. */
             template<uint num_hex_digits>
             hex_payload<num_hex_digits> parse_hex(std::string message_on_error) {
@@ -198,7 +193,7 @@ namespace Scan {
                         return 0;
                     }
 
-                    payload |= static_cast<uint64_t>(hex_digit_to_number(curr)) << (4 * hex_ind);
+                    payload |= static_cast<uint64_t>(hex_digit_to_number(curr)) << (4 * (num_hex_digits - hex_ind - 1));
                     this->advance();
                 }
 
