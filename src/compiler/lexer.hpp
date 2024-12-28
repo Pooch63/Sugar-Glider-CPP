@@ -51,6 +51,7 @@ namespace Scan {
         // Keywords >
         BREAK,
         CONST,
+        CONTINUE,
         FALSE,
         IF,
         TRUE,

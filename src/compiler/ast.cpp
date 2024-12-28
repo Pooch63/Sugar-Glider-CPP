@@ -86,6 +86,12 @@ Break* Node::as_break_statement() {
     #endif
     return dynamic_cast<Break*>(this);
 }
+Continue* Node::as_continue_statement() {
+    #ifdef DEBUG_ASSERT
+    assert(this->node_type == NodeType::NODE_CONTINUE);
+    #endif
+    return dynamic_cast<Continue*>(this);
+}
 Body* Node::as_body() {
     #ifdef DEBUG_ASSERT
     assert(this->node_type == NodeType::NODE_BODY);
@@ -160,6 +166,7 @@ While::~While() {
 
 Break::Break(TokenPosition position) : Node(NodeType::NODE_BREAK, position) {};
 
+Continue::Continue(TokenPosition position) : Node(NodeType::NODE_CONTINUE, position) {};
 
 Body::Body() : Node(NodeType::NODE_BODY) {};
 

@@ -372,11 +372,18 @@ AST::While* Parser::parse_while_statement() {
 }
 
 AST::Break* Parser::parse_break_statement() {
-    // Go through break statement
+    // Go through break token
     this->advance();
     Scan::Token break_= this->previous_token;
 
     return new AST::Break(break_.get_position());
+}
+AST::Continue* Parser::parse_continue_statement() {
+    // Go through continue token
+    this->advance();
+    Scan::Token continue_= this->previous_token;
+
+    return new AST::Continue(continue_.get_position());
 }
 
 AST::Node* Parser::parse_statement() {
@@ -398,6 +405,10 @@ AST::Node* Parser::parse_statement() {
             break;
         case TokType::BREAK:
             node = this->parse_break_statement();
+            this->expect_symbol(TokType::SEMICOLON);
+            break;
+        case TokType::CONTINUE:
+            node = this->parse_continue_statement();
             this->expect_symbol(TokType::SEMICOLON);
             break;
         case TokType::IF:

@@ -223,6 +223,19 @@ void Compiler::compile_break_statement(AST::Break* node) {
             Intermediate::INSTR_GOTO,
             loop_end ) );
 }
+void Compiler::compile_continue_statement(AST::Continue* node) {
+    label_index_t* loop_start = this->scopes.get_loop_condition_label();
+    if (loop_start == nullptr) {
+        this->output.error(node->get_position(), "A continue statement may only appear in a loop.");
+        this->error = true;
+        return;
+    }
+
+    this->main_chunk.add_instruction(
+        Intermediate::Instruction(
+            Intermediate::INSTR_GOTO,
+            loop_start ) );
+}
 
 void Compiler::compile_body(AST::Body* body) {
     if (!body->will_create_scope()) scopes.new_scope(ScopeType::NORMAL);
@@ -285,6 +298,9 @@ void Compiler::compile_node(AST::Node* node) {
             break;
         case AST::NodeType::NODE_BREAK:
             this->compile_break_statement(node->as_break_statement());
+            break;
+        case AST::NodeType::NODE_CONTINUE:
+            this->compile_continue_statement(node->as_continue_statement());
             break;
 
         case AST::NodeType::NODE_BODY:

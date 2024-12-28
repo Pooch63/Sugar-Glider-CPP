@@ -33,6 +33,7 @@ namespace Scopes {
             bool get_variable(std::string* name, Intermediate::Variable &info) const;
             void add_variable(std::string* name, Intermediate::Variable info);
         
+            Intermediate::label_index_t * get_loop_condition_label() const;
             Intermediate::label_index_t * get_loop_end() const;
 
             inline ScopeType get_type() const { return this->type; };
@@ -56,6 +57,9 @@ namespace Scopes {
             void new_scope(ScopeType type, Intermediate::label_index_t* condition, Intermediate::label_index_t* end);
             void pop_scope();
 
+            // Get the start of the condition of the loop we're in
+            // Returns nullptr if no loop is available
+            Intermediate::label_index_t* get_loop_condition_label() const;
             // Get the end of the loop we're in
             // Returns nullptr if no loop is available
             Intermediate::label_index_t* get_loop_end() const;

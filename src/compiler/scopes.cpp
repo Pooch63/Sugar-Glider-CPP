@@ -38,6 +38,12 @@ void Scope::add_variable(std::string* name, Variable info) {
     this->variables[*name] = info;
 };
 
+label_index_t * Scope::get_loop_condition_label() const {
+    #ifdef DEBUG_ASSERT
+    assert(this->type == ScopeType::LOOP);
+    #endif
+    return this->loop_condition;
+};
 label_index_t* Scope::get_loop_end() const {
     #ifdef DEBUG_ASSERT
     assert(this->type == ScopeType::LOOP);
@@ -81,6 +87,17 @@ void ScopeManager::pop_scope() {
     this->scopes.pop_back();
 }
 
+label_index_t* ScopeManager::get_loop_condition_label() const {
+    for (uint index = this->scopes.size() - 1; index > 0; index -= 1) {
+        Scope scope = this->scopes.at(index);
+        // Not a loop, but may be inside a loop
+        if (scope.get_type() == ScopeType::NORMAL) continue;
+
+        return scope.get_loop_condition_label();
+
+    }
+    return nullptr;
+}
 label_index_t* ScopeManager::get_loop_end() const {
     for (uint index = this->scopes.size() - 1; index > 0; index -= 1) {
         Scope scope = this->scopes.at(index);

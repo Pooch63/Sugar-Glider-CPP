@@ -36,6 +36,7 @@ const char* Scan::tok_type_to_string(TokType type) {
 
         case BREAK: return "break";
         case CONST: return "const";
+        case CONTINUE: return "continue";
         case FALSE: return "false";
         case IF: return "if";
         case TRUE: return "true";
@@ -133,6 +134,7 @@ namespace {
     static std::unordered_map<std::string, TokType> keywords = {
         { "break", TokType::BREAK },
         { "const", TokType::CONST },
+        { "continue", TokType::CONTINUE },
         { "false", TokType::FALSE },
         { "if", TokType::IF },
         { "true", TokType::TRUE },

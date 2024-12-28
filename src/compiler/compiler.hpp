@@ -33,6 +33,7 @@ class Compiler {
         void compile_if_statement(AST::If* node);
         void compile_while_loop(AST::While* node);
         void compile_break_statement(AST::Break* node);
+        void compile_continue_statement(AST::Continue* node);
 
         void compile_body(AST::Body* body);
 

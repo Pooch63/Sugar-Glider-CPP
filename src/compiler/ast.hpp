@@ -22,6 +22,7 @@ namespace AST {
         NODE_IF,
         NODE_WHILE,
         NODE_BREAK,
+        NODE_CONTINUE,
 
         NODE_BODY
     };
@@ -40,6 +41,7 @@ namespace AST {
     class If;
     class While;
     class Break;
+    class Continue;
     class Body;
 
     // @REVIEW: Don't free until end of compilation.
@@ -69,6 +71,7 @@ namespace AST {
             If* as_if_statement();
             While* as_while_loop();
             Break* as_break_statement();
+            Continue* as_continue_statement();
             Body* as_body();
 
             virtual ~Node() = default;
@@ -200,6 +203,10 @@ namespace AST {
     class Break : public Node {
         public:
             Break(TokenPosition position);
+    };
+    class Continue : public Node {
+        public:
+            Continue(TokenPosition position);
     };
 
     class Body : public Node {
