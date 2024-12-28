@@ -1,9 +1,15 @@
 #include "label-intermediate.hpp"
 
+#include <set>
+
 using Intermediate::intermediate_set_t, Intermediate::Instruction, Intermediate::InstrCode;
 
 void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized) {
     using Intermediate::Label, Intermediate::label_index_t;
+
+    /* Maximum size of a label to be unrolled */
+    const int MAX_UNROLL_SIZE = 1;
+
     // Store the labels, then at the end, transfer them to the optimized
     std::vector<Label> labels = std::vector<Label>();
 
@@ -88,35 +94,93 @@ void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized) {
         }
     }
 
+    /* Label unrolling */
+
+    // This lookup table's keys are the labels that can be unrolled
+    std::unordered_map<label_index_t, Label> small = std::unordered_map<label_index_t, Label>();
+
+    // Get a list of small labels
+    for (Label label : labels) {
+        if (label.instructions.size() <= MAX_UNROLL_SIZE) {
+            small.insert({ *label.name, label });
+        }
+    }
+    // Now replace those small labels in every instance
+    std::vector<Label> unrolled = std::vector<Label>();
+    for (Label label : labels) {
+        unrolled.push_back(Label(label.name));
+        for (Instruction instr : label.instructions) {
+            bool unroll = instr.code == InstrCode::INSTR_GOTO;
+
+            if (!unroll) {
+                unrolled.back().instructions.push_back(instr);
+                continue;
+            }
+
+            auto found = small.find(*instr.get_address());
+
+            if (found == small.end()) {
+                unrolled.back().instructions.push_back(instr);
+                continue;
+            }
+
+            for (Instruction replaced : found->second.instructions) {
+                unrolled.back().instructions.push_back(replaced);
+            }
+        }
+    }
+    labels = unrolled;
+
     /* Dead code elimination */
 
     /* REMOVE all labels that are literally never used. */
-    // This lookup table's keys are the labels that are accessible. Everything else is gone.
-    std::unordered_map<label_index_t, bool> jumped = std::unordered_map<label_index_t, bool>();
+    // This lookup table stores the number of jumps to a label. If a label is not a key in
+    // this map, it means that it was not referenced.
+    // We will remove any label that is not referenced
+    std::unordered_map<label_index_t, uint> jumped = std::unordered_map<label_index_t, uint>();
 
     // Gather list of labels that are actually used.
     // Add first label, since that's the entry point
     for (uint label_ind = 0; label_ind < labels.size(); label_ind += 1) {
         Label label = labels[label_ind];
-        if (label_ind == 0) jumped[*label.name] = true;
+        // Set to 1 so that even if nothing references this label, we still keep it
+        if (label_ind == 0) jumped[*label.name] = 1;
 
         for (Instruction instr : label.instructions) {
             if (!instr.is_jump()) continue;
+    
+            auto reference_object = jumped.find(*instr.get_address());
+            // // The number of times the label was referenced
+            uint references = 0;
+            if (reference_object != jumped.end()) references = reference_object->second;
 
-            jumped[*instr.get_address()] = true;
+            jumped[*instr.get_address()] = references + 1;
         }
     }
     // Now, remove the unnused blocks
     std::vector<Label> dce = std::vector<Label>();
     for (Label label : labels) {
         auto jumped_label = jumped.find(*label.name);
-        if (jumped_label != jumped.end()) dce.push_back(label);
+        // Make sure the label was referenced and at least 1 instruction still needs it.
+        if (jumped_label != jumped.end() && jumped_label->second > 0) dce.push_back(label);
+        // If we delete the label, then remove all the references that the
+        // label contained. This prevents the need for multiple passes
+        // to remove all unused labels.
+        else {
+            for (Instruction instr : label.instructions) {
+                if (!instr.is_jump()) continue;
+
+                // This time, we know that the label the jump referenced is already in the map,
+                // because it's part of a jump and must have been added.
+                jumped[*instr.get_address()] = jumped[*instr.get_address()] - 1;
+            }
+        }
     }
     labels = dce;
 
     /* Transfer instructions */
     for (Label label : labels) {
-        optimized.new_label(new std::string(*label.name));
+        optimized.new_label(new std::string(*label.name),true);
         for (Instruction instr : label.instructions) {
             optimized.add_instruction(instr);
         }
