@@ -180,7 +180,7 @@ void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized) {
 
     /* Transfer instructions */
     for (Label label : labels) {
-        optimized.new_label(new std::string(*label.name),true);
+        optimized.new_label(new std::string(*label.name));
         for (Instruction instr : label.instructions) {
             optimized.add_instruction(instr);
         }
