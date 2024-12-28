@@ -139,7 +139,7 @@ namespace Parse {
                 for the token to be there. */
             bool expect_symbol(Scan::TokType type);
             /* Same as expect_symbol with just the type, but a custom error message is provided. */
-            bool expect_symbol(Scan::TokType type, char* error_message);
+            bool expect_symbol(Scan::TokType type, const char* error_message);
             /* If the current token is the given type, return true.
                 Otherwise, error and return false.
                 Advances no matter what. */

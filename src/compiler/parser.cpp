@@ -206,7 +206,7 @@ bool Parser::expect_symbol(TokType type) {
     this->output.error(curr.get_position(), error_message);
     return false;
 };
-bool Parser::expect_symbol(TokType type, char* error_message) {
+bool Parser::expect_symbol(TokType type, const char* error_message) {
     Scan::Token curr = this->curr();
     if (curr.get_type() == type) {
         this->advance();
@@ -240,11 +240,11 @@ void Parser::synchronize() {
             case TokType::VAR:
             case TokType::WHILE:
             case TokType::IF:
+            case TokType::SEMICOLON:
             case TokType::EOI:
                 return;
             default: break;
         }
-        if (this->previous_token.get_type() == TokType::SEMICOLON) return;
         this->advance();
     }
 }
