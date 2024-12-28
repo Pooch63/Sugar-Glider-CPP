@@ -99,6 +99,7 @@ namespace Intermediate {
         /* Convert a value to an instruction that loads it onto the stack. */
         static Instruction value_to_instruction(Values::Value value);
     };
+    void log_instruction(Instruction instr);
 
     typedef std::vector<Intermediate::Instruction> intermediate_set_t;
 

@@ -145,7 +145,7 @@ static uint INSTRUCTION_NAME_LENGTH = 30;
 /* Space given to argument before logging the comment */
 static uint ARGUMENT_SPACE = IR_LABEL_LENGTH + 5;
 
-static void log_instruction(Instruction instr) {
+void Intermediate::log_instruction(Instruction instr) {
     std::string type = Intermediate::instr_type_to_string(instr.code);
     
     std::cout << instruction_name_c << type;
