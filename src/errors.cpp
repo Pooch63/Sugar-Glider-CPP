@@ -30,8 +30,6 @@ int Output::get_line_end(int line) const {
 void Output::output_line(Position::TokenPosition position, Colors::Color problem_color) {
     using std::max, std::min;
 
-    this->errored = true;
-
     // Log the line information
     // Add one to line and column since they're both 0-indexed
     std::string location = std::to_string(position.line + 1);
@@ -91,6 +89,7 @@ void Output::output_line(Position::TokenPosition position, Colors::Color problem
 };
 void Output::error(Position::TokenPosition position, std::string error) {
     this->output_line(position, Colors::RED);
+    this->errored = true;
 
     Colors::set_color(Colors::BOLD);
     Colors::set_color(Colors::RED);
