@@ -49,6 +49,7 @@ namespace Parse {
 
         /* Rule functions */
         AST::Node* number(Scan::Token &current, Parser* parser);
+        AST::Node* parse_string(Scan::Token &current, Parser* parser);
         // E.g., true, false, and null
         AST::Node* keyword_constant(Scan::Token &current, Parser* parser);
 
@@ -83,16 +84,6 @@ namespace Parse {
             /* Will be set to the first token of the stream */
             Scan::Token current_token;
 
-            // Token helpers
-            /* Current token */
-            inline Scan::Token& curr() { return this->current_token; };
-            /* Previous token */
-            inline Scan::Token& previous() { return this->previous_token; };
-            /* Continues forward with one token. */
-            void advance();
-            /* Returns whether or not there are only EOF tokens in the stream */
-            bool at_EOF() const;
-
             // Rule helpers
             /* Returns the rule of the current token. */
             Rules::ParseRule get_parse_rule();
@@ -113,6 +104,16 @@ namespace Parse {
             AST::Node* parse_optionally_inlined_block();
         public:
             Parser(Scan::Scanner& scanner, Output& output);
+
+            // Token helpers
+            /* Current token */
+            inline Scan::Token& curr() { return this->current_token; };
+            /* Previous token */
+            inline Scan::Token& previous() { return this->previous_token; };
+            /* Continues forward with one token. */
+            void advance();
+            /* Returns whether or not there are only EOF tokens in the stream */
+            bool at_EOF() const;
 
             /* Pratt top-down parse expressions with this precedence or higher. */
             AST::Node* parse_precedence(int prec);

@@ -16,6 +16,13 @@ Compiler::Compiler(Intermediate::Block& chunk, Output &output) : main_chunk(chun
     this->scopes.new_scope(ScopeType::NORMAL);
 };
 
+void Compiler::compile_string(AST::String* node) {
+    node->save_string();
+    this->main_chunk.add_instruction(
+        Intermediate::Instruction(
+            Intermediate::INSTR_STRING,
+            node->get_string() ) );
+}
 void Compiler::compile_number(AST::Number* node) {
     this->main_chunk.add_instruction(Intermediate::Instruction(node->get_number()));
 }
@@ -260,7 +267,10 @@ void Compiler::compile_node(AST::Node* node) {
     #endif
 
     switch (node->get_type()) {
-        /* Push a number onto the stack */
+        /* Push these values onto the stack */
+        case AST::NodeType::NODE_STRING:
+            this->compile_string(node->as_string());
+            break;
         case AST::NodeType::NODE_NUMBER:
             this->compile_number(node->as_number());
             break;
@@ -270,6 +280,7 @@ void Compiler::compile_node(AST::Node* node) {
         case AST::NodeType::NODE_FALSE:
             this->compile_false_value();
             break;
+
         case AST::NodeType::NODE_BINOP:
             this->compile_bin_op(node->as_bin_op());
             break;

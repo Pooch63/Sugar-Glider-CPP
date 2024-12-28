@@ -7,6 +7,7 @@
 #include "../globals.hpp"
 #include "../utils.hpp"
 
+#include <unordered_map>
 #include <vector>
 
 /* The number of characters that can be used in a random label name.
@@ -26,6 +27,17 @@ namespace Intermediate {
         std::string* name;
         VariableType type;
         int scope;
+
+        bool operator==(const Variable &var) const {
+            return *name == *var.name && type == var.type && scope == var.scope;
+        };
+    };
+    struct VariableHasher {
+        // Don't include the type in the hashing function because that is bound to the name
+        // and scope. There can't be two variables whose only difference is their type.
+        size_t operator()(const Variable &var) const {
+            return std::hash<std::string>()(*var.name) ^ std::hash<int>()(var.scope); 
+        }
     };
 
     /* Many of these op codes are exactly the same as the ones in the
@@ -48,6 +60,7 @@ namespace Intermediate {
         INSTR_FALSE,
         INSTR_NULL,
         INSTR_NUMBER,
+        INSTR_STRING,
 
         INSTR_LOAD,
         INSTR_STORE,
@@ -64,6 +77,7 @@ namespace Intermediate {
     union ir_instruction_arg_t {
         /* For jump commands */
         label_index_t* label;
+        std::string* str;
         Operations::BinOpType bin_op;
         Operations::UnaryOpType unary_op;
         Values::number_t number;
@@ -76,7 +90,10 @@ namespace Intermediate {
         ir_instruction_arg_t payload;
 
         Instruction(Intermediate::InstrCode code);
-        Instruction(Intermediate::InstrCode code, label_index_t* label);
+        /* Used for strings, and also for jump commands, since a string
+            is the label index type.
+            If the label type is ever changed, then another overload will be needed. */
+        Instruction(Intermediate::InstrCode code, std::string* payload);
         Instruction(Intermediate::InstrCode code, Operations::BinOpType bin_op);
         Instruction(Intermediate::InstrCode code, Operations::UnaryOpType unary_op);
         Instruction(InstrCode code, Variable variable);

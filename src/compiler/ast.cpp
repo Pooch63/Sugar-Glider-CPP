@@ -26,6 +26,12 @@ bool AST::node_is_expression(NodeType type) {
 Node::Node(NodeType type) : node_type(type) {};
 Node::Node(NodeType type, TokenPosition position) : node_type(type), position(position) {};
 
+String* Node::as_string() {
+    #ifdef DEBUG_ASSERT
+    assert(this->node_type == NodeType::NODE_STRING);
+    #endif
+    return dynamic_cast<String*>(this);
+}
 Number* Node::as_number() {
     #ifdef DEBUG_ASSERT
     assert(this->node_type == NodeType::NODE_NUMBER);
@@ -97,6 +103,12 @@ Body* Node::as_body() {
     assert(this->node_type == NodeType::NODE_BODY);
     #endif
     return dynamic_cast<Body*>(this);
+}
+
+String::String(std::string* str, TokenPosition pos) :
+    Node(NodeType::NODE_STRING, pos), str(str) {};
+String::~String() {
+    if (!this->reserve_string) delete this->str;
 }
 
 Number::Number(Values::number_t number) :

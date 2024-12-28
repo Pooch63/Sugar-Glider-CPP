@@ -5,7 +5,14 @@ using namespace Intermediate;
 
 // Constructor overloads >
 Instruction::Instruction(InstrCode code) : code(code) {};
-Instruction::Instruction(InstrCode code, label_index_t* label) : code(code), payload(ir_instruction_arg_t{ .label = label }) {};
+Instruction::Instruction(InstrCode code, std::string* payload) : code(code) {
+    if (code == InstrCode::INSTR_STRING) {
+        this->payload.str = payload;
+    }
+    else {
+        this->payload.label = payload;
+    }
+};
 Instruction::Instruction(InstrCode code, Operations::BinOpType type) :
     code(code), payload(ir_instruction_arg_t{ .bin_op = type }) {};
 Instruction::Instruction(InstrCode code, Operations::UnaryOpType type) :
@@ -100,6 +107,7 @@ Instruction Instruction::value_to_instruction(Values::Value value) {
 using namespace Colors;
 std::string instruction_name_c = create_color(Color::PURPLE);
 std::string number_c = create_color(Color::YELLOW);
+std::string string_c = create_color(Color::YELLOW);
 std::string operation_c = create_color(Color::CYAN);
 std::string label_c = create_color(Color::BLUE) + create_color(Color::BOLD);
 std::string variable_c = create_color(Color::RED) + create_color(Color::UNDERLINE);
@@ -127,6 +135,8 @@ const char* Intermediate::instr_type_to_string(InstrCode code) {
             return "INSTR_NULL";
         case InstrCode::INSTR_NUMBER:
             return "INSTR_NUMBER";
+        case InstrCode::INSTR_STRING:
+            return "INSTR_STRING";
         case InstrCode::INSTR_LOAD:
             return "LOAD";
         case InstrCode::INSTR_STORE:
@@ -141,9 +151,14 @@ const char* Intermediate::instr_type_to_string(InstrCode code) {
 };
 
 /* Length of instruction name in the console */
-static uint INSTRUCTION_NAME_LENGTH = 30;
+static const uint INSTRUCTION_NAME_LENGTH = 30;
 /* Space given to argument before logging the comment */
-static uint ARGUMENT_SPACE = IR_LABEL_LENGTH + 5;
+static const uint ARGUMENT_SPACE = IR_LABEL_LENGTH + 5;
+/* Max length of a string in an argument */
+static const uint MAX_STRING_LENGTH = 20;
+
+// And max string length must be at least 3 to allow for "..."
+static_assert(MAX_STRING_LENGTH >= 5);
 
 void Intermediate::log_instruction(Instruction instr) {
     std::string type = Intermediate::instr_type_to_string(instr.code);
@@ -203,10 +218,39 @@ void Intermediate::log_instruction(Instruction instr) {
             comment += "]";
         }
             break;
+        case InstrCode::INSTR_STRING:
+        {
+            std::string* value = instr.payload.variable.name;
+
+            argument = '"';
+
+            if (value->size() <= MAX_STRING_LENGTH) {
+                argument += *value;
+            }
+            else {
+                argument += value->substr(0, MAX_STRING_LENGTH - 3);
+                argument += "...";
+            }
+            argument += '"';
+
+            std::cout << string_c << argument;
+            
+            comment = "length=(";
+            comment += std::to_string(value->size());
+            comment += ")";
+        }
+            break;
         case InstrCode::INSTR_LOAD:
         case InstrCode::INSTR_STORE:
         {
-            argument = *instr.payload.variable.name;
+            std::string* name = instr.payload.variable.name;
+
+            if (name->size() <= MAX_STRING_LENGTH) argument = *name;
+            else {
+                argument = name->substr(0, MAX_STRING_LENGTH - 3);
+                argument += "...";
+            }
+
             argument += number_as_subscript(instr.payload.variable.scope);
 
             std::cout << variable_c << argument;

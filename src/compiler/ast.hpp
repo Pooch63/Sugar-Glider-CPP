@@ -7,6 +7,7 @@
 
 namespace AST {
     enum NodeType {
+        NODE_STRING,
         NODE_NUMBER,
         NODE_TRUE,
         NODE_FALSE,
@@ -29,6 +30,7 @@ namespace AST {
 
     bool node_is_expression(NodeType type);
 
+    class String;
     class Number;
     class True;
     class False;
@@ -61,6 +63,7 @@ namespace AST {
 
             /* Return pointers to nodes depending on the type you specify.
                 The wrapper type MUST be the same as the node type. */
+            String* as_string();
             Number* as_number();
             BinOp* as_bin_op();
             UnaryOp* as_unary_op();
@@ -77,6 +80,18 @@ namespace AST {
             virtual ~Node() = default;
     };
 
+    class String : public Node {
+        private:
+            std::string* str;
+            bool reserve_string = false;
+        public:
+            String(std::string* str, TokenPosition pos);
+
+            inline void save_string() { this->reserve_string = true; };
+            inline std::string* get_string() const { return this->str; };
+
+            ~String();
+    };
     class Number : public Node {
         private:
             Values::number_t number;

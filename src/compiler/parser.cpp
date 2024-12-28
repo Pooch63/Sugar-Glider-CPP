@@ -17,6 +17,18 @@ std::array<Rules::ParseRule, Scan::NUM_TOKEN_TYPES> Rules::rules = {};
 AST::Node* Parse::Rules::number(Scan::Token& current, Parser* parser) {
     return new AST::Number(current.get_number());
 }
+AST::Node* Parse::Rules::parse_string(Scan::Token &current, Parser* parser) {
+    // You can do something like "a""b" to concatenate into "ab", so allow for that
+    std::string* str = current.get_string();
+    current.mark_payload();
+
+    while (parser->curr().get_type() == TokType::STRING) {
+        std::string* next = parser->curr().get_string();
+        str->append(std::string(*next));
+    }
+
+    return new AST::String(str, current.get_position());
+}
 AST::Node* Parse::Rules::keyword_constant(Scan::Token &current, Parser* parser) {
     switch (current.get_type()) {
         case TokType::TRUE: return new AST::True();
@@ -109,6 +121,11 @@ AST::Node* Parse::Rules::var_assignment(Scan::Token &current, AST::Node* left, P
 bool Parser::rules_initialized = false;
 void Parser::initialize_parse_rules() {
     using Rules::rules, Rules::ParseRule;
+    rules[TokType::STRING] = ParseRule{
+        .nud = Rules::parse_string,
+        .led = nullptr,
+        .precedence = Precedence::PREC_NONE
+    };
     rules[TokType::NUMBER] = ParseRule{
         .nud = Rules::number,
         .led = nullptr,
