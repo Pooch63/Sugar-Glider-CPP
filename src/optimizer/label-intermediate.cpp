@@ -13,7 +13,7 @@ void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized) {
     // Store the labels, then at the end, transfer them to the optimized
     std::vector<Label> labels = std::vector<Label>();
 
-    /* Constant folding optimizer */
+    /* Constant folding optimizer. */
     for (uint label_ind = 0; label_ind < old.label_count(); label_ind += 1) {
         Label &old_label = old.get_label_at_numerical_index(label_ind);
         labels.push_back(Label(old_label.name));
@@ -93,6 +93,18 @@ void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized) {
             label.push_back(instr);
         }
     }
+
+    /* DCE: Remove unreachable code within labels */
+    std::vector<Label> reachable = std::vector<Label>();
+    for (Label label : labels) {
+        reachable.push_back(Label(label.name));
+
+        for (Instruction instr : label.instructions) {
+            reachable.back().instructions.push_back(instr);
+            if (instr.code == InstrCode::INSTR_GOTO) break;
+        }
+    }
+    labels = reachable;
 
     /* Label unrolling */
 
