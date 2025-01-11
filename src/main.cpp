@@ -14,7 +14,7 @@ int main() {
     Parse::Parser::initialize_parse_rules();
     Random::initialize_rng();
 
-    std::string prog = "var g = 1; if (g = 3) { g = g + 4; }";
+    std::string prog = "var b = PI * PI; println(PI *);";
 
     Output output(prog);
     Scan::Scanner lexer(prog, output);
@@ -22,7 +22,7 @@ int main() {
     Parse::Parser parser(lexer, output);
     AST::Node* node = parser.parse();
 
-    std::cout << "DID PARSING WORK?" << std::endl;
+    std::cout << "DID PARSING WORK?" << sizeof(Intermediate::Variable) << std::endl;
 
     /* If there was a parse error, there will be some null pointers, so DO NOT
         actually compile. */
@@ -44,10 +44,11 @@ int main() {
         return -1;
     }
 
+    block.log_block();
+
     auto optimized = Intermediate::Block();
     optimize_labels(block, optimized);
 
-    block.log_block();
     std::cout << std::endl;
     optimized.log_block();
 

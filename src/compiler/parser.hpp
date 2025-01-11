@@ -22,6 +22,9 @@ namespace Parse {
         // *, / or %
         PREC_FACTOR,
 
+        // a(
+        PREC_CALL,
+
         PREC_UNARY
     };
 
@@ -57,6 +60,8 @@ namespace Parse {
         AST::Node* binary_op(Scan::Token &current, AST::Node* left, Parser* parser);
         AST::Node* ternary_op(Scan::Token &current, AST::Node* left, Parser* parser);
         AST::Node* paren_group(Scan::Token &current, Parser* parser);
+
+        AST::Node* function_call(Scan::Token &currrent, AST::Node* left, Parser* parser);
 
         AST::Node* var_value(Scan::Token &current, Parser* parser);
         // Something like x = 3

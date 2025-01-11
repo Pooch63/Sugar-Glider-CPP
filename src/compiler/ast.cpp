@@ -11,6 +11,7 @@ bool AST::node_is_expression(NodeType type) {
     switch (type) {
         case NODE_BINOP:
         case NODE_UNARYOP:
+        case NODE_STRING:
         case NODE_NUMBER:
         case NODE_TRUE:
         case NODE_FALSE:
@@ -22,6 +23,58 @@ bool AST::node_is_expression(NodeType type) {
             return false;
     }
 };
+bool AST::node_may_be_function(NodeType type) {
+    switch (type) {
+        case NODE_VAR_VALUE:
+        case NODE_VAR_ASSIGNMENT:
+            return true;
+        default:
+            return false;
+    }
+}
+
+const char* AST::node_type_to_string(NodeType type) {
+    switch (type) {
+        case NODE_BINOP:
+            return "binary op";
+        case NODE_UNARYOP:
+            return "unary op";
+        case NODE_STRING:
+            return "string";
+        case NODE_NUMBER:
+            return "number";
+        case NODE_TRUE:
+            return "true";
+        case NODE_FALSE:
+            return "false";
+        case NODE_TERNARY_OP:
+            return "ternary op";
+        case NODE_VAR_DEFINITION:
+            return "variable definition";
+        case NODE_VAR_VALUE:
+            return "variable value";
+        case NODE_VAR_ASSIGNMENT:
+            return "variable assignment";
+        case NODE_IF:
+            return "if statement";
+        case NODE_WHILE:
+            return "while loop";
+        case NODE_BREAK:
+            return "break statement";
+        case NODE_CONTINUE:
+            return "continue statement";
+        case NODE_FUNCTION_CALL:
+            return "function call";
+        case NODE_BODY:
+            return "body";
+        default:
+            #ifdef DEBUG
+            assert(false && "unknown AST node type");
+            #endif
+            return "internal error -- unknown node type. please contact developers";
+    }
+};
+
 
 Node::Node(NodeType type) : node_type(type) {};
 Node::Node(NodeType type, TokenPosition position) : node_type(type), position(position) {};
@@ -97,6 +150,12 @@ Continue* Node::as_continue_statement() {
     assert(this->node_type == NodeType::NODE_CONTINUE);
     #endif
     return dynamic_cast<Continue*>(this);
+}
+FunctionCall* Node::as_function_call() {
+    #ifdef DEBUG_ASSERT
+    assert(this->node_type == NodeType::NODE_FUNCTION_CALL);
+    #endif
+    return dynamic_cast<FunctionCall*>(this);
 }
 Body* Node::as_body() {
     #ifdef DEBUG_ASSERT
@@ -177,8 +236,23 @@ While::~While() {
 }
 
 Break::Break(TokenPosition position) : Node(NodeType::NODE_BREAK, position) {};
-
 Continue::Continue(TokenPosition position) : Node(NodeType::NODE_CONTINUE, position) {};
+
+FunctionCall::FunctionCall(Node* function) : Node(NodeType::NODE_FUNCTION_CALL), function(function) {};
+FunctionCall::~FunctionCall() {
+    if (this->function != nullptr) delete this->function;
+    for (Node* argument : this->arguments) {
+        if (argument != nullptr) delete argument;
+    }
+}
+
+void FunctionCall::add_argument(Node* argument) {
+    #ifdef DEBUG
+    assert(node_is_expression(argument->get_type()));
+    #endif
+
+    this->arguments.push_back(argument);
+}
 
 Body::Body() : Node(NodeType::NODE_BODY) {};
 

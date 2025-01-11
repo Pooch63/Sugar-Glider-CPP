@@ -5,6 +5,8 @@
 
 #include "../ir/intermediate.hpp"
 
+/* Optimizes label IR. After optimization is done, assume that the old optimization block
+    CANNOT be used nor copied anymore. */
 void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized);
 
 #endif

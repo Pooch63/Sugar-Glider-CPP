@@ -43,24 +43,39 @@ void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized) {
                     );
                 }
 
+                last.free_payload();
+
                 continue;
             }
             /* Binop folding */
             if (label.size() >= 2 && label.at(label.size() - 2).is_constant() && last.is_constant() && instr.code == InstrCode::INSTR_BIN_OP) {
-                Values::Value* result = Values::bin_op(instr.get_bin_op(), label.at(label.size() - 2).payload_to_value(), last.payload_to_value());
+                Values::Value a = label.at(label.size() - 2).payload_to_value();
+                Values::Value b = last.payload_to_value();
+                
+                Values::Value* result = Values::bin_op(instr.get_bin_op(), a, b);
 
                 if (result == nullptr) {
                     // Just push the binop
                     label.push_back(instr);
+
+                    // Make sure the faulty instructions' payloads are still valid
+                    a.mark_payload();
+                    b.mark_payload();
+
                     delete result;
                     continue;
                 }
+
+                result->mark_payload();
 
                 // Pop the last two loads
                 label.pop_back();
                 label.pop_back();
                 // Push the result
                 label.push_back(Instruction::value_to_instruction(*result));
+
+                label.at(label.size() - 2).free_payload();
+                last.free_payload();
 
                 delete result;
                 continue;
@@ -86,6 +101,7 @@ void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized) {
             }
             /* Unnecessary constant folding */
             if (last.is_static_flow_load() && instr.code == InstrCode::INSTR_POP) {
+                last.free_payload();
                 label.pop_back();
                 continue;
             }

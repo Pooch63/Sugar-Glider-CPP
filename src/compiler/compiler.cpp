@@ -76,6 +76,7 @@ void Compiler::compile_ternary_op(AST::TernaryOp* node) {
 }
 
 bool Compiler::get_variable_info(AST::VarValue* variable, Intermediate::Variable &info) {
+    std::cout << "trying to find variable " << *variable->get_name() << std::endl;
     bool var_found = this->scopes.get_variable(variable->get_name(), info);
 
     /* Make sure the variable exists */
@@ -244,6 +245,17 @@ void Compiler::compile_continue_statement(AST::Continue* node) {
             loop_start ) );
 }
 
+void Compiler::compile_function_call(AST::FunctionCall* node) {
+    for (auto argument : *node) {
+        this->compile_node(argument);
+    }
+    this->compile_node(node->get_function());
+    this->main_chunk.add_instruction(
+        Intermediate::Instruction(
+            Intermediate::INSTR_CALL,
+            node->argument_count() ));
+}
+
 void Compiler::compile_body(AST::Body* body) {
     if (!body->will_create_scope()) scopes.new_scope(ScopeType::NORMAL);
 
@@ -312,6 +324,10 @@ void Compiler::compile_node(AST::Node* node) {
             break;
         case AST::NodeType::NODE_CONTINUE:
             this->compile_continue_statement(node->as_continue_statement());
+            break;
+
+        case AST::NodeType::NODE_FUNCTION_CALL:
+            this->compile_function_call(node->as_function_call());
             break;
 
         case AST::NodeType::NODE_BODY:

@@ -19,37 +19,20 @@ Instruction::Instruction(InstrCode code, Operations::UnaryOpType type) :
     code(code), payload(ir_instruction_arg_t{ .unary_op = type }) {};
 Instruction::Instruction(InstrCode code, Variable variable) :
     code(code), payload(ir_instruction_arg_t{ .variable = variable }) {};
+Instruction::Instruction(InstrCode code, uint argument) : code(code) {
+    if (code == InstrCode::INSTR_CALL) {
+        this->payload.num_arguments = argument;
+    }
+    else {
+        #ifdef DEBUG
+        assert(false && "The instruction code given does not accept an unsigned integer (uint) argument");
+        #endif
+    }
+}
 
 Instruction::Instruction(Values::number_t number) :
     code(Intermediate::INSTR_NUMBER), payload(ir_instruction_arg_t{ .number = number }) {};
 // < Constructor overloads
-
-// Getters >
-Values::number_t Instruction::get_number() const {
-    #ifdef DEBUG
-    assert(this->code == InstrCode::INSTR_NUMBER);
-    #endif
-    return this->payload.number;
-}
-label_index_t* Instruction::get_address() const {
-    #ifdef DEBUG
-    assert(this->is_jump());
-    #endif
-    return this->payload.label;
-}
-Operations::BinOpType Instruction::get_bin_op() const {
-    #ifdef DEBUG
-    assert(this->code == InstrCode::INSTR_BIN_OP);
-    #endif
-    return this->payload.bin_op;
-}
-Operations::UnaryOpType Instruction::get_unary_op() const {
-    #ifdef DEBUG
-    assert(this->code == InstrCode::INSTR_UNARY_OP);
-    #endif
-    return this->payload.unary_op;
-}
-// < Getters
 
 bool Instruction::is_truthy_constant() const {
     return this->code == InstrCode::INSTR_TRUE || this->code == InstrCode::INSTR_FALSE ||
@@ -59,7 +42,8 @@ bool Instruction::is_constant() const {
     return this->code == InstrCode::INSTR_TRUE ||
         this->code == InstrCode::INSTR_FALSE ||
         this->code == InstrCode::INSTR_NULL ||
-        this->code == InstrCode::INSTR_NUMBER;
+        this->code == InstrCode::INSTR_NUMBER ||
+        this->code == InstrCode::INSTR_STRING;
 }
 bool Instruction::is_static_flow_load() const {
     if (this->code == InstrCode::INSTR_LOAD) return true;
@@ -84,6 +68,8 @@ Values::Value Instruction::payload_to_value() const {
 
 Instruction Instruction::value_to_instruction(Values::Value value) {
     switch (value.get_type()) {
+        case Values::ValueType::STRING:
+            return Instruction(InstrCode::INSTR_STRING, value.get_string());
         case Values::ValueType::NUMBER:
             return Instruction(value.get_number());
         case Values::ValueType::TRUE:
@@ -95,6 +81,12 @@ Instruction Instruction::value_to_instruction(Values::Value value) {
             /* Can't convert this to an instruction */
             assert(false);
             #endif
+    }
+};
+
+void Instruction::free_payload() {
+    if (this->code == InstrCode::INSTR_STRING) {
+        delete this->payload.str;
     }
 };
 
@@ -141,6 +133,8 @@ const char* Intermediate::instr_type_to_string(InstrCode code) {
             return "LOAD";
         case InstrCode::INSTR_STORE:
             return "STORE";
+        case InstrCode::INSTR_CALL:
+            return "CALL";
         case InstrCode::INSTR_EXIT:
             return "EXIT";
         default:
@@ -251,13 +245,19 @@ void Intermediate::log_instruction(Instruction instr) {
                 argument += "...";
             }
 
-            argument += number_as_subscript(instr.payload.variable.scope);
+            argument += var_ind_to_subscript(instr.payload.variable.scope);
 
             std::cout << variable_c << argument;
             
             comment = "(";
             comment += (instr.payload.variable.type == VariableType::CONSTANT ? "const" : "mut var");
             comment += ")";
+        }
+            break;
+        case InstrCode::INSTR_CALL:
+        {
+            argument = std::to_string(instr.get_argument_count());
+            std::cout << number_c << argument;
         }
             break;
         default: break;

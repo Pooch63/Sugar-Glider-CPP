@@ -10,15 +10,23 @@
 #endif
 
 namespace Values {
+    class Value;
+
     enum ValueType {
+        STRING,
         NUMBER,
         TRUE,
-        FALSE
+        FALSE,
+
+        NATIVE_FUNCTION
     };
     typedef double number_t;
+    typedef void (*native_function_t)(Value* result);
 
     union value_mem_t {
         number_t number;
+        std::string* str;
+        native_function_t native;
     };
 
     class Value {
@@ -26,9 +34,16 @@ namespace Values {
             ValueType type;
             value_mem_t value;
 
+            // Whether or not the value class is responsible for freeing the payload
+            bool free_payload = true;
+
         public:
+            /* For strings */
+            Value(ValueType type, std::string* str);
             /* For numbers */
             Value(ValueType type, number_t number);
+            /* For native functions */
+            Value(ValueType type, native_function_t native);
 
             /* For literals: true, false, null */
             Value(ValueType type);
@@ -40,6 +55,14 @@ namespace Values {
                 #endif
                 return this->value.number;
             }
+            inline std::string* get_string() const {
+                #ifdef DEBUG
+                assert(this->type == ValueType::STRING);
+                #endif
+                return this->value.str;
+            }
+
+            inline void mark_payload() { this->free_payload = true; }
 
             bool is_numerical() const;
             Values::number_t to_number() const;

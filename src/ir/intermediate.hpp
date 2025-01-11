@@ -7,13 +7,18 @@
 #include "../globals.hpp"
 #include "../utils.hpp"
 
+#ifdef DEBUG
+#include <cassert> // For getters
+#endif
+
 #include <unordered_map>
 #include <vector>
 
 /* The number of characters that can be used in a random label name.
     Generating two identical 20-character labels from these 64 codepoints 
    is astronomically unlikely -- less than winning the Mega Millions 5 times 
-   in a row and being stricken by lightning 19 times after. */
+   in a row and being stricken by lightning 19 times after. On the nonexistent
+   chance it does happen, compilation WILL break, but you just have to compile again. */
 #define CHAR_LABEL_COUNT 64
 
 using Bytecode::OpCode;
@@ -65,6 +70,15 @@ namespace Intermediate {
         INSTR_LOAD,
         INSTR_STORE,
 
+        /* Argument is number of arguments that are used to call the function.
+            Top value of stack must be the function to call.
+            The next n values must be the n arguments, e.g.
+            x(1, 2) = a stack of:
+            x
+            2
+            1 */
+        INSTR_CALL,
+
         INSTR_EXIT
     };
 
@@ -82,21 +96,24 @@ namespace Intermediate {
         Operations::UnaryOpType unary_op;
         Values::number_t number;
 
+        uint num_arguments;
+
         Variable variable;
     };
 
     struct Instruction {
-        Intermediate::InstrCode code;
+        InstrCode code;
         ir_instruction_arg_t payload;
 
-        Instruction(Intermediate::InstrCode code);
+        Instruction(InstrCode code);
         /* Used for strings, and also for jump commands, since a string
             is the label index type.
             If the label type is ever changed, then another overload will be needed. */
-        Instruction(Intermediate::InstrCode code, std::string* payload);
-        Instruction(Intermediate::InstrCode code, Operations::BinOpType bin_op);
-        Instruction(Intermediate::InstrCode code, Operations::UnaryOpType unary_op);
+        Instruction(InstrCode code, std::string* payload);
+        Instruction(InstrCode code, Operations::BinOpType bin_op);
+        Instruction(InstrCode code, Operations::UnaryOpType unary_op);
         Instruction(InstrCode code, Variable variable);
+        Instruction(InstrCode code, uint argument);
         /* There is only one instruction that takes this number. */
         Instruction(Values::number_t number);
 
@@ -112,15 +129,46 @@ namespace Intermediate {
         inline bool has_number_payload() const { return this->code == InstrCode::INSTR_NUMBER; };
         // inline bool has_string_payload() const { return this->code == InstrCode::INSTR_STRING; };
         
+        // Getters >
+        inline Values::number_t get_number() const {
+            #ifdef DEBUG
+            assert(this->code == InstrCode::INSTR_NUMBER);
+            #endif
+            return this->payload.number;
+        }
+        inline label_index_t* get_address() const {
+            #ifdef DEBUG
+            assert(this->is_jump());
+            #endif
+            return this->payload.label;
+        }
+        inline Operations::BinOpType get_bin_op() const {
+            #ifdef DEBUG
+            assert(this->code == InstrCode::INSTR_BIN_OP);
+            #endif
+            return this->payload.bin_op;
+        }
+        inline Operations::UnaryOpType get_unary_op() const {
+            #ifdef DEBUG
+            assert(this->code == InstrCode::INSTR_UNARY_OP);
+            #endif
+            return this->payload.unary_op;
+        }
+        inline uint get_argument_count() const {
+            #ifdef DEBUG
+            assert(this->code == InstrCode::INSTR_CALL);
+            #endif
+            return this->payload.num_arguments;
+        }
 
-        Values::number_t        get_number() const;
-        label_index_t*          get_address() const;
-        Operations::BinOpType   get_bin_op() const;
-        Operations::UnaryOpType get_unary_op() const;
+        // < Getters
 
         /* Convert payload to a value object. Only call if it CAN be converted, e.g.
             if it's a number, true, false, null, etc. */
         Values::Value payload_to_value() const;
+
+        /* If it's a string, free the payload */
+        void free_payload();
 
         /* Convert a value to an instruction that loads it onto the stack. */
         static Instruction value_to_instruction(Values::Value value);

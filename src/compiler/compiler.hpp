@@ -36,6 +36,8 @@ class Compiler {
         void compile_break_statement(AST::Break* node);
         void compile_continue_statement(AST::Continue* node);
 
+        void compile_function_call(AST::FunctionCall* node);
+
         void compile_body(AST::Body* body);
 
         /* Compile a node into the chunk */

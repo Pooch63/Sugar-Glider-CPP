@@ -25,10 +25,15 @@ namespace AST {
         NODE_BREAK,
         NODE_CONTINUE,
 
+        NODE_FUNCTION_CALL,
+
         NODE_BODY
     };
 
     bool node_is_expression(NodeType type);
+    bool node_may_be_function(NodeType type);
+
+    const char* node_type_to_string(NodeType type);
 
     class String;
     class Number;
@@ -44,6 +49,7 @@ namespace AST {
     class While;
     class Break;
     class Continue;
+    class FunctionCall;
     class Body;
 
     // @REVIEW: Don't free until end of compilation.
@@ -75,6 +81,7 @@ namespace AST {
             While* as_while_loop();
             Break* as_break_statement();
             Continue* as_continue_statement();
+            FunctionCall* as_function_call();
             Body* as_body();
 
             virtual ~Node() = default;
@@ -222,6 +229,24 @@ namespace AST {
     class Continue : public Node {
         public:
             Continue(TokenPosition position);
+    };
+
+    class FunctionCall : public Node {
+        private:
+            Node* function;
+            std::vector<Node*> arguments = std::vector<Node*>();
+        public:
+            FunctionCall(Node* function);
+
+            inline auto          begin() { return this->arguments.begin(); };
+            inline auto            end() { return this->arguments.end(); };
+            inline auto argument_count() { return this->arguments.size(); };
+
+            inline Node* get_function() const { return this->function; };
+
+            void add_argument(Node* argument);
+
+            ~FunctionCall();
     };
 
     class Body : public Node {

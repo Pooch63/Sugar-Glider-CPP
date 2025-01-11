@@ -367,6 +367,7 @@ Token Scanner::next_token() {
         case '?': one_char_type = TokType::QUESTION_MARK; break;
         case ':': one_char_type = TokType::COLON; break;
         case ';': one_char_type = TokType::SEMICOLON; break;
+        case ',': one_char_type = TokType::COMMA; break;
     };
     if (one_char_type != TokType::ERROR) {
         this->advance();

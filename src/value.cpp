@@ -13,7 +13,16 @@ namespace Math {
 
 using namespace Values;
 
-Value::Value(ValueType type, number_t number) : type(type), value(value_mem_t{ .number = number }) {};
+Value::Value(ValueType type, std::string* str) : type(type), value(value_mem_t{ .str = str }) {
+    #ifdef DEBUG_ASSERT
+    assert(type == ValueType::STRING);
+    #endif
+}
+Value::Value(ValueType type, number_t number) : type(type), value(value_mem_t{ .number = number }) {
+    #ifdef DEBUG_ASSERT
+    assert(type == ValueType::NUMBER);
+    #endif
+};
 Value::Value(ValueType type) : type(type) {};
 
 bool Value::is_numerical() const {
@@ -48,6 +57,15 @@ static Values::number_t mod(Values::number_t a, Values::number_t b) {
 
 Value* Values::bin_op(Operations::BinOpType type, Value a, Value b) {
     using Operations::BinOpType;
+
+    if (
+        type == BinOpType::BINOP_ADD &&
+        a.get_type() == ValueType::STRING &&
+        b.get_type() == ValueType::STRING) {
+            return new Value(
+                ValueType::STRING,
+                new std::string(*a.get_string() + *b.get_string()));
+        }
 
     if (!a.is_numerical() || !b.is_numerical()) {
         return nullptr;

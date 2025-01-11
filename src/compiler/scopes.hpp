@@ -41,9 +41,16 @@ namespace Scopes {
 
     class ScopeManager {
         private:
+            static bool native_scope_initialized;
+        public:
+            static void init_native_scope();
+
+        private:
             std::vector<Scope> scopes = std::vector<Scope>();
 
         public:
+            ScopeManager();
+
             bool variable_exists(std::string* name) const;
             /* Returns false if there was no instance. Otherwise, returns true and updates the variable info.
                 Goes up through the scope tree to try to find the variable. */
@@ -64,6 +71,8 @@ namespace Scopes {
             // Returns nullptr if no loop is available
             Intermediate::label_index_t* get_loop_end() const;
     };
+
+    extern Scope native_scope;
 }
 
 #endif

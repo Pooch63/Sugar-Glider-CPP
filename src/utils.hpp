@@ -10,7 +10,7 @@
 uint get_digits(uint number);
 
 #ifdef DEBUG
-std::string number_as_subscript(uint num);
+std::string var_ind_to_subscript(int num);
 uint get_string_length_as_utf32(std::string str);
 #endif
 

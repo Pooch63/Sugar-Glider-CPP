@@ -25,6 +25,7 @@ AST::Node* Parse::Rules::parse_string(Scan::Token &current, Parser* parser) {
     while (parser->curr().get_type() == TokType::STRING) {
         std::string* next = parser->curr().get_string();
         str->append(std::string(*next));
+        parser->advance();
     }
 
     return new AST::String(str, current.get_position());
@@ -56,7 +57,7 @@ AST::Node* Parse::Rules::unary_op(Scan::Token& current, Parser* parser) {
     AST::Node* argument = parser->parse_precedence((int)Precedence::PREC_UNARY + 1);
     return new AST::UnaryOp(type, argument);
 }
-AST::Node* Parse::Rules::binary_op(Scan::Token& current, AST::Node* left, Parser* parser) {
+AST::Node* Parse::Rules::binary_op(Scan::Token &current, AST::Node* left, Parser* parser) {
     Operations::BinOpType type;
     Precedence prec;
 
@@ -90,19 +91,52 @@ AST::Node* Parse::Rules::binary_op(Scan::Token& current, AST::Node* left, Parser
     AST::Node* right = parser->parse_precedence(static_cast<int>(prec) + 1);
     return new AST::BinOp(type, left, right);
 }
-AST::Node* Parse::Rules::paren_group(Scan::Token& current, Parser* parser) {
+AST::Node* Parse::Rules::paren_group(Scan::Token &current, Parser* parser) {
     AST::Node* expression = parser->parse_precedence((int)Precedence::PREC_NONE);
     parser->expect_symbol(TokType::RPAREN);
 
     return expression;
 };
-AST::Node* Parse::Rules::ternary_op(Scan::Token& current, AST::Node* left, Parser* parser) {
+AST::Node* Parse::Rules::ternary_op(Scan::Token &current, AST::Node* left, Parser* parser) {
     AST::Node* if_true = parser->parse_precedence((int)Precedence::PREC_NONE);
     parser->expect_symbol(TokType::COLON);
     AST::Node* if_false = parser->parse_precedence((int)Precedence::PREC_NONE);
 
     return new AST::TernaryOp(left, if_true, if_false);
 };
+
+AST::Node* Parse::Rules::function_call(Scan::Token &current, AST::Node* left, Parser* parser) {
+    if (!AST::node_may_be_function(left->get_type())) {
+        char error_message[100];
+        snprintf(error_message, 100, "Cannot call non-function type %s", AST::node_type_to_string(left->get_type()));
+        parser->get_output().error(
+            current.get_position(),
+            error_message
+        );
+    }
+
+    AST::FunctionCall* call = new AST::FunctionCall(left);
+
+    if (parser->curr().get_type() != TokType::RPAREN) {
+        while (parser->curr().get_type() != TokType::RPAREN) {
+            AST::Node* argument = parser->parse_expression();
+            
+            if (argument == nullptr) break;
+            call->add_argument(argument);
+
+            if (parser->curr().get_type() == TokType::COMMA) {
+                parser->advance();
+            }
+            else {
+                break;
+            }
+        }
+    }
+
+    parser->expect_symbol(TokType::RPAREN, "Expected ')' after function call");
+
+    return call;
+}
 
 AST::Node* Parse::Rules::var_value(Scan::Token &current, Parser* parser) {
     // Make sure to stop the variable name from automatically being freed
@@ -164,8 +198,8 @@ void Parser::initialize_parse_rules() {
 
     rules[TokType::LPAREN] = ParseRule{
         .nud = Rules::paren_group,
-        .led = nullptr,
-        .precedence = Precedence::PREC_NONE
+        .led = Rules::function_call,
+        .precedence = Precedence::PREC_CALL
     };
 
     rules[TokType::QUESTION_MARK] = ParseRule{
@@ -185,17 +219,13 @@ void Parser::initialize_parse_rules() {
 // < Rule functions
 /* < Parse rule initialization */
 
-
 Parser::Parser(Scan::Scanner& scanner, Output& output) :
     scanner(scanner),
     output(output),
     previous_token(Scan::start),
     current_token(scanner.next_real_token())
 {
-    #ifdef DEBUG
-    /* You ABSOLUTELY CAN NOT initialize a parser without initializing the rules */
-    assert(Parser::rules_initialized);
-    #endif
+    if (!Parser::rules_initialized) Parser::initialize_parse_rules();
 }
 
 void Parser::advance() {this->previous_token.free();

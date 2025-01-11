@@ -51,16 +51,22 @@ label_index_t* Scope::get_loop_end() const {
     return this->loop_end;
 };
 
+ScopeManager::ScopeManager() {
+    if (!ScopeManager::native_scope_initialized) ScopeManager::init_native_scope();
+
+    this->scopes.push_back(native_scope);
+}
+
 bool ScopeManager::variable_exists(std::string* name) const {
-    printf("Inside variable exists\n");
+    printf("DEBUG -- Inside variable exists\n");
     for (uint index = this->scopes.size() - 1; index > 0; index -= 1) {
         if (this->scopes.at(index).has_variable(name)) return true;
     }
     return false;
 }
 bool ScopeManager::get_variable(std::string* name, Variable &info) const {
-    for (uint index = this->scopes.size() - 1; index > 0; index -= 1) {
-        if (this->scopes.at(index).get_variable(name, info)) return true;
+    for (int index = this->scopes.size() - 1; index >= 0; index -= 1) {
+        if (this->scopes.at(static_cast<uint>(index)).get_variable(name, info)) return true;
     }
     return false;
 }
@@ -108,4 +114,25 @@ label_index_t* ScopeManager::get_loop_end() const {
 
     }
     return nullptr;
+}
+
+bool ScopeManager::native_scope_initialized = false;
+
+Scope Scopes::native_scope = Scope(ScopeType::NORMAL);
+
+void ScopeManager::init_native_scope() {
+    if (ScopeManager::native_scope_initialized) return;
+    ScopeManager::native_scope_initialized = true;
+
+    constexpr int var_count = 1;
+    const char* variables[var_count] = {
+        "PI"
+    };
+
+    std::string* var;
+
+    for (int ind = 0; ind < var_count; ind += 1) {
+        var = new std::string(variables[ind]);
+        native_scope.add_variable(var, Variable{ .name = var, .type = VariableType::CONSTANT, .scope = -1 });
+    }
 }

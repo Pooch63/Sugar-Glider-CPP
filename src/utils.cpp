@@ -32,9 +32,11 @@ static const char subscripts[10][4] = {
 };
 
 #ifdef DEBUG
-std::string number_as_subscript(uint num) {
-    std::string str = std::to_string(num);
+std::string var_ind_to_subscript(int num) {
+    std::string str = std::to_string(abs(num));
     std::string output = "";
+
+    if (num < 0) output += '-';
 
     for (char c : str) {
         uint subscript_ind = c - '0';

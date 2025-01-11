@@ -64,6 +64,8 @@ namespace Scan {
         COLON,
         // ;
         SEMICOLON,
+        // ,
+        COMMA,
         // < Operators
 
         // Keywords >
