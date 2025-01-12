@@ -228,7 +228,8 @@ std::string* Scanner::parse_string() {
                 if (next == '\0') {
                     this->output.error(
                         TokenPosition{ .line = this->line, .col = this->col, .length = 1 },
-                        "Expected additional input after escape character '\\'.");
+                        "Expected additional input after escape character '\\'.",
+                        Errors::LEX_ERROR);
                     continue_loop = false;
                     break;
                 }
@@ -325,7 +326,8 @@ std::string* Scanner::parse_string() {
     if (delimiter_end == '\0') {
         this->output.error(
             TokenPosition{ .line = this->line, .col = this->col, .length = 1 },
-            "Expected ending quote to string" );
+            "Expected ending quote to string",
+            Errors::LEX_ERROR);
     }
 
     return str;
@@ -454,7 +456,7 @@ Token Scanner::next_token() {
     /* If there was an unknown token, error and then  */
     char error_message[50];
     snprintf(error_message, 50, "Unknown character '%c'", curr);
-    this->output.error(TokenPosition{ .line = this->line, .col = this->col, .length = 1 }, error_message);
+    this->output.error(TokenPosition{ .line = this->line, .col = this->col, .length = 1 }, error_message, Errors::LEX_ERROR);
 
     this->advance();
     return Token(TokType::ERROR, TokenPosition{ .line = -1, .col = -1, .length = -1 });

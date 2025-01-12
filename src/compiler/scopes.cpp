@@ -58,7 +58,6 @@ ScopeManager::ScopeManager() {
 }
 
 bool ScopeManager::variable_exists(std::string* name) const {
-    printf("DEBUG -- Inside variable exists\n");
     for (uint index = this->scopes.size() - 1; index > 0; index -= 1) {
         if (this->scopes.at(index).has_variable(name)) return true;
     }

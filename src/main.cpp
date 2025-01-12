@@ -14,7 +14,7 @@ int main() {
     Parse::Parser::initialize_parse_rules();
     Random::initialize_rng();
 
-    std::string prog = "var b = PI * PI; println(PI *);";
+    std::string prog = "var b = PI * PI; println(PI * abcdefghijklmnopqrstuvwyzabcdefghijklmnopqrstuvwyzabcdefghijklmnopqrstuvwyzabcdefghijklmnopqrstuvwyz);";
 
     Output output(prog);
     Scan::Scanner lexer(prog, output);
@@ -28,7 +28,7 @@ int main() {
         actually compile. */
     if (output.had_error()) {
         delete node;
-        return -1;
+        return output.get_error();
     }
 
     using Bytecode::Chunk;
@@ -41,7 +41,7 @@ int main() {
     /* If there was a compiler error, don't continue. */
     if (!compile_success) {
         delete node;
-        return -1;
+        return Errors::COMPILE_ERROR;
     }
 
     block.log_block();

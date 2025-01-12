@@ -111,7 +111,8 @@ AST::Node* Parse::Rules::function_call(Scan::Token &current, AST::Node* left, Pa
         snprintf(error_message, 100, "Cannot call non-function type %s", AST::node_type_to_string(left->get_type()));
         parser->get_output().error(
             current.get_position(),
-            error_message
+            error_message,
+            Errors::PARSE_ERROR
         );
     }
 
@@ -145,7 +146,7 @@ AST::Node* Parse::Rules::var_value(Scan::Token &current, Parser* parser) {
 };
 AST::Node* Parse::Rules::var_assignment(Scan::Token &current, AST::Node* left, Parser* parser) {
     if (left->get_type() != AST::NODE_VAR_VALUE) {
-        parser->get_output().error(current.get_position(), "Only a variable may be followed by an equals sign. (=)");
+        parser->get_output().error(current.get_position(), "Only a variable may be followed by an equals sign. (=)", Errors::PARSE_ERROR);
     }
 
     AST::Node* value = parser->parse_expression();
@@ -250,7 +251,7 @@ bool Parser::expect_symbol(TokType type) {
         Scan::tok_type_to_string(this->curr().get_type()),
         Scan::tok_to_concise_string(this->curr()).c_str(),
         Scan::tok_type_to_string(type));
-    this->output.error(curr.get_position(), error_message);
+    this->output.error(curr.get_position(), error_message, Errors::PARSE_ERROR);
     return false;
 };
 bool Parser::expect_symbol(TokType type, const char* error_message) {
@@ -260,7 +261,7 @@ bool Parser::expect_symbol(TokType type, const char* error_message) {
         return true;
     }
 
-    this->output.error(curr.get_position(), error_message);
+    this->output.error(curr.get_position(), error_message, Errors::PARSE_ERROR);
     return false;
 };
 bool Parser::expect(TokType type, char* error_message) {
@@ -339,7 +340,7 @@ AST::Node* Parser::parse_precedence(int prec) {
     if (nud == nullptr) {
         char error_message[100];
         snprintf(error_message, 100, "Unexpected token type %s", Scan::tok_type_to_string(this->curr().get_type()));
-        this->output.error(this->curr().get_position(), error_message);
+        this->output.error(this->curr().get_position(), error_message, Errors::PARSE_ERROR);
 
         // Enter panic mode
         this->synchronize();

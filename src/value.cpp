@@ -80,6 +80,9 @@ Value* Values::bin_op(Operations::BinOpType type, Value a, Value b) {
         /* Make sure the numbers are both integers. */
         firstI = floor(first);
         secondI = floor(second);
+
+        /* Bitwise operation error on floats */
+        if (first != firstI && second != secondI) return nullptr;
     }
 
     switch (type) {
@@ -113,6 +116,9 @@ Value* Values::unary_op(Operations::UnaryOpType type, Value arg) {
     if (Operations::unary_is_bitwise_operator(type)) {
         /* Make sure the numbers is an integer. */
         argI = floor(num);
+
+        /* Bitwise operation error on floats */
+        if (num != argI) return nullptr;
     }
 
     switch (type) {

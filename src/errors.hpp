@@ -1,9 +1,19 @@
 #ifndef _SGCPP_ERRORS_HPP
 #define _SGCPP_ERRORS_HPP
 
+#include <iostream>
 #include <string>
 #include <vector>
 
+namespace Errors {
+    enum ErrorCode {
+        NO_ERROR      =  0,
+        LEX_ERROR     = -1,
+        PARSE_ERROR   = -2,
+        COMPILE_ERROR = -3,
+        RUNTIME_ERROR = -4
+    };
+};
 namespace Colors {
     enum Color {
         /* Colors */
@@ -26,7 +36,7 @@ namespace Colors {
     /* Return the string needed to set the terminal to the color */
     std::string create_color(Color color);
     /* Set the terminal to the color */
-    void set_color(Color color);
+    void set_color(Color color, std::ostream &output);
 };
 namespace Position {
     struct TokenPosition {
@@ -60,26 +70,26 @@ class Output {
         
         /* Extract the program's line ends into the line_ends vector */
         void extract_line_ends();
-
         /* Get the index of the newline character at the given line.
             If -1 is passed, -1 is returned (since it's the index of the character
             right before the start of the program.) */
         int get_line_end(int line) const;
 
-        bool errored = false;
+        Errors::ErrorCode error_code = Errors::NO_ERROR;
+
+        void output_line(Position::TokenPosition position, Colors::Color problem_color, std::ostream &output);
 
     public:
         /* Automatically extract line inds. */
         Output(std::string& prog);
 
-        void output_line(Position::TokenPosition position, Colors::Color problem_color);
-
         /* Write a warning to the console */
         void warning(Position::TokenPosition position, std::string warning);
         /* Write an error to the console */
-        void error(Position::TokenPosition position, std::string error);
+        void error(Position::TokenPosition position, std::string error, Errors::ErrorCode code);
 
-        inline bool had_error() const { return this->errored; };
+        inline bool had_error() const { return this->error_code != Errors::NO_ERROR; };
+        inline Errors::ErrorCode get_error() const { return this->error_code; };
 };
 
 #endif

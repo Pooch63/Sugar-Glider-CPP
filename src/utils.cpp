@@ -50,6 +50,18 @@ std::string var_ind_to_subscript(int num) {
 };
 #endif
 
+void truncate_string(std::string &output, uint max_len, std::string &value) {
+    #ifdef DEBUG_ASSERT
+    assert(max_len >= 3);
+    #endif
+
+    if (value.size() <= max_len) output = value;
+    else {
+        output = value.substr(0, max_len - 3);
+        output += "...";
+    }
+};
+
 /* Count code points in a UTF-8 string.
     Proudly stolen from Marcelo Cantos on https://stackoverflow.com/questions/4063146/getting-the-actual-length-of-a-utf-8-encoded-stdstring. */
 uint get_string_length_as_utf32(std::string str) {
@@ -94,4 +106,9 @@ int utf32_codepoint_to_char_buffer(uint32_t codepoint, char buffer[4]) {
         buffer[3] = (0b10000000 | (codepoint & 0x3f));         // 10xxxxxx
         return 4;
     }
+
+    #ifdef DEBUG
+    assert(false && "unknwon codepoint given to codepoint function");
+    #endif
+    return -1;
 }

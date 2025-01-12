@@ -1,16 +1,13 @@
 #include "errors.hpp"
 
-#include <iostream>
-
-
 std::string Colors::create_color(Color color) {
     std::string str = "\x1b[";
     str += std::to_string(static_cast<int>(color));
     str += 'm';
     return str;
 };
-void Colors::set_color(Color color) {
-    std::cout << create_color(color);
+void Colors::set_color(Color color, std::ostream &output) {
+    output << create_color(color);
 }
 
 /* Automatically extracts line ends. */
@@ -27,7 +24,7 @@ void Output::extract_line_ends() {
 int Output::get_line_end(int line) const {
     return line == -1 ? -1 : this->line_ends.at(line);
 }
-void Output::output_line(Position::TokenPosition position, Colors::Color problem_color) {
+void Output::output_line(Position::TokenPosition position, Colors::Color problem_color, std::ostream &output) {
     using std::max, std::min;
 
     // Log the line information
@@ -37,9 +34,9 @@ void Output::output_line(Position::TokenPosition position, Colors::Color problem
     location += std::to_string(position.col + 1);
     location += " |  ";
 
-    Colors::set_color(Colors::YELLOW);
-    std::cout << location;
-    Colors::set_color(Colors::DEFAULT);
+    Colors::set_color(Colors::YELLOW, output);
+    output << location;
+    Colors::set_color(Colors::DEFAULT, output);
 
     int line_start = this->get_line_end(position.line - 1) + 1;
     int line_end = this->get_line_end(position.line) - 1;
@@ -54,62 +51,62 @@ void Output::output_line(Position::TokenPosition position, Colors::Color problem
     // Log the line
     /* First, log the characters to the left */
     for (int ind = left_start; ind < error_start; ind += 1) {
-        std::cout << this->prog.at(ind);
+        output << this->prog.at(ind);
     }
     /* Now, log the area color. */
-    Colors::set_color(problem_color);
+    Colors::set_color(problem_color, output);
     // An EOF token goes past the program length, so make sure not to go too far
     for (int ind = error_start; ind < min(
             static_cast<int>(this->prog.size()), error_start + position.length
         ); ind += 1) {
-        std::cout << this->prog.at(ind);
+        output << this->prog.at(ind);
     }
-    Colors::set_color(Colors::DEFAULT);
+    Colors::set_color(Colors::DEFAULT, output);
 
     /* Finally, log characters to the right of the error */
     int right_characters_start = line_start + error_start + position.length;
     for (int ind = right_characters_start;
         ind <= min(line_start + Output::MAX_LOG_LENGTH, line_end);
         ind += 1) {
-            std::cout << this->prog.at(ind);
+            output << this->prog.at(ind);
     }
     // Now, log the characters underneath
-    std::cout << '\n';
+    output << '\n';
 
     /* Add spaces until we get underneath the error start */
     for (uint space = 0; space < location.size() + position.col - start_col; space += 1) {
-        std::cout << ' ';
+        output << ' ';
     }
     /* Add the carats */
-    Colors::set_color(Colors::MAGENTA);
+    Colors::set_color(Colors::MAGENTA, output);
     for (int carat = 0; carat < position.length; carat += 1) {
-        std::cout << '^';
+        output << '^';
     }
-    std::cout << '\n';
+    output << '\n';
 };
-void Output::error(Position::TokenPosition position, std::string error) {
-    this->output_line(position, Colors::RED);
-    this->errored = true;
+void Output::error(Position::TokenPosition position, std::string error, Errors::ErrorCode code) {
+    this->output_line(position, Colors::RED, std::cerr);
 
-    Colors::set_color(Colors::BOLD);
-    Colors::set_color(Colors::RED);
-    std::cout << "error: ";
+    Colors::set_color(Colors::BOLD, std::cerr);
+    Colors::set_color(Colors::RED, std::cerr);
+    std::cerr << "error: ";
 
-    Colors::set_color(Colors::DEFAULT);
-    std::cout << error;
+    Colors::set_color(Colors::DEFAULT, std::cerr);
+    std::cerr << error;
 
+    std::cerr << '\n' << std::endl;
 
-    std::cout << '\n' << std::endl;
+    this->error_code = code;
 }
 void Output::warning(Position::TokenPosition position, std::string warning) {
-    this->output_line(position, Colors::YELLOW);
+    this->output_line(position, Colors::YELLOW, std::cout);
 
-    Colors::set_color(Colors::BOLD);
-    Colors::set_color(Colors::MAGENTA);
-    std::cout << "warning: ";
+    Colors::set_color(Colors::BOLD, std::cout);
+    Colors::set_color(Colors::MAGENTA, std::cout);
+    std::cerr << "warning: ";
 
-    Colors::set_color(Colors::DEFAULT);
-    std::cout << warning;
+    Colors::set_color(Colors::DEFAULT, std::cout);
+    std::cerr << warning;
 
-    std::cout << '\n' << std::endl;
+    std::cerr << '\n' << std::endl;
 }

@@ -158,7 +158,7 @@ void Intermediate::log_instruction(Instruction instr) {
     std::string type = Intermediate::instr_type_to_string(instr.code);
     
     std::cout << instruction_name_c << type;
-    set_color(Color::DEFAULT);
+    set_color(Color::DEFAULT, std::cout);
     for (uint space = type.size(); space < INSTRUCTION_NAME_LENGTH; space += 1) {
         std::cout << ' ';
     }
@@ -262,7 +262,7 @@ void Intermediate::log_instruction(Instruction instr) {
             break;
         default: break;
     }
-    set_color(Colors::DEFAULT);
+    set_color(Colors::DEFAULT, std::cout);
 
     argument_length = get_string_length_as_utf32(argument);
 
@@ -274,7 +274,7 @@ void Intermediate::log_instruction(Instruction instr) {
         }
         std::cout << comment_c;
         std::cout << "; " << comment;
-        set_color(Colors::DEFAULT);
+        set_color(Colors::DEFAULT, std::cout);
     }
 
     std::cout << '\n';
@@ -297,7 +297,7 @@ void Block::log_block() const {
         Label label = this->labels.at(set_count);
         std::cout << '\n';
         std::cout << label_c << ".L" << *label.name << ":\n";
-        set_color(Colors::DEFAULT);
+        set_color(Colors::DEFAULT, std::cout);
 
         for (Instruction instr : label.instructions) {
             /* Log instruction number */

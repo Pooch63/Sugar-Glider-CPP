@@ -190,7 +190,8 @@ namespace Scan {
                      if (!is_hex_digit(curr)) {
                         this->output.error(
                             TokenPosition{ .line = this->line, .col = this->col, .length = static_cast<int>(num_hex_digits - hex_ind) },
-                            message_on_error
+                            message_on_error,
+                            Errors::LEX_ERROR
                         );
                         return 0;
                     }

@@ -76,14 +76,16 @@ void Compiler::compile_ternary_op(AST::TernaryOp* node) {
 }
 
 bool Compiler::get_variable_info(AST::VarValue* variable, Intermediate::Variable &info) {
-    std::cout << "trying to find variable " << *variable->get_name() << std::endl;
     bool var_found = this->scopes.get_variable(variable->get_name(), info);
 
     /* Make sure the variable exists */
     if (!var_found) {
+        std::string name;
+        truncate_string(name, 30, *variable->get_name());
+
         char error[100];
-        snprintf(error, 100, "Variable \"%s\" does not exist.", variable->get_name()->c_str());
-        this->output.error(variable->get_position(), error);
+        snprintf(error, 100, "Variable \"%s\" does not exist.", name.c_str());
+        this->output.error(variable->get_position(), error, Errors::COMPILE_ERROR);
         this->error = true;
         return false;
     }
@@ -97,7 +99,7 @@ void Compiler::compile_variable_definition(AST::VarDefinition* def) {
     if (this->scopes.last_scope_has_variable(def->get_name())) {
         char error[100];
         snprintf(error, 100, "Variable \"%s\" has already been declared in this scope.", def->get_name()->c_str());
-        this->output.error(def->get_position(), error);
+        this->output.error(def->get_position(), error, Errors::COMPILE_ERROR);
         this->error = true;
         return;
     }
@@ -140,7 +142,7 @@ void Compiler::compile_variable_assignment(AST::VarAssignment* node) {
                 std::string error_message = "Cannot assign a value to constant variable \"";
                 error_message += *var_info.name;
                 error_message += "\"";
-                this->output.error(node->get_position(), error_message);
+                this->output.error(node->get_position(), error_message, Errors::COMPILE_ERROR);
                 this->error = true;
             }
 
@@ -221,7 +223,7 @@ void Compiler::compile_while_loop(AST::While* node) {
 void Compiler::compile_break_statement(AST::Break* node) {
     label_index_t* loop_end = this->scopes.get_loop_end();
     if (loop_end == nullptr) {
-        this->output.error(node->get_position(), "A break statement may only appear in a loop.");
+        this->output.error(node->get_position(), "A break statement may only appear in a loop.", Errors::COMPILE_ERROR);
         this->error = true;
         return;
     }
@@ -234,7 +236,7 @@ void Compiler::compile_break_statement(AST::Break* node) {
 void Compiler::compile_continue_statement(AST::Continue* node) {
     label_index_t* loop_start = this->scopes.get_loop_condition_label();
     if (loop_start == nullptr) {
-        this->output.error(node->get_position(), "A continue statement may only appear in a loop.");
+        this->output.error(node->get_position(), "A continue statement may only appear in a loop.", Errors::COMPILE_ERROR);
         this->error = true;
         return;
     }

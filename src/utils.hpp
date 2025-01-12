@@ -14,6 +14,9 @@ std::string var_ind_to_subscript(int num);
 uint get_string_length_as_utf32(std::string str);
 #endif
 
+/* Truncate a string to the maximum length, then add ... if necessary */
+void truncate_string(std::string &output, uint max_len, std::string &value);
+
 uint64_t time_in_millis();
 
 namespace Random {
