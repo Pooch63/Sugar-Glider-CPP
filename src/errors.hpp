@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "../lib/rang.hpp"
+
 namespace Errors {
     enum ErrorCode {
         NO_ERROR      =  0,
@@ -13,30 +15,6 @@ namespace Errors {
         COMPILE_ERROR = -3,
         RUNTIME_ERROR = -4
     };
-};
-namespace Colors {
-    enum Color {
-        /* Colors */
-        RED = 31,
-        GREEN = 32,
-        YELLOW = 33,
-        BLUE = 34,
-        PURPLE = 35,
-        CYAN = 36,
-        WHITE = 37,
-        MAGENTA = 95,
-
-        /* Text styles */
-        BOLD = 1,
-        UNDERLINE = 4,
-
-        DEFAULT = 0,
-    };
-
-    /* Return the string needed to set the terminal to the color */
-    std::string create_color(Color color);
-    /* Set the terminal to the color */
-    void set_color(Color color, std::ostream &output);
 };
 namespace Position {
     struct TokenPosition {
@@ -77,7 +55,7 @@ class Output {
 
         Errors::ErrorCode error_code = Errors::NO_ERROR;
 
-        void output_line(Position::TokenPosition position, Colors::Color problem_color, std::ostream &output);
+        void output_line(Position::TokenPosition position, rang::fg problem_color, std::ostream &output);
 
     public:
         /* Automatically extract line inds. */

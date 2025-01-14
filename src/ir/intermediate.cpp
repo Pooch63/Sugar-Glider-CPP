@@ -96,14 +96,15 @@ void Instruction::free_payload() {
 #include <cassert>
 #include <iostream>
 
-using namespace Colors;
-std::string instruction_name_c = create_color(Color::PURPLE);
-std::string number_c = create_color(Color::YELLOW);
-std::string string_c = create_color(Color::YELLOW);
-std::string operation_c = create_color(Color::CYAN);
-std::string label_c = create_color(Color::BLUE) + create_color(Color::BOLD);
-std::string variable_c = create_color(Color::RED) + create_color(Color::UNDERLINE);
-std::string comment_c = create_color(Color::GREEN);
+#include "../../lib/rang.hpp"
+
+rang::fg instruction_name_c = rang::fg::magenta;
+rang::fg number_c = rang::fg::yellow;
+rang::fg string_c = rang::fg::yellow;
+rang::fg operation_c = rang::fg::yellow;
+rang::fg label_c = rang::fg::blue;
+rang::fg variable_c = rang::fg::red;
+rang::fg comment_c = rang::fg::green;
 
 const char* Intermediate::instr_type_to_string(InstrCode code) {
     switch (code) {
@@ -157,8 +158,7 @@ static_assert(MAX_STRING_LENGTH >= 5);
 void Intermediate::log_instruction(Instruction instr) {
     std::string type = Intermediate::instr_type_to_string(instr.code);
     
-    std::cout << instruction_name_c << type;
-    set_color(Color::DEFAULT, std::cout);
+    std::cout << instruction_name_c << type << rang::style::reset;
     for (uint space = type.size(); space < INSTRUCTION_NAME_LENGTH; space += 1) {
         std::cout << ' ';
     }
@@ -177,7 +177,7 @@ void Intermediate::log_instruction(Instruction instr) {
         {
             argument = ".L";
             argument += *instr.payload.label;
-            std::cout << label_c << argument;
+            std::cout << label_c << rang::style::bold << argument;
         }
             break;
         case InstrCode::INSTR_BIN_OP:
@@ -247,7 +247,7 @@ void Intermediate::log_instruction(Instruction instr) {
 
             argument += var_ind_to_subscript(instr.payload.variable.scope);
 
-            std::cout << variable_c << argument;
+            std::cout << variable_c << rang::style::underline << argument;
             
             comment = "(";
             comment += (instr.payload.variable.type == VariableType::CONSTANT ? "const" : "mut var");
@@ -262,7 +262,7 @@ void Intermediate::log_instruction(Instruction instr) {
             break;
         default: break;
     }
-    set_color(Colors::DEFAULT, std::cout);
+    std::cout << rang::style::reset;
 
     argument_length = get_string_length_as_utf32(argument);
 
@@ -272,9 +272,8 @@ void Intermediate::log_instruction(Instruction instr) {
                 std::cout << ' ';
             }
         }
-        std::cout << comment_c;
-        std::cout << "; " << comment;
-        set_color(Colors::DEFAULT, std::cout);
+        std::cout << comment_c << "; " << comment;
+        std::cout << rang::style::reset;
     }
 
     std::cout << '\n';
@@ -296,8 +295,8 @@ void Block::log_block() const {
     for (uint set_count = 0; set_count < this->labels.size(); set_count += 1) {
         Label label = this->labels.at(set_count);
         std::cout << '\n';
-        std::cout << label_c << ".L" << *label.name << ":\n";
-        set_color(Colors::DEFAULT, std::cout);
+        std::cout << label_c << rang::style::bold << ".L" << *label.name << ":\n";
+        std::cout << rang::style::reset;
 
         for (Instruction instr : label.instructions) {
             /* Log instruction number */

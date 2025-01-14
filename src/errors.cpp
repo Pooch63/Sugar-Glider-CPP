@@ -1,15 +1,5 @@
 #include "errors.hpp"
 
-std::string Colors::create_color(Color color) {
-    std::string str = "\x1b[";
-    str += std::to_string(static_cast<int>(color));
-    str += 'm';
-    return str;
-};
-void Colors::set_color(Color color, std::ostream &output) {
-    output << create_color(color);
-}
-
 /* Automatically extracts line ends. */
 Output::Output(std::string& prog) : prog(prog) {
     this->extract_line_ends();
@@ -24,7 +14,7 @@ void Output::extract_line_ends() {
 int Output::get_line_end(int line) const {
     return line == -1 ? -1 : this->line_ends.at(line);
 }
-void Output::output_line(Position::TokenPosition position, Colors::Color problem_color, std::ostream &output) {
+void Output::output_line(Position::TokenPosition position, rang::fg problem_color, std::ostream &output) {
     using std::max, std::min;
 
     // Log the line information
@@ -34,9 +24,7 @@ void Output::output_line(Position::TokenPosition position, Colors::Color problem
     location += std::to_string(position.col + 1);
     location += " |  ";
 
-    Colors::set_color(Colors::YELLOW, output);
-    output << location;
-    Colors::set_color(Colors::DEFAULT, output);
+    output << rang::fg::yellow << location << rang::style::reset;
 
     int line_start = this->get_line_end(position.line - 1) + 1;
     int line_end = this->get_line_end(position.line) - 1;
@@ -54,14 +42,14 @@ void Output::output_line(Position::TokenPosition position, Colors::Color problem
         output << this->prog.at(ind);
     }
     /* Now, log the area color. */
-    Colors::set_color(problem_color, output);
+    std::cout << problem_color;
     // An EOF token goes past the program length, so make sure not to go too far
     for (int ind = error_start; ind < min(
             static_cast<int>(this->prog.size()), error_start + position.length
         ); ind += 1) {
         output << this->prog.at(ind);
     }
-    Colors::set_color(Colors::DEFAULT, output);
+    std::cout << rang::style::reset;
 
     /* Finally, log characters to the right of the error */
     int right_characters_start = line_start + error_start + position.length;
@@ -78,35 +66,25 @@ void Output::output_line(Position::TokenPosition position, Colors::Color problem
         output << ' ';
     }
     /* Add the carats */
-    Colors::set_color(Colors::MAGENTA, output);
+    output << rang::fg::magenta;
     for (int carat = 0; carat < position.length; carat += 1) {
         output << '^';
     }
     output << '\n';
 };
 void Output::error(Position::TokenPosition position, std::string error, Errors::ErrorCode code) {
-    this->output_line(position, Colors::RED, std::cerr);
+    this->output_line(position, rang::fg::red, std::cerr);
 
-    Colors::set_color(Colors::BOLD, std::cerr);
-    Colors::set_color(Colors::RED, std::cerr);
-    std::cerr << "error: ";
-
-    Colors::set_color(Colors::DEFAULT, std::cerr);
-    std::cerr << error;
-
+    std::cerr << rang::style::bold << rang::fg::red << "error: ";
+    std::cerr << rang::style::reset << error;
     std::cerr << '\n' << std::endl;
 
     this->error_code = code;
 }
 void Output::warning(Position::TokenPosition position, std::string warning) {
-    this->output_line(position, Colors::YELLOW, std::cout);
+    this->output_line(position, rang::fg::yellow, std::cout);
 
-    Colors::set_color(Colors::BOLD, std::cout);
-    Colors::set_color(Colors::MAGENTA, std::cout);
-    std::cerr << "warning: ";
-
-    Colors::set_color(Colors::DEFAULT, std::cout);
-    std::cerr << warning;
-
+    std::cerr << rang::style::bold << rang::fg::red << "warning: ";
+    std::cerr << rang::style::reset << warning;
     std::cerr << '\n' << std::endl;
 }
