@@ -14,7 +14,7 @@ using Rules::nud_func_t, Rules::led_func_t;
 std::array<Rules::ParseRule, Scan::NUM_TOKEN_TYPES> Rules::rules = {};
 
 // Rule functions >
-AST::Node* Parse::Rules::number(Scan::Token& current, Parser* parser) {
+AST::Node* Parse::Rules::number(Scan::Token& current, [[maybe_unused]] Parser* parser) {
     return new AST::Number(current.get_number());
 }
 AST::Node* Parse::Rules::parse_string(Scan::Token &current, Parser* parser) {
@@ -30,7 +30,7 @@ AST::Node* Parse::Rules::parse_string(Scan::Token &current, Parser* parser) {
 
     return new AST::String(str, current.get_position());
 }
-AST::Node* Parse::Rules::keyword_constant(Scan::Token &current, Parser* parser) {
+AST::Node* Parse::Rules::keyword_constant(Scan::Token &current, [[maybe_unused]] Parser* parser) {
     switch (current.get_type()) {
         case TokType::TRUE: return new AST::True();
         case TokType::FALSE: return new AST::False();
@@ -91,13 +91,13 @@ AST::Node* Parse::Rules::binary_op(Scan::Token &current, AST::Node* left, Parser
     AST::Node* right = parser->parse_precedence(static_cast<int>(prec) + 1);
     return new AST::BinOp(type, left, right);
 }
-AST::Node* Parse::Rules::paren_group(Scan::Token &current, Parser* parser) {
+AST::Node* Parse::Rules::paren_group([[maybe_unused]] Scan::Token &current, Parser* parser) {
     AST::Node* expression = parser->parse_precedence((int)Precedence::PREC_NONE);
     parser->expect_symbol(TokType::RPAREN);
 
     return expression;
 };
-AST::Node* Parse::Rules::ternary_op(Scan::Token &current, AST::Node* left, Parser* parser) {
+AST::Node* Parse::Rules::ternary_op([[maybe_unused]] Scan::Token &current, AST::Node* left, Parser* parser) {
     AST::Node* if_true = parser->parse_precedence((int)Precedence::PREC_NONE);
     parser->expect_symbol(TokType::COLON);
     AST::Node* if_false = parser->parse_precedence((int)Precedence::PREC_NONE);
@@ -139,7 +139,7 @@ AST::Node* Parse::Rules::function_call(Scan::Token &current, AST::Node* left, Pa
     return call;
 }
 
-AST::Node* Parse::Rules::var_value(Scan::Token &current, Parser* parser) {
+AST::Node* Parse::Rules::var_value(Scan::Token &current, [[maybe_unused]] Parser* parser) {
     // Make sure to stop the variable name from automatically being freed
     current.mark_payload();
     return new AST::VarValue(current.get_string(), current.get_position());
@@ -457,9 +457,9 @@ AST::Function* Parser::parse_function() {
     std::string* name = found_identifier ? this->previous_token.get_string() : nullptr;
     if (found_identifier) this->previous_token.mark_payload();
 
-    this->expect_symbol(TokType::LPAREN);
+    AST::Function* function = new AST::Function(name, this->previous_token.get_position());
 
-    AST::Function* function = new AST::Function(name);
+    this->expect_symbol(TokType::LPAREN);
 
     if (this->current_token.get_type() != TokType::RPAREN) {
         while (this->curr().get_type() != TokType::RPAREN && this->curr().get_type() != TokType::EOI) {
