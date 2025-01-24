@@ -23,6 +23,9 @@ Instruction::Instruction(InstrCode code, uint argument) : code(code) {
     if (code == InstrCode::INSTR_CALL) {
         this->payload.num_arguments = argument;
     }
+    else if (code == InstrCode::INSTR_MAKE_FUNCTION_REFERENCE) {
+        this->payload.function_index = argument;
+    }
     else {
         #ifdef DEBUG
         assert(false && "The instruction code given does not accept an unsigned integer (uint) argument");
@@ -90,21 +93,12 @@ void Instruction::free_payload() {
     }
 };
 
-#ifdef DEBUG
 #include "../errors.hpp"
 
 #include <cassert>
 #include <iostream>
 
 #include "../../lib/rang.hpp"
-
-rang::fg instruction_name_c = rang::fg::magenta;
-rang::fg number_c = rang::fg::yellow;
-rang::fg string_c = rang::fg::yellow;
-rang::fg operation_c = rang::fg::yellow;
-rang::fg label_c = rang::fg::blue;
-rang::fg variable_c = rang::fg::red;
-rang::fg comment_c = rang::fg::green;
 
 const char* Intermediate::instr_type_to_string(InstrCode code) {
     switch (code) {
@@ -130,6 +124,8 @@ const char* Intermediate::instr_type_to_string(InstrCode code) {
             return "INSTR_NUMBER";
         case InstrCode::INSTR_STRING:
             return "INSTR_STRING";
+        case InstrCode::INSTR_MAKE_FUNCTION_REFERENCE:
+            return "MAKE_FUNCTION_REFERENCE";
         case InstrCode::INSTR_LOAD:
             return "LOAD";
         case InstrCode::INSTR_STORE:
@@ -144,6 +140,14 @@ const char* Intermediate::instr_type_to_string(InstrCode code) {
             #endif
     }
 };
+
+rang::fg instruction_name_c = rang::fg::magenta;
+rang::fg number_c = rang::fg::yellow;
+rang::fg string_c = rang::fg::yellow;
+rang::fg operation_c = rang::fg::cyan;
+rang::fg label_c = rang::fg::blue;
+rang::fg variable_c = rang::fg::red;
+rang::fg comment_c = rang::fg::green;
 
 /* Length of instruction name in the console */
 static const uint INSTRUCTION_NAME_LENGTH = 30;
@@ -278,9 +282,6 @@ void Intermediate::log_instruction(Instruction instr) {
 
     std::cout << '\n';
 }
-
-Block::Block() {
-}
 void Block::log_block() const {
     size_t size = 0;
     for (Label set : this->labels) size += set.instructions.size();
@@ -289,8 +290,6 @@ void Block::log_block() const {
 
     uint instr_number = 0;
 
-    std::cout << "-------------------------------------------------------\n";
-    std::cout << "                          IR                           \n";
     // Don't increment the loop, because print instruction always increases it by at least one
     for (uint set_count = 0; set_count < this->labels.size(); set_count += 1) {
         Label label = this->labels.at(set_count);
@@ -310,11 +309,25 @@ void Block::log_block() const {
             instr_number += 1;
         }
     }
-    
-    std::cout << "-------------------------------------------------------" << std::endl;
 }
 
-#endif
+// Label IR >
+Block *LabelIR::new_function() {
+    this->functions.push_back(Block());
+    return &this->functions.back();
+}
+void LabelIR::log_ir() const {
+    std::cout << "-------------------------------------------------------\n";
+    std::cout << "                          IR                           \n";
+    std::cout << rang::fg::green
+              << "                       =>MAIN<=                        \n";
+    std::cout << rang::style::reset;
+
+    this->main.log_block();
+
+    std::cout << "-------------------------------------------------------" << std::endl;
+};
+// < Label IR
 
 Intermediate::Label::Label(label_index_t* index) : name(index) {};
 

@@ -10,8 +10,9 @@ class Compiler {
     private:
         bool error = false;
 
+        Intermediate::LabelIR &ir;
         /* A reference to the main chunk we'll compiling into at the moment */
-        Intermediate::Block& main_chunk;
+        Intermediate::Block *main_block;
         Output &output;
         Scopes::ScopeManager scopes = Scopes::ScopeManager();
 
@@ -37,13 +38,14 @@ class Compiler {
         void compile_continue_statement(AST::Continue* node);
 
         void compile_function_call(AST::FunctionCall* node);
+        void compile_function_definition(AST::Function* node);
 
         void compile_body(AST::Body* body);
 
         /* Compile a node into the chunk */
         void compile_node(AST::Node* node);
     public:
-        Compiler(Intermediate::Block& main_chunk, Output &output);
+        Compiler(Intermediate::LabelIR& ir, Output &output);
 
         /* Compile the whole program, and then add an exit instruction.
             Returns true if the program was compiled successfully. */

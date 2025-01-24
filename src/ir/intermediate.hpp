@@ -67,6 +67,10 @@ namespace Intermediate {
         INSTR_NUMBER,
         INSTR_STRING,
 
+        /* Create a reference to a function at the given index, which is a value.
+            Argument is index of function. */
+        INSTR_MAKE_FUNCTION_REFERENCE,
+
         INSTR_LOAD,
         INSTR_STORE,
 
@@ -97,6 +101,7 @@ namespace Intermediate {
         Values::number_t number;
 
         uint num_arguments;
+        uint function_index;
 
         Variable variable;
     };
@@ -204,8 +209,6 @@ namespace Intermediate {
                 done automatically. */
             std::vector<Label> labels = std::vector<Label>();
         public:
-            Block();
-
             /* Generate a new label with a randomly-generated index. */
             label_index_t* new_label();
             /* Generate a new label with a given index. */
@@ -230,6 +233,19 @@ namespace Intermediate {
             label_index_t* gen_label_name() const;
 
             ~Block();
+    };
+    class LabelIR {
+        private:
+            Block main = Block();
+
+            std::vector<Block> functions = std::vector<Block>();
+        public:
+            inline Block            *get_main() { return &this->main; };
+            inline uint   last_function_index() { return this->functions.size() - 1; };
+
+            Block *new_function();
+
+            void log_ir() const;
     };
 };
 
