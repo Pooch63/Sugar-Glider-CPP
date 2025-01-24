@@ -260,7 +260,9 @@ void FunctionCall::add_argument(Node* argument) {
     this->arguments.push_back(argument);
 }
 
-Function::Function(std::string* name) : Node(NodeType::NODE_FUNCTION_DEFINITION), name(name) {};
+Function::Function(std::string* name, TokenPosition name_position) :
+    Node(NodeType::NODE_FUNCTION_DEFINITION, name_position),
+    name(name) {};
 
 void Function::add_argument(std::string* argument) {
     this->arguments.push_back(argument);

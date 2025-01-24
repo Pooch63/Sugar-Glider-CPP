@@ -257,7 +257,7 @@ namespace AST {
             std::vector<std::string*> arguments = std::vector<std::string*>();
             Node* function_body;
         public:
-            Function(std::string* name);
+            Function(std::string* name, TokenPosition name_position);
 
             inline auto            begin() const { return this->arguments.begin(); };
             inline auto              end() const { return this->arguments.end(); };
