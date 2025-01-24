@@ -11,10 +11,9 @@
 #include <iostream>
 
 int main() {
-    Parse::Parser::initialize_parse_rules();
     Random::initialize_rng();
 
-    std::string prog = "var b = PI * PI; println(PI * abcdefghijklmnopqrstuvwyzabcdefghijklmnopqrstuvwyzabcdefghijklmnopqrstuvwyzabcdefghijklmnopqrstuvwyz);";
+    std::string prog = "function _(_) {  }; \"\\U00000065\";";
 
     Output output(prog);
     Scan::Scanner lexer(prog, output);
@@ -22,7 +21,7 @@ int main() {
     Parse::Parser parser(lexer, output);
     AST::Node* node = parser.parse();
 
-    std::cout << "DID PARSING WORK?" << sizeof(Intermediate::Variable) << std::endl;
+    std::cout << "DID PARSING WORK?" << std::endl;
 
     /* If there was a parse error, there will be some null pointers, so DO NOT
         actually compile. */
@@ -33,7 +32,7 @@ int main() {
 
     using Bytecode::Chunk;
     Chunk chunk = Chunk();
-    auto block = Intermediate::Block();
+    auto block = Intermediate::LabelIR();
 
     Compiler compiler(block, output);
     bool compile_success = compiler.compile(node);
@@ -44,10 +43,10 @@ int main() {
         return Errors::COMPILE_ERROR;
     }
 
-    block.log_block();
+    block.log_ir();
 
     auto optimized = Intermediate::Block();
-    optimize_labels(block, optimized);
+    optimize_labels(*block.get_main(), optimized);
 
     std::cout << std::endl;
     optimized.log_block();
