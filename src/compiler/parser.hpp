@@ -102,8 +102,10 @@ namespace Parse {
 
             void skip_semicolons();
 
-            /* Parses an expression within parentheses (()) */
+            /* Parse an expression within parentheses (()) */
             AST::Node* parse_parenthesized_expression();
+            /* Parse a block within braces ({}) */
+            AST::Body* parse_braced_block();
             /* Parse either a block (code surrounded by {}), OR if that's not possible,
                 parse a single statement. */
             AST::Node* parse_optionally_inlined_block();
@@ -132,6 +134,9 @@ namespace Parse {
             AST::Break* parse_break_statement();
             AST::Continue* parse_continue_statement();
 
+            std::string* parse_function_parameter();
+            AST::Function* parse_function();
+
             AST::Node* parse_statement();
 
             AST::Body* parse();
@@ -150,6 +155,7 @@ namespace Parse {
                 Otherwise, error and return false.
                 Advances no matter what. */
             bool expect(Scan::TokType type, char* error_message);
+            bool expect(Scan::TokType type, const char* error_message);
 
             inline Output &get_output() const { return this->output; };
     };

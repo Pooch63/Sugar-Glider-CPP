@@ -265,12 +265,19 @@ bool Parser::expect_symbol(TokType type, const char* error_message) {
     return false;
 };
 bool Parser::expect(TokType type, char* error_message) {
+    /* Intentional choice: I felt that const_cast was appropriate here to avoid the EXACT SAME CODE
+        implemented twice. */
+    return this->expect(type, const_cast<const char*>(error_message));
+}
+bool Parser::expect(TokType type, const char* error_message) {
     Scan::Token current = this->curr();
     this->advance();
 
     if (current.get_type() == type) {
         return true;
     }
+
+    this->output.error(current.get_position(), error_message, Errors::PARSE_ERROR);
 
     return false;
 }
@@ -314,9 +321,7 @@ AST::Node* Parser::parse_parenthesized_expression() {
 
     return expression;
 };
-AST::Node* Parser::parse_optionally_inlined_block() {
-    if (this->curr().get_type() != TokType::LBRACKET) return this->parse_expression();
-
+AST::Body* Parser::parse_braced_block() {
     // Go through {
     this->advance();
 
@@ -330,6 +335,11 @@ AST::Node* Parser::parse_optionally_inlined_block() {
     this->expect_symbol(TokType::RBRACKET);
 
     return body;
+}
+AST::Node* Parser::parse_optionally_inlined_block() {
+    if (this->curr().get_type() != TokType::LBRACKET) return this->parse_expression();
+
+    return this->parse_braced_block();
 }
 
 AST::Node* Parser::parse_precedence(int prec) {
@@ -434,6 +444,45 @@ AST::Continue* Parser::parse_continue_statement() {
     return new AST::Continue(continue_.get_position());
 }
 
+std::string* Parser::parse_function_parameter() {
+    bool found_identifier = this->expect(TokType::IDENTIFIER, "Expected identifier as function parameter");
+    if (found_identifier) this->previous_token.mark_payload();
+    return found_identifier ? this->previous_token.get_string() : nullptr;
+}
+AST::Function* Parser::parse_function() {
+    // Go through function token
+    this->advance();
+
+    bool found_identifier = this->expect(TokType::IDENTIFIER, "Expected identifier to describe function");
+    std::string* name = found_identifier ? this->previous_token.get_string() : nullptr;
+    if (found_identifier) this->previous_token.mark_payload();
+
+    this->expect_symbol(TokType::LPAREN);
+
+    AST::Function* function = new AST::Function(name);
+
+    if (this->current_token.get_type() != TokType::RPAREN) {
+        while (this->curr().get_type() != TokType::RPAREN && this->curr().get_type() != TokType::EOI) {
+            std::string* argument = this->parse_function_parameter();
+            
+            if (argument == nullptr) break;
+            function->add_argument(argument);
+
+            if (this->curr().get_type() == TokType::COMMA) {
+                this->advance();
+            }
+            else {
+                break;
+            }
+        }
+    }
+
+    this->expect_symbol(TokType::RPAREN, "Expected ) after function arguments");
+
+    function->set_body(this->parse_braced_block());
+    return function;
+}
+
 AST::Node* Parser::parse_statement() {
     // Skip over redundant semicolons
     this->skip_semicolons();
@@ -461,6 +510,9 @@ AST::Node* Parser::parse_statement() {
             break;
         case TokType::IF:
             node = this->parse_if_statement();
+            break;
+        case TokType::FUNCTION:
+            node = this->parse_function();
             break;
         default:
             node = this->parse_expression();
