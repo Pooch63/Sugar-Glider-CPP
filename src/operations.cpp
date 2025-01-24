@@ -5,10 +5,16 @@
 #endif
 
 bool Operations::bin_op_is_bitwise_operator(BinOpType type) {
-    return false;
+    switch (type) {
+        default:
+            return false;
+    }
 };
 bool Operations::unary_is_bitwise_operator(UnaryOpType type) {
-    return false;
+    switch (type) {
+        default:
+            return false;
+    }
 }
 
 #ifdef DEBUG
