@@ -39,6 +39,7 @@ const char* Scan::tok_type_to_string(TokType type) {
         case CONST: return "const";
         case CONTINUE: return "continue";
         case FALSE: return "false";
+        case FUNCTION: return "function";
         case IF: return "if";
         case TRUE: return "true";
         case VAR: return "var";
@@ -81,7 +82,7 @@ void Token::free() {
     if (!this->free_payload) return;
 
     if (this->has_string_payload()) {
-        printf("DEBUG freed string \"%s\" (%p)\n", this->get_string()->c_str(), this->get_string());
+        printf("DEBUG freed string \"%s\" (%p)\n", this->get_string()->c_str(), static_cast<void*>(this->get_string()));
         delete this->get_string();
     }
 }
@@ -121,6 +122,7 @@ namespace {
         { "const", TokType::CONST },
         { "continue", TokType::CONTINUE },
         { "false", TokType::FALSE },
+        { "function", TokType::FUNCTION },
         { "if", TokType::IF },
         { "true", TokType::TRUE },
         { "var", TokType::VAR },
@@ -296,6 +298,12 @@ std::string* Scanner::parse_string() {
                         length = utf32_codepoint_to_char_buffer(hex, buffer);
                     }
                         break;
+                    case 'U':
+                    {
+                        uint32_t hex = this->parse_hex<8>("A \\U escape sequence requires eight hexadecimal digits.");
+                        length = utf32_codepoint_to_char_buffer(hex, buffer);
+                    }
+                        break;
 
                     default:
                     {
@@ -342,7 +350,7 @@ Token Scanner::next_token() {
     if (this->current() == '\0') {
         return Token(
             TokType::EOI,
-            TokenPosition{ .line = this->line, col = this->col, .length = 1 }
+            TokenPosition{ .line = this->line, .col = this->col, .length = 1 }
         );
     }
 

@@ -73,6 +73,7 @@ namespace Scan {
         CONST,
         CONTINUE,
         FALSE,
+        FUNCTION,
         IF,
         TRUE,
         VAR,
@@ -178,7 +179,7 @@ namespace Scan {
             using hex_payload = typename std::conditional<
                 num_hex_digits <= 2,
                 char,
-                uint32_t >::type;
+                char32_t >::type;
             /* Read in the specified number of hex digits and return the number. */
             template<uint num_hex_digits>
             hex_payload<num_hex_digits> parse_hex(std::string message_on_error) {
