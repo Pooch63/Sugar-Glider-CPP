@@ -1,7 +1,8 @@
-MAKE_MODE = build
+MAKE_MODE = debug
 
 CC = g++
-flags := -Wall -std=c++17 -O3
+warnings = -pedantic -Wall -Wextra -Werror
+flags := $(warnings) -std=c++20 -O3
 
 SRC_DIR = ./src
 OBJ_DIR =./obj
