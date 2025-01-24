@@ -157,6 +157,12 @@ FunctionCall* Node::as_function_call() {
     #endif
     return dynamic_cast<FunctionCall*>(this);
 }
+Function* Node::as_function() {
+    #ifdef DEBUG_ASSERT
+    assert(this->node_type == NodeType::NODE_FUNCTION_DEFINITION);
+    #endif
+    return dynamic_cast<Function*>(this);
+}
 Body* Node::as_body() {
     #ifdef DEBUG_ASSERT
     assert(this->node_type == NodeType::NODE_BODY);
@@ -252,6 +258,24 @@ void FunctionCall::add_argument(Node* argument) {
     #endif
 
     this->arguments.push_back(argument);
+}
+
+Function::Function(std::string* name) : Node(NodeType::NODE_FUNCTION_DEFINITION), name(name) {};
+
+void Function::add_argument(std::string* argument) {
+    this->arguments.push_back(argument);
+}
+void Function::set_body(Node* body) {
+    this->function_body = body;
+}
+
+Function::~Function() {
+    if (this->name != nullptr) delete name;
+    if (this->function_body != nullptr) delete this->function_body;
+
+    for (std::string* argument : this->arguments) {
+        if (argument != nullptr) delete argument;
+    }
 }
 
 Body::Body() : Node(NodeType::NODE_BODY) {};

@@ -26,6 +26,7 @@ namespace AST {
         NODE_CONTINUE,
 
         NODE_FUNCTION_CALL,
+        NODE_FUNCTION_DEFINITION,
 
         NODE_BODY
     };
@@ -50,6 +51,7 @@ namespace AST {
     class Break;
     class Continue;
     class FunctionCall;
+    class Function;
     class Body;
 
     // @REVIEW: Don't free until end of compilation.
@@ -82,6 +84,7 @@ namespace AST {
             Break* as_break_statement();
             Continue* as_continue_statement();
             FunctionCall* as_function_call();
+            Function* as_function();
             Body* as_body();
 
             virtual ~Node() = default;
@@ -238,15 +241,33 @@ namespace AST {
         public:
             FunctionCall(Node* function);
 
-            inline auto          begin() { return this->arguments.begin(); };
-            inline auto            end() { return this->arguments.end(); };
-            inline auto argument_count() { return this->arguments.size(); };
+            inline auto          begin() const { return this->arguments.begin(); };
+            inline auto            end() const { return this->arguments.end(); };
+            inline auto argument_count() const { return this->arguments.size(); };
 
             inline Node* get_function() const { return this->function; };
 
             void add_argument(Node* argument);
 
             ~FunctionCall();
+    };
+    class Function : public Node {
+        private:
+            std::string* name;
+            std::vector<std::string*> arguments = std::vector<std::string*>();
+            Node* function_body;
+        public:
+            Function(std::string* name);
+
+            inline auto            begin() const { return this->arguments.begin(); };
+            inline auto              end() const { return this->arguments.end(); };
+            inline std::string* get_name() const { return this->name; };
+            inline Node*        get_body() const { return this->function_body; };
+
+            void add_argument(std::string* argument);
+            void set_body(Node* Body);
+
+            ~Function();
     };
 
     class Body : public Node {
