@@ -10,7 +10,8 @@
 namespace Scopes {
     enum ScopeType {
         NORMAL,
-        LOOP
+        LOOP,
+        FUNCTION
     };
 
     class Scope {
@@ -59,6 +60,8 @@ namespace Scopes {
             Intermediate::Variable add_variable(std::string* name, Intermediate::VariableType type);
 
             bool last_scope_has_variable(std::string* name);
+
+            bool in_function() const;
 
             void new_scope(ScopeType type);
             void new_scope(ScopeType type, Intermediate::label_index_t* condition, Intermediate::label_index_t* end);

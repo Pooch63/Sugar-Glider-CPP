@@ -282,13 +282,18 @@ void Compiler::compile_function_definition(AST::Function* node) {
 
     this->main_block = this->ir.new_function();
 
-printf("maybe?\n");
+    this->scopes.new_scope(Scopes::FUNCTION);
     this->compile_node(node->get_body());
-printf("yes!\n");
+    this->scopes.pop_scope();
 
     this->main_block = old_compile;
 }
 void Compiler::compile_return_statement(AST::Return* node) {
+    if (!this->scopes.in_function()) {
+        this->output.error(node->get_position(), "Illegal return statement in non-function scope", Errors::COMPILE_ERROR);
+        this->error = true;
+    }
+
     this->compile_node(node->get_return_value());
     this->main_block->add_instruction(
         Intermediate::Instruction(Intermediate::INSTR_RETURN)

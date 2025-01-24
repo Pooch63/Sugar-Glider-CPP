@@ -336,7 +336,7 @@ void LabelIR::log_ir() const {
     for (uint func_ind = 0; func_ind < this->functions.size(); func_ind += 1) {
     std::cout << "-------------------------------------------------------\n";
         std::cout << '\n' << rang::fg::green;
-        std::cout << "                       Function " << std::hex << func_ind << std::dec << "\n";
+        std::cout << "                       Function 0x" << std::hex << func_ind << std::dec << "\n";
         std::cout << rang::style::reset;
 
         this->functions[func_ind].log_block();

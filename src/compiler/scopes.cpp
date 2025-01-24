@@ -11,7 +11,7 @@ using namespace Scopes;
 Scope::Scope(ScopeType type) : type(type) {
     // Make sure that this isn't a scope type that had to give more information
     #ifdef DEBUG
-    assert(type == ScopeType::NORMAL);
+    assert(type == ScopeType::NORMAL || type == ScopeType::FUNCTION);
     #endif
 };
 Scope::Scope(ScopeType type, label_index_t* condition, label_index_t* end) :
@@ -38,7 +38,7 @@ void Scope::add_variable(std::string* name, Variable info) {
     this->variables[*name] = info;
 };
 
-label_index_t * Scope::get_loop_condition_label() const {
+label_index_t *Scope::get_loop_condition_label() const {
     #ifdef DEBUG_ASSERT
     assert(this->type == ScopeType::LOOP);
     #endif
@@ -80,6 +80,13 @@ Variable ScopeManager::add_variable(std::string* name, VariableType type) {
 }
 bool ScopeManager::last_scope_has_variable(std::string* name) {
     return this->scopes.back().has_variable(name);
+};
+
+bool ScopeManager::in_function() const {
+    for (int index = this->scopes.size() - 1; index >= 0; index -= 1) {
+        if (this->scopes.at(static_cast<uint>(index)).get_type() == ScopeType::FUNCTION) return true;
+    }
+    return false;
 };
 
 void ScopeManager::new_scope(ScopeType type) {
