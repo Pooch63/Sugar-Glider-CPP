@@ -105,6 +105,10 @@ void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized) {
                 label.pop_back();
                 continue;
             }
+            /* DCE after return statement */
+            if (last.code == InstrCode::INSTR_RETURN) {
+                break;
+            }
 
             label.push_back(instr);
         }

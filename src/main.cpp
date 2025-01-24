@@ -13,7 +13,7 @@
 int main() {
     Random::initialize_rng();
 
-    std::string prog = "function _(_) {  }; \"\\U00000065\";";
+    std::string prog = "function _(_) { return _; _ = 5; }; _ = 4; \"\\U00000065\"; ((((((_))))))(3);";
 
     Output output(prog);
     Scan::Scanner lexer(prog, output);
@@ -34,8 +34,10 @@ int main() {
     Chunk chunk = Chunk();
     auto block = Intermediate::LabelIR();
 
+printf("?maybe?\n");
     Compiler compiler(block, output);
     bool compile_success = compiler.compile(node);
+printf("!yes!\n");
 
     /* If there was a compiler error, don't continue. */
     if (!compile_success) {

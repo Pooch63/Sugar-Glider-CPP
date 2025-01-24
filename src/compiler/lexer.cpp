@@ -41,6 +41,7 @@ const char* Scan::tok_type_to_string(TokType type) {
         case FALSE: return "false";
         case FUNCTION: return "function";
         case IF: return "if";
+        case RETURN: return "return";
         case TRUE: return "true";
         case VAR: return "var";
         case WHILE: return "while";
@@ -124,6 +125,7 @@ namespace {
         { "false", TokType::FALSE },
         { "function", TokType::FUNCTION },
         { "if", TokType::IF },
+        { "return", TokType::RETURN },
         { "true", TokType::TRUE },
         { "var", TokType::VAR },
         { "while", TokType::WHILE },

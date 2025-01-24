@@ -259,11 +259,9 @@ void Compiler::compile_function_call(AST::FunctionCall* node) {
 }
 void Compiler::compile_function_definition(AST::Function* node) {
     Intermediate::Block *old_compile = this->main_block;
-    this->main_block = this->ir.new_function();
 
     /* Make sure the variable can be declared. */
     if (this->scopes.last_scope_has_variable(node->get_name())) {
-        printf("Entered error, so far so good \n");
         char error[100];
         std::string name;
         truncate_string(name, 30, *node->get_name());
@@ -271,15 +269,31 @@ void Compiler::compile_function_definition(AST::Function* node) {
         this->output.error(node->get_position(), error, Errors::COMPILE_ERROR);
         this->error = true;
     }
-    
-    this->main_block->add_instruction(Intermediate::Instruction(
-        Intermediate::INSTR_MAKE_FUNCTION_REFERENCE,
-        this->ir.last_function_index()));
 
+    this->main_block->add_instruction(Intermediate::Instruction(
+        Intermediate::INSTR_GET_FUNCTION_REFERENCE,
+        this->ir.last_function_index()));
+    /* Add the variable to scopes */
+    Intermediate::Variable variable = this->scopes.add_variable(node->get_name(), Intermediate::MUTABLE);
+    this->main_block->add_instruction(
+        Intermediate::Instruction(
+            Intermediate::INSTR_STORE,
+            variable ));
+
+    this->main_block = this->ir.new_function();
+
+printf("maybe?\n");
     this->compile_node(node->get_body());
-    
+printf("yes!\n");
+
     this->main_block = old_compile;
 }
+void Compiler::compile_return_statement(AST::Return* node) {
+    this->compile_node(node->get_return_value());
+    this->main_block->add_instruction(
+        Intermediate::Instruction(Intermediate::INSTR_RETURN)
+    );
+};
 
 void Compiler::compile_body(AST::Body* body) {
     if (!body->will_create_scope()) scopes.new_scope(ScopeType::NORMAL);
@@ -356,6 +370,9 @@ void Compiler::compile_node(AST::Node* node) {
             break;
         case AST::NodeType::NODE_FUNCTION_DEFINITION:
             this->compile_function_definition(node->as_function());
+            break;
+        case AST::NodeType::NODE_RETURN:
+            this->compile_return_statement(node->as_return_statement());
             break;
 
         case AST::NodeType::NODE_BODY:

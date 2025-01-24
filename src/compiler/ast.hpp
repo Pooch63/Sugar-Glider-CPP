@@ -27,6 +27,7 @@ namespace AST {
 
         NODE_FUNCTION_CALL,
         NODE_FUNCTION_DEFINITION,
+        NODE_RETURN,
 
         NODE_BODY
     };
@@ -52,6 +53,7 @@ namespace AST {
     class Continue;
     class FunctionCall;
     class Function;
+    class Return;
     class Body;
 
     // @REVIEW: Don't free until end of compilation.
@@ -85,6 +87,7 @@ namespace AST {
             Continue* as_continue_statement();
             FunctionCall* as_function_call();
             Function* as_function();
+            Return* as_return_statement();
             Body* as_body();
 
             virtual ~Node() = default;
@@ -268,6 +271,16 @@ namespace AST {
             void set_body(Node* Body);
 
             ~Function();
+    };
+    class Return : public Node {
+        private:
+            Node *return_value;
+        public:
+            Return(Node *return_value, TokenPosition return_position);
+
+            inline Node *get_return_value() const { return this->return_value; };
+
+            ~Return();
     };
 
     class Body : public Node {

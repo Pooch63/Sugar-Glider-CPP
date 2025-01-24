@@ -133,6 +133,7 @@ namespace Parse {
             AST::While* parse_while_statement();
             AST::Break* parse_break_statement();
             AST::Continue* parse_continue_statement();
+            AST::Return* parse_return_statement();
 
             std::string* parse_function_parameter();
             AST::Function* parse_function();

@@ -163,6 +163,12 @@ Function* Node::as_function() {
     #endif
     return dynamic_cast<Function*>(this);
 }
+Return* Node::as_return_statement() {
+    #ifdef DEBUG_ASSERT
+    assert(this->node_type == NodeType::NODE_RETURN);
+    #endif
+    return dynamic_cast<Return*>(this);
+}
 Body* Node::as_body() {
     #ifdef DEBUG_ASSERT
     assert(this->node_type == NodeType::NODE_BODY);
@@ -278,6 +284,13 @@ Function::~Function() {
     for (std::string* argument : this->arguments) {
         if (argument != nullptr) delete argument;
     }
+}
+
+Return::Return(Node *return_value, TokenPosition return_position) :
+    Node(NodeType::NODE_RETURN, return_position),
+    return_value(return_value) {};
+Return::~Return() {
+    if (this->return_value != nullptr) delete this->return_value;
 }
 
 Body::Body() : Node(NodeType::NODE_BODY) {};

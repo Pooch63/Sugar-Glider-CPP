@@ -75,6 +75,7 @@ namespace Scan {
         FALSE,
         FUNCTION,
         IF,
+        RETURN,
         TRUE,
         VAR,
         WHILE,

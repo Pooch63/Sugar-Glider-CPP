@@ -69,7 +69,8 @@ namespace Intermediate {
 
         /* Create a reference to a function at the given index, which is a value.
             Argument is index of function. */
-        INSTR_MAKE_FUNCTION_REFERENCE,
+        INSTR_GET_FUNCTION_REFERENCE,
+        INSTR_RETURN,
 
         INSTR_LOAD,
         INSTR_STORE,
@@ -164,6 +165,12 @@ namespace Intermediate {
             assert(this->code == InstrCode::INSTR_CALL);
             #endif
             return this->payload.num_arguments;
+        }
+        inline uint get_function_index() const {
+            #ifdef DEBUG
+            assert(this->code == InstrCode::INSTR_GET_FUNCTION_REFERENCE);
+            #endif
+            return this->payload.function_index;
         }
 
         // < Getters

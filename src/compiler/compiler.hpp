@@ -39,6 +39,7 @@ class Compiler {
 
         void compile_function_call(AST::FunctionCall* node);
         void compile_function_definition(AST::Function* node);
+        void compile_return_statement(AST::Return* node);
 
         void compile_body(AST::Body* body);
 

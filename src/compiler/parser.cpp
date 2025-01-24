@@ -443,6 +443,16 @@ AST::Continue* Parser::parse_continue_statement() {
 
     return new AST::Continue(continue_.get_position());
 }
+AST::Return* Parser::parse_return_statement() {
+    // Go through return token
+    this->advance();
+
+    TokenPosition return_position = this->previous_token.get_position();
+    AST::Node* value = this->parse_expression();
+
+    this->expect_symbol(TokType::SEMICOLON, "Semicolon expected after return statement");
+    return new AST::Return(value, return_position);
+};
 
 std::string* Parser::parse_function_parameter() {
     bool found_identifier = this->expect(TokType::IDENTIFIER, "Expected identifier as function parameter");
@@ -513,6 +523,9 @@ AST::Node* Parser::parse_statement() {
             break;
         case TokType::FUNCTION:
             node = this->parse_function();
+            break;
+        case TokType::RETURN:
+            node = this->parse_return_statement();
             break;
         default:
             node = this->parse_expression();

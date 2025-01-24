@@ -23,7 +23,7 @@ Instruction::Instruction(InstrCode code, uint argument) : code(code) {
     if (code == InstrCode::INSTR_CALL) {
         this->payload.num_arguments = argument;
     }
-    else if (code == InstrCode::INSTR_MAKE_FUNCTION_REFERENCE) {
+    else if (code == InstrCode::INSTR_GET_FUNCTION_REFERENCE) {
         this->payload.function_index = argument;
     }
     else {
@@ -46,7 +46,8 @@ bool Instruction::is_constant() const {
         this->code == InstrCode::INSTR_FALSE ||
         this->code == InstrCode::INSTR_NULL ||
         this->code == InstrCode::INSTR_NUMBER ||
-        this->code == InstrCode::INSTR_STRING;
+        this->code == InstrCode::INSTR_STRING ||
+        this->code == InstrCode::INSTR_GET_FUNCTION_REFERENCE;
 }
 bool Instruction::is_static_flow_load() const {
     if (this->code == InstrCode::INSTR_LOAD) return true;
@@ -124,8 +125,10 @@ const char* Intermediate::instr_type_to_string(InstrCode code) {
             return "INSTR_NUMBER";
         case InstrCode::INSTR_STRING:
             return "INSTR_STRING";
-        case InstrCode::INSTR_MAKE_FUNCTION_REFERENCE:
-            return "MAKE_FUNCTION_REFERENCE";
+        case InstrCode::INSTR_GET_FUNCTION_REFERENCE:
+            return "GET_FUNCTION_REFERENCE";
+        case InstrCode::INSTR_RETURN:
+            return "RETURN";
         case InstrCode::INSTR_LOAD:
             return "LOAD";
         case InstrCode::INSTR_STORE:
@@ -238,6 +241,11 @@ void Intermediate::log_instruction(Instruction instr) {
             comment += ")";
         }
             break;
+        case InstrCode::INSTR_GET_FUNCTION_REFERENCE:
+        {
+            std::cout << variable_c << instr.get_function_index();
+        }
+            break;
         case InstrCode::INSTR_LOAD:
         case InstrCode::INSTR_STORE:
         {
@@ -318,12 +326,21 @@ Block *LabelIR::new_function() {
 }
 void LabelIR::log_ir() const {
     std::cout << "-------------------------------------------------------\n";
-    std::cout << "                          IR                           \n";
+    std::cout << "                          IR\n";
     std::cout << rang::fg::green
-              << "                       =>MAIN<=                        \n";
+              << "                       =>MAIN<=\n";
     std::cout << rang::style::reset;
 
     this->main.log_block();
+
+    for (uint func_ind = 0; func_ind < this->functions.size(); func_ind += 1) {
+    std::cout << "-------------------------------------------------------\n";
+        std::cout << '\n' << rang::fg::green;
+        std::cout << "                       Function " << std::hex << func_ind << std::dec << "\n";
+        std::cout << rang::style::reset;
+
+        this->functions[func_ind].log_block();
+    }
 
     std::cout << "-------------------------------------------------------" << std::endl;
 };
