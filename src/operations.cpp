@@ -17,7 +17,6 @@ bool Operations::unary_is_bitwise_operator(UnaryOpType type) {
     }
 }
 
-#ifdef DEBUG
 const char* Operations::bin_op_to_string(BinOpType type) {
     switch (type) {
         case BinOpType::BINOP_ADD: return "+";
@@ -27,9 +26,7 @@ const char* Operations::bin_op_to_string(BinOpType type) {
         case BinOpType::BINOP_MOD: return "%";
         /* Otherwise, there was an error. Unknown binary operation type. */
         default:
-            #ifdef DEBUG
-            assert(false);
-            #endif
+            throw sg_assert_error("Tried to convert unknown BinOpType to string");
     }
 };
 const char* Operations::unary_op_to_string(UnaryOpType type) {
@@ -37,9 +34,6 @@ const char* Operations::unary_op_to_string(UnaryOpType type) {
         case UnaryOpType::UNARY_NEGATE: return "-";
         /* Otherwise, there was an error. Unknown unary operation type. */
         default:
-            #ifdef DEBUG
-            assert(false);
-            #endif
+            throw sg_assert_error("Tried to convert unknown UnaryOpType to string");
     }
 };
-#endif

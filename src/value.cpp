@@ -36,10 +36,7 @@ Values::number_t Value::to_number() const {
         case ValueType::TRUE: return static_cast<Values::number_t>(1);
         case ValueType::FALSE: return static_cast<Values::number_t>(0);
         default:
-            #ifdef DEBUG
-            /* Invalid numerical type */
-            assert(false);
-            #endif
+            throw sg_assert_error("Tried to convert non-numeric value type to number");
     }
 }
 
@@ -97,9 +94,7 @@ Value* Values::bin_op(Operations::BinOpType type, Value a, Value b) {
         case BinOpType::BINOP_MOD:
             return new Value(ValueType::NUMBER, mod(first, second));
         default:
-            #ifdef DEBUG
-            assert(false);
-            #endif
+            throw sg_assert_error("Tried to compute unknown binary operation on two values");
     }
 };
 Value* Values::unary_op(Operations::UnaryOpType type, Value arg) {
@@ -125,8 +120,6 @@ Value* Values::unary_op(Operations::UnaryOpType type, Value arg) {
         case UnaryOpType::UNARY_NEGATE:
             return new Value(ValueType::NUMBER, -num);
         default:
-            #ifdef DEBUG
-            assert(false);
-            #endif
+            throw sg_assert_error("Tried to compute unknown unary operation on value");
     }
 };

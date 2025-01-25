@@ -9,10 +9,8 @@
 /* Get the number of digits in a decimal number */
 uint get_digits(uint number);
 
-#ifdef DEBUG
 std::string var_ind_to_subscript(int num);
 uint get_string_length_as_utf32(std::string str);
-#endif
 
 /* Truncate a string to the maximum length, then add ... if necessary */
 void truncate_string(std::string &output, uint max_len, std::string &value);

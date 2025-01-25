@@ -165,9 +165,7 @@ void Compiler::compile_variable_assignment(AST::VarAssignment* node) {
             break;
         /* Unknown variable to set */
         default:
-            #ifdef DEBUG
-            assert(false);
-            #endif
+            throw sg_assert_error("Parse error: Invalid variable node type to compile");
     }
 };
 

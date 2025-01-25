@@ -18,10 +18,8 @@ namespace Operations {
     bool bin_op_is_bitwise_operator(BinOpType type);
     bool unary_is_bitwise_operator(UnaryOpType type);
     
-    #ifdef DEBUG
     const char* bin_op_to_string(BinOpType type);
     const char* unary_op_to_string(UnaryOpType type);
-    #endif
 };
 
 #endif

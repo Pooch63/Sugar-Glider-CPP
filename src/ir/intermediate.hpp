@@ -90,9 +90,7 @@ namespace Intermediate {
         INSTR_EXIT
     };
 
-    #ifdef DEBUG
     const char* instr_type_to_string(InstrCode code);
-    #endif
 
     typedef std::string label_index_t;
 

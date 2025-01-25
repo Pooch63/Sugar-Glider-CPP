@@ -23,10 +23,7 @@ static uint8_t hex_digit_to_number(char c) {
     if (c >= 'a' && c <= 'f') return c - 'a' + 10;
     if (c >= 'A' && c <= 'F') return c - 'A' + 10;
 
-    #ifdef DEBUG_ASSERT
-    assert(false &&
-            "unknown hexadecimal digit");
-    #endif
+    throw sg_assert_error("unknown hexadecimal digit");
 }
 
 namespace Scan {

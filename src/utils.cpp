@@ -31,7 +31,6 @@ static const char subscripts[10][4] = {
     "\u2089"
 };
 
-#ifdef DEBUG
 std::string var_ind_to_subscript(int num) {
     std::string str = std::to_string(abs(num));
     std::string output = "";
@@ -41,14 +40,13 @@ std::string var_ind_to_subscript(int num) {
     for (char c : str) {
         uint subscript_ind = c - '0';
         // If it's not a digit, throw
-        if (subscript_ind >= 10) assert(false);
+        if (subscript_ind >= 10) throw sg_assert_error("Tried to convert non-digit character to subscript");
 
         output += subscripts[subscript_ind];
     }
 
     return output;
 };
-#endif
 
 void truncate_string(std::string &output, uint max_len, std::string &value) {
     #ifdef DEBUG_ASSERT
@@ -107,8 +105,6 @@ int utf32_codepoint_to_char_buffer(uint32_t codepoint, char buffer[4]) {
         return 4;
     }
 
-    #ifdef DEBUG
-    assert(false && "unknwon codepoint given to codepoint function");
-    #endif
+    throw sg_assert_error("Unknown codepoint given to utf32_codepoint_to_char_buffer function");
     return -1;
 }

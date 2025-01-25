@@ -128,9 +128,7 @@ VariableType ScopeManager::add_variable_headers(VariableType basic_type) {
         case VariableType::CONSTANT: return VariableType::FUNCTION_CONSTANT;
         case VariableType::MUTABLE:  return VariableType::FUNCTION_MUTABLE;
         default:
-            #ifdef DEBUG
-            assert(false && "Logic not yet implemented for this variable type");
-            #endif
+            throw sg_assert_error("Logic not yet implemented to add variable header to this variable type");
     }
 };
 

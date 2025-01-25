@@ -3,6 +3,17 @@
 
 using namespace Intermediate;
 
+const char* Intermediate::variable_type_to_string(VariableType type) {
+    switch (type) {
+        case VariableType::CONSTANT: return "const var";
+        case VariableType::MUTABLE: return "mut var";
+        case VariableType::FUNCTION_CONSTANT: return "func mut var";
+        case VariableType::FUNCTION_MUTABLE: return "func const var";
+        default:
+            throw sg_assert_error("Unknown variable type in string function");
+    }
+};
+
 // Constructor overloads >
 Instruction::Instruction(InstrCode code) : code(code) {};
 Instruction::Instruction(InstrCode code, std::string* payload) : code(code) {
@@ -63,10 +74,7 @@ Values::Value Instruction::payload_to_value() const {
         case InstrCode::INSTR_FALSE:
             return Values::Value(Values::ValueType::FALSE);
         default:
-            #ifdef DEBUG
-            /* Can't convert this instruction to a value */
-            assert(false);
-            #endif
+            throw sg_assert_error("Tried to convert instruction payload to value that could not become a value");
     }
 };
 
@@ -81,10 +89,7 @@ Instruction Instruction::value_to_instruction(Values::Value value) {
         case Values::ValueType::FALSE:
             return Instruction(InstrCode::INSTR_FALSE);
         default:
-            #ifdef DEBUG
-            /* Can't convert this to an instruction */
-            assert(false);
-            #endif
+            throw sg_assert_error("Tried to convert instruction to a value that could not become a value");
     }
 };
 
@@ -138,9 +143,7 @@ const char* Intermediate::instr_type_to_string(InstrCode code) {
         case InstrCode::INSTR_EXIT:
             return "EXIT";
         default:
-            #ifdef DEBUG
-            assert(false);
-            #endif
+            throw sg_assert_error("Tried to convert unknown instruction type to string");
     }
 };
 
@@ -262,7 +265,7 @@ void Intermediate::log_instruction(Instruction instr) {
             std::cout << variable_c << rang::style::underline << argument;
             
             comment = "(";
-            comment += (instr.payload.variable.type == VariableType::CONSTANT ? "const" : "mut var");
+            comment += Intermediate::variable_type_to_string(instr.payload.variable.type);
             comment += ")";
         }
             break;
@@ -324,6 +327,9 @@ Block *LabelIR::new_function() {
     this->functions.push_back(Block());
     return &this->functions.back();
 }
+int LabelIR::last_function_index()  {
+    return this->functions.size() == 0 ? -1 : static_cast<int>(this->functions.size()) - 1;
+};
 void LabelIR::log_ir() const {
     std::cout << "-------------------------------------------------------\n";
     std::cout << "                          IR\n";

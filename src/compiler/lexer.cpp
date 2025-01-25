@@ -52,9 +52,7 @@ const char* Scan::tok_type_to_string(TokType type) {
 
         default:
             /* We should not have to convert any other token to a string */
-            #ifdef DEBUG
-            assert(false);
-            #endif
+            throw sg_assert_error("Unknown token type to convert to string");
     }
 };
 std::string Scan::tok_to_concise_string(Token token) {

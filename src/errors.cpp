@@ -54,7 +54,7 @@ void Output::output_line(Position::TokenPosition position, rang::fg problem_colo
     /* Finally, log characters to the right of the error */
     int right_characters_start = line_start + error_start + position.length;
     for (int ind = right_characters_start;
-        ind <= min(line_start + Output::MAX_LOG_LENGTH, line_end);
+        ind <= min(left_start + Output::MAX_LOG_LENGTH, line_end);
         ind += 1) {
             output << this->prog.at(ind);
     }
@@ -87,4 +87,10 @@ void Output::warning(Position::TokenPosition position, std::string warning) {
     std::cerr << rang::style::bold << rang::fg::red << "warning: ";
     std::cerr << rang::style::reset << warning;
     std::cerr << '\n' << std::endl;
+}
+
+std::runtime_error log_assert(const char* message) {
+    std::cerr << rang::style::bold << rang::fg::red << "internal error\n";
+    std::cerr << rang::style::reset << "Please report this issue\n";
+    return std::runtime_error(message);
 }

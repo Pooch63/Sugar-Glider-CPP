@@ -35,10 +35,7 @@ AST::Node* Parse::Rules::keyword_constant(Scan::Token &current, [[maybe_unused]]
         case TokType::TRUE: return new AST::True();
         case TokType::FALSE: return new AST::False();
         default:
-            #ifdef DEBUG
-            // We somehow got a token that was not a keyword constant
-            assert(false);
-            #endif
+            throw sg_assert_error("Parser tried to parse non-literal token as literal");
     }
 }
 
@@ -83,9 +80,7 @@ AST::Node* Parse::Rules::binary_op(Scan::Token &current, AST::Node* left, Parser
             prec = Precedence::PREC_FACTOR;
             break;
         default:
-            #ifdef DEBUG
-            assert(false);
-            #endif
+            throw sg_assert_error("Parser tried to parse unknown token as binary operator");
     }
 
     AST::Node* right = parser->parse_precedence(static_cast<int>(prec) + 1);
