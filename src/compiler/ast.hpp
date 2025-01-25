@@ -168,13 +168,15 @@ namespace AST {
         private:
             std::string* name;
             Node* value;
-            Intermediate::VariableType variable_type;
+            /* Doesn't account for function variables or closures.
+                Just stores whether it's mutable ro immutable. */
+            Intermediate::VariableType basic_variable_type;
         public:
-            VarDefinition(Intermediate::VariableType variable_type, std::string* name, Node* value, TokenPosition pos);
+            VarDefinition(Intermediate::VariableType basic_variable_type, std::string* name, Node* value, TokenPosition pos);
 
-            inline std::string*         get_name() const { return this->name; };
-            inline Node*                get_value() const { return this->value; };
-            inline Intermediate::VariableType get_variable_type() const { return this->variable_type; };
+            inline std::string*               get_name() const { return this->name; };
+            inline Node*                      get_value() const { return this->value; };
+            inline Intermediate::VariableType get_basic_variable_type() const { return this->basic_variable_type; };
 
             ~VarDefinition();
     };

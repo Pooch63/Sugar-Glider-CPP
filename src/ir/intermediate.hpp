@@ -26,8 +26,11 @@ using Bytecode::OpCode;
 namespace Intermediate {
     enum VariableType {
         CONSTANT,
-        MUTABLE
+        MUTABLE,
+        FUNCTION_CONSTANT,
+        FUNCTION_MUTABLE
     };
+    const char* variable_type_to_string(VariableType type);
     struct Variable {
         std::string* name;
         VariableType type;
@@ -248,7 +251,7 @@ namespace Intermediate {
             std::vector<Block> functions = std::vector<Block>();
         public:
             inline Block            *get_main() { return &this->main; };
-            inline uint   last_function_index() { return this->functions.size() - 1; };
+            int   last_function_index();
 
             Block *new_function();
 

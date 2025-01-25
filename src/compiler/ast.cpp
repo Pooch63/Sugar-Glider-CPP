@@ -212,9 +212,9 @@ TernaryOp::~TernaryOp() {
     if (this->false_value != nullptr) delete this->false_value;
 }
 
-VarDefinition::VarDefinition(Intermediate::VariableType variable_type, std::string* name, Node* value, TokenPosition position) :
+VarDefinition::VarDefinition(Intermediate::VariableType basic_variable_type, std::string* name, Node* value, TokenPosition position) :
     Node(NodeType::NODE_VAR_DEFINITION, position),
-    name(name), value(value), variable_type(variable_type) {};
+    name(name), value(value), basic_variable_type(basic_variable_type) {};
 VarDefinition::~VarDefinition() {
     /* If there is a bug with the name being freed, START HERE. The runtime doesn't need it... for now. */
     if (this->name != nullptr) delete this->name;

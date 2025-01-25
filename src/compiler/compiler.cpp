@@ -105,7 +105,9 @@ void Compiler::compile_variable_definition(AST::VarDefinition* def) {
     }
 
     /* Add the variable to scopes */
-    Intermediate::Variable variable = this->scopes.add_variable(def->get_name(), def->get_variable_type());
+    Intermediate::Variable variable = this->scopes.add_variable(
+        def->get_name(),
+        this->scopes.add_variable_headers(def->get_basic_variable_type()));
 
     this->main_block->add_instruction(
         Intermediate::Instruction(
@@ -158,9 +160,7 @@ void Compiler::compile_variable_assignment(AST::VarAssignment* node) {
             this->main_block->add_instruction(
                 Intermediate::Instruction(
                     Intermediate::INSTR_LOAD,
-                    var_info
-                )
-            );
+                    var_info ));
         }
             break;
         /* Unknown variable to set */
@@ -270,9 +270,10 @@ void Compiler::compile_function_definition(AST::Function* node) {
         this->error = true;
     }
 
+
     this->main_block->add_instruction(Intermediate::Instruction(
         Intermediate::INSTR_GET_FUNCTION_REFERENCE,
-        this->ir.last_function_index()));
+        static_cast<uint>(this->ir.last_function_index()) + 1));
     /* Add the variable to scopes */
     Intermediate::Variable variable = this->scopes.add_variable(node->get_name(), Intermediate::MUTABLE);
     this->main_block->add_instruction(

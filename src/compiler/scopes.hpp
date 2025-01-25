@@ -41,6 +41,7 @@ namespace Scopes {
     };
 
     class ScopeManager {
+        using VariableType = Intermediate::VariableType;
         private:
             static bool native_scope_initialized;
         public:
@@ -57,7 +58,7 @@ namespace Scopes {
                 Goes up through the scope tree to try to find the variable. */
             bool get_variable(std::string* name, Intermediate::Variable &info) const;
             /* Add a variable to the current scope. */
-            Intermediate::Variable add_variable(std::string* name, Intermediate::VariableType type);
+            Intermediate::Variable add_variable(std::string* name, VariableType type);
 
             bool last_scope_has_variable(std::string* name);
 
@@ -73,6 +74,12 @@ namespace Scopes {
             // Get the end of the loop we're in
             // Returns nullptr if no loop is available
             Intermediate::label_index_t* get_loop_end() const;
+
+            /**
+                @param {VariableType::MUTABLE | VariableType::CONSTANT} - first type
+                @return {VariableType} - The type, updated if we're in a function
+            */
+            VariableType add_variable_headers(VariableType basic_type);
     };
 
     extern Scope native_scope;

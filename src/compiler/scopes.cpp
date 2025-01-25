@@ -121,6 +121,18 @@ label_index_t* ScopeManager::get_loop_end() const {
     }
     return nullptr;
 }
+VariableType ScopeManager::add_variable_headers(VariableType basic_type) {
+    if (!this->in_function()) return basic_type;
+
+    switch (basic_type) {
+        case VariableType::CONSTANT: return VariableType::FUNCTION_CONSTANT;
+        case VariableType::MUTABLE:  return VariableType::FUNCTION_MUTABLE;
+        default:
+            #ifdef DEBUG
+            assert(false && "Logic not yet implemented for this variable type");
+            #endif
+    }
+};
 
 bool ScopeManager::native_scope_initialized = false;
 
