@@ -25,6 +25,18 @@ Value::Value(ValueType type, number_t number) : type(type), value(value_mem_t{ .
 };
 Value::Value(ValueType type) : type(type) {};
 
+std::string Value::to_debug_string() const {
+    switch (this->get_type()) {
+        case ValueType::NUMBER: return std::to_string(this->get_number());
+        case ValueType::TRUE:   return "true";
+        case ValueType::FALSE:  return "false";
+        case ValueType::STRING: return *this->get_string();
+        case ValueType::NATIVE_FUNCTION: return "[native function]";
+        default:
+            throw sg_assert_error("Unknown value to log as string");
+    }
+};
+
 bool Value::is_numerical() const {
     return this->type == ValueType::NUMBER ||
         this->type == ValueType::TRUE ||

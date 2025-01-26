@@ -47,6 +47,8 @@ namespace Values {
 
             /* For literals: true, false, null */
             Value(ValueType type);
+
+            std::string to_debug_string() const;
             
             inline ValueType get_type() const { return this->type; };
             inline number_t get_number() const {
