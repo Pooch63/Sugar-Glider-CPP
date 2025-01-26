@@ -5,6 +5,8 @@
 #define DEBUG_ASSERT // run every single assertion to make sure the program is working.
 
 #define IR_LABEL_LENGTH 20 // length of label name in IR. Reduce for memory-tight constraints, but too small and label collisions will occur.
+#define MAX_FUNCTION_ARGUMENTS 255
+#define STRINGIFY(x) #x
 
 #ifdef DEBUG
     #include <iostream>

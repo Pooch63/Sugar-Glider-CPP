@@ -113,12 +113,23 @@ AST::Node* Parse::Rules::function_call(Scan::Token &current, AST::Node* left, Pa
 
     AST::FunctionCall* call = new AST::FunctionCall(left);
 
+    int arg_count = 0;
     if (parser->curr().get_type() != TokType::RPAREN) {
         while (parser->curr().get_type() != TokType::RPAREN) {
+            // Warn if we've already seen the max number of arguments
+            if (arg_count == MAX_FUNCTION_ARGUMENTS) {
+                // Use the macro to avoid an unncessary snprintf format
+                #define CREATE_MAX_ARG_ERROR(x) "A function call may only pass up to " STRINGIFY(x) " arguments"
+                parser->get_output().error(parser->curr().get_position(), CREATE_MAX_ARG_ERROR(MAX_FUNCTION_ARGUMENTS), Errors::PARSE_ERROR);
+                #undef CREATE_MAX_ARG_ERROR
+            }
+
             AST::Node* argument = parser->parse_expression();
             
             if (argument == nullptr) break;
             call->add_argument(argument);
+
+            arg_count += 1;
 
             if (parser->curr().get_type() == TokType::COMMA) {
                 parser->advance();
