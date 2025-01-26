@@ -27,8 +27,34 @@ uint8_t Chunk::read_byte(uint current_byte_index) const {
 
 #ifdef DEBUG
 
+const char* instruction_to_string(OpCode code) {
+    switch (code) {
+        case OpCode::OP_POP: return "POP";
+        case OpCode::OP_GOTO: return "GOTO";
+        case OpCode::OP_POP_JIZ: return "POP_JIZ";
+        case OpCode::OP_POP_JNZ: return "POP_JNZ";
+        case OpCode::OP_BIN: return "BIN_OP";
+        case OpCode::OP_UNARY: return "UNARY_OP";
+        case OpCode::OP_TRUE: return "OP_TRUE";
+        case OpCode::OP_FALSE: return "OP_FALSE";
+        case OpCode::OP_NULL: return "OP_NULL";
+        case OpCode::OP_NUMBER: return "OP_NUMBER";
+        case OpCode::OP_LOAD_CONST: return "LOAD_CONST";
+        case OpCode::OP_RETURN: return "RETURN";
+        case OpCode::OP_CALL: return "CALL";
+        case OpCode::OP_EXIT: return "EXIT";
+
+        default:
+            throw sg_assert_error("Unknown bytecode instruction to log to string");
+    }
+}
+
+#include "../../lib/rang.hpp"
+
 /* How long the area for the instruction name should be when we're logging */
-static int INSTRUCTION_NAME_LENGTH = 30;
+static const int INSTRUCTION_NAME_LENGTH = 30;
+static const int MAX_ARGUMENT_LENGTH = IR_LABEL_LENGTH + 5;
+static const rang::fg comment_c = rang::fg::green;
 int Chunk::print_instruction(uint current_byte_index) {
     OpCode code = static_cast<OpCode>(this->read_byte(current_byte_index));
     /* The number of bytes we'll need to read. The first is the instruction */
@@ -37,45 +63,7 @@ int Chunk::print_instruction(uint current_byte_index) {
     std::string output = "";
 
     // Add the instruction name
-    switch (code) {
-        case OpCode::OP_POP:
-            output = "POP";
-            break;
-        case OpCode::OP_GOTO:
-            output = "GOTO";
-            break;
-        case OpCode::OP_POP_JIZ:
-            output = "POP_JIZ";
-            break;
-        case OpCode::OP_POP_JNZ:
-            output = "POP_JNZ";
-            break;
-        case OpCode::OP_BIN:
-            output = "BIN_OP";
-            break;
-        case OpCode::OP_UNARY:
-            output = "UNARY_OP";
-            break;
-        case OpCode::OP_TRUE:
-            output = "OP_TRUE";
-            break;
-        case OpCode::OP_FALSE:
-            output = "OP_FALSE";
-            break;
-        case OpCode::OP_NULL:
-            output = "OP_NULL";
-            break;
-        case OpCode::OP_NUMBER:
-            output = "OP_NUMBER";
-            break;
-        case OpCode::OP_LOAD_CONST:
-            output = "LOAD_CONST";
-            break;
-        case OpCode::OP_EXIT:
-            output = "EXIT";
-            break;
-        default: break;
-    }
+    output = instruction_to_string(code);
 
     // Add spaces
     uint instr_name_length = output.size();
@@ -83,6 +71,8 @@ int Chunk::print_instruction(uint current_byte_index) {
         output += " ";
     }
 
+    std::string comment = "";
+    // Add the comment if necessary
     // Add the argument information, if it needs it
     switch (code) {
         case OpCode::OP_GOTO:
@@ -113,9 +103,16 @@ int Chunk::print_instruction(uint current_byte_index) {
             break;
         case OpCode::OP_LOAD_CONST:
         {
-            uint32_t constant_index = this->read_uint32(current_byte_index + read_count);
+            constant_index_t constant_index = this->read_value<constant_index_t>(current_byte_index + read_count);
             output += std::to_string(constant_index);
             read_count += sizeof(uint32_t);
+        }
+            break;
+        case OpCode::OP_CALL:
+        {
+            call_arguments_t arg_count = this->read_value<call_arguments_t>(current_byte_index + read_count);
+            output += std::to_string(arg_count);
+            read_count += sizeof(address_t);
         }
             break;
         case OpCode::OP_NUMBER:
@@ -131,6 +128,15 @@ int Chunk::print_instruction(uint current_byte_index) {
 
     std::cout << output;
 
+    if (comment.size() > 0) {
+        for (int space = 0; space < MAX_ARGUMENT_LENGTH - static_cast<int>(get_string_length_as_utf32(comment)); space += 1) {
+            std::cout << ' ';
+        }
+        std::cout << comment_c << "; " << comment;
+    }
+
+    std::cout << rang::style::reset;
+
     return read_count;
 }
 
@@ -145,7 +151,7 @@ void Chunk::print_code() {
         for (uint space = 0; space < code_count_length - index_length; space += 1) {
             std::cout << ' ';
         }
-        std::cout << std::to_string(byte_index) << " |  ";
+        std::cout << "  " << std::to_string(byte_index) << " |  ";
 
         /* Log the instruction, and add the number of bytes we advanced to the byte index. */
         byte_index += this->print_instruction(byte_index);

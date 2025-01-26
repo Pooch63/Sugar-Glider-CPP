@@ -63,8 +63,19 @@ namespace Bytecode {
 
         /* Push the constant at this index in the constant array onto the stack.
             Constant must be a value of unknown size at runtime, so not a boolean, null, nor number.
-            Argument is 4 bytes, uint32_t. */
+            Argument is constant_index_t. */
         OP_LOAD_CONST,
+
+        /* Return from the current function */
+        OP_RETURN,
+        /* Argument is call_arguments_t, number of arguments that are used to call the function.
+            Top value of stack must be the function to call.
+            The next n values must be the n arguments, e.g.
+            x(1, 2) = a stack of:
+            x
+            2
+            1 */
+        OP_CALL,
 
         /* Push the value of the variable at the specified index on top of the stack.
             Argument is sizeof(variable_index_t) bytes long, the variable index */
@@ -82,6 +93,10 @@ namespace Bytecode {
     typedef uint32_t address_t;
     /* The index to store variables */
     typedef uint32_t variable_index_t;
+    /* The number of call arguments */
+    typedef uint8_t call_arguments_t;
+    /* Size of constant pool */
+    typedef uint32_t constant_index_t;
 
     typedef std::vector<uint8_t> bytecode_t;
     class Chunk {
@@ -198,7 +213,6 @@ namespace Bytecode {
             /* Log representation of bytecode to console */
             void print_code();
             #endif
-
     };
 };
 
