@@ -21,7 +21,7 @@ void Compiler::compile_string(AST::String* node) {
     this->main_block->add_instruction(
         Intermediate::Instruction(
             Intermediate::INSTR_STRING,
-            node->get_string() ) );
+            node->get_string() ));
 }
 void Compiler::compile_number(AST::Number* node) {
     this->main_block->add_instruction(Intermediate::Instruction(node->get_number()));
@@ -75,7 +75,7 @@ void Compiler::compile_ternary_op(AST::TernaryOp* node) {
     this->main_block->new_label(end);
 }
 
-bool Compiler::get_variable_info(AST::VarValue* variable, Intermediate::Variable &info) {
+bool Compiler::get_variable_info(AST::VarValue* variable, Intermediate::Variable *&info) {
     bool var_found = this->scopes.get_variable(variable->get_name(), info);
 
     /* Make sure the variable exists */
@@ -105,28 +105,31 @@ void Compiler::compile_variable_definition(AST::VarDefinition* def) {
     }
 
     /* Add the variable to scopes */
-    Intermediate::Variable variable = this->scopes.add_variable(
+    Intermediate::Variable *variable = this->scopes.add_variable(
         def->get_name(),
-        this->scopes.add_variable_headers(def->get_basic_variable_type()));
+        this->scopes.add_variable_headers(def->get_basic_variable_type()), this->function_index);
 
     this->main_block->add_instruction(
         Intermediate::Instruction(
             Intermediate::INSTR_STORE,
-            variable
-        )
-    );
+            variable ));
 }
 void Compiler::compile_variable_value(AST::VarValue* node) {
-    Intermediate::Variable var_info;
+    Intermediate::Variable *var_info;
     
     if (!this->get_variable_info(node, var_info)) return;
 
+    auto k = Intermediate::Instruction(Intermediate::INSTR_LOAD, var_info);(void)k;
+    this->main_block->begin();
     this->main_block->add_instruction(
         Intermediate::Instruction(
             Intermediate::INSTR_LOAD,
-            var_info
-        )
-    );
+            var_info ));
+
+    /* Close variable if necessary */
+    if (var_info->function_ind != this->function_index && !var_info->in_topmost_scope()) {
+        var_info->close();
+    }
 };
 void Compiler::compile_variable_assignment(AST::VarAssignment* node) {
     this->compile_node(node->get_value());
@@ -136,13 +139,13 @@ void Compiler::compile_variable_assignment(AST::VarAssignment* node) {
     switch (variable->get_type()) {
         case AST::NODE_VAR_VALUE:
         {
-            Intermediate::Variable var_info;
+            Intermediate::Variable *var_info;
             
             if (!this->get_variable_info(node->get_variable()->as_variable_value(), var_info)) return;
 
-            if (var_info.type == Intermediate::VariableType::CONSTANT) {
+            if (var_info->type == Intermediate::VariableType::GLOBAL_CONSTANT) {
                 std::string error_message = "Cannot assign a value to constant variable \"";
-                error_message += *var_info.name;
+                error_message += *var_info->name;
                 error_message += "\"";
                 this->output.error(node->get_position(), error_message, Errors::COMPILE_ERROR);
                 this->error = true;
@@ -151,9 +154,7 @@ void Compiler::compile_variable_assignment(AST::VarAssignment* node) {
             this->main_block->add_instruction(
                 Intermediate::Instruction(
                     Intermediate::INSTR_STORE,
-                    var_info
-                )
-            );
+                    var_info ));
 
             /* In expressions like var g = x = 1, we need to load the value of the variable
                 after calculating it. */
@@ -256,8 +257,6 @@ void Compiler::compile_function_call(AST::FunctionCall* node) {
             node->argument_count() ));
 }
 void Compiler::compile_function_definition(AST::Function* node) {
-    Intermediate::Block *old_compile = this->main_block;
-
     /* Make sure the variable can be declared. */
     if (this->scopes.last_scope_has_variable(node->get_name())) {
         char error[100];
@@ -268,23 +267,34 @@ void Compiler::compile_function_definition(AST::Function* node) {
         this->error = true;
     }
 
-
     this->main_block->add_instruction(Intermediate::Instruction(
-        Intermediate::INSTR_GET_FUNCTION_REFERENCE,
-        static_cast<uint>(this->ir.last_function_index()) + 1));
-    /* Add the variable to scopes */
-    Intermediate::Variable variable = this->scopes.add_variable(node->get_name(), Intermediate::MUTABLE);
-    this->main_block->add_instruction(
-        Intermediate::Instruction(
-            Intermediate::INSTR_STORE,
-            variable ));
+            Intermediate::INSTR_GET_FUNCTION_REFERENCE,
+            static_cast<uint>(this->ir.last_function_index()) + 1));
+    // Add top level function
+    if (!this->scopes.in_function()) {
+        /* Add the variable to scopes */
+        Intermediate::Variable *variable = this->scopes.add_variable(node->get_name(), Intermediate::GLOBAL_MUTABLE, this->function_index);
+        this->main_block->add_instruction(
+            Intermediate::Instruction(
+                Intermediate::INSTR_STORE,
+                variable ));
+    }
+    // Add it to function
+    else {
+        this->main_block->add_instruction(Intermediate::Instruction(Intermediate::INSTR_MAKE_FUNCTION));
+    }
 
+    Intermediate::Block *old_compile = this->main_block;
     this->main_block = this->ir.new_function();
+
+    int last_function_index = this->function_index;
+    this->function_index = this->ir.last_function_index();
 
     this->scopes.new_scope(Scopes::FUNCTION);
     this->compile_node(node->get_body());
     this->scopes.pop_scope();
 
+    this->function_index = last_function_index;
     this->main_block = old_compile;
 }
 void Compiler::compile_return_statement(AST::Return* node) {

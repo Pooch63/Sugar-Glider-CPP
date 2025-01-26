@@ -9,6 +9,7 @@
 class Compiler {
     private:
         bool error = false;
+        int function_index = Intermediate::global_function_ind;
 
         Intermediate::LabelIR &ir;
         /* A reference to the main chunk we'll compiling into at the moment */
@@ -18,7 +19,7 @@ class Compiler {
 
         /* Try to get variable info from name. Return whether or not it was successful.
             Error if there was an error. */
-        bool get_variable_info(AST::VarValue* variable, Intermediate::Variable &info);
+        bool get_variable_info(AST::VarValue* variable, Intermediate::Variable *&info);
 
         /* All the compilation functions for specific nodes */
         void compile_string(AST::String* node);

@@ -26,7 +26,7 @@ bool Scope::has_variable(std::string* name) const {
     auto variable = this->variables.find(*name);
     return variable != this->variables.end();
 };
-bool Scope::get_variable(std::string* name, Variable &info) const {
+bool Scope::get_variable(std::string* name, Variable *&info) const {
     auto variable = this->variables.find(*name);
     // If no variable was found, return nullptr
     if (variable == this->variables.end()) return false;
@@ -34,8 +34,9 @@ bool Scope::get_variable(std::string* name, Variable &info) const {
     info = variable->second;
     return true;
 };
-void Scope::add_variable(std::string* name, Variable info) {
-    this->variables[*name] = info;
+Variable *Scope::add_variable(std::string* name, Variable *info) {
+    auto insert = this->variables.emplace(*name, info);
+    return insert.first->second;
 };
 
 label_index_t *Scope::get_loop_condition_label() const {
@@ -63,20 +64,24 @@ bool ScopeManager::variable_exists(std::string* name) const {
     }
     return false;
 }
-bool ScopeManager::get_variable(std::string* name, Variable &info) const {
+bool ScopeManager::get_variable(std::string* name, Variable *&info) const {
     for (int index = this->scopes.size() - 1; index >= 0; index -= 1) {
         if (this->scopes.at(static_cast<uint>(index)).get_variable(name, info)) return true;
     }
     return false;
 }
-Variable ScopeManager::add_variable(std::string* name, VariableType type) {
+Variable *ScopeManager::add_variable(std::string* name, VariableType type, int function_index) {
     #ifdef DEBUG_ASSERT
     assert(this->scopes.size() > 0);
     #endif
 
-    Variable info = Variable{ .name = name, .type = type, .scope = static_cast<int>(this->scopes.size()) - 1 };
-    this->scopes.back().add_variable(name, info);
-    return info;
+    Variable *info = new Variable(
+        name,
+        type,
+        this->scopes.size() <= 2 ? Intermediate::global_function_ind : static_cast<int>(this->scopes.size()) - 1,
+        function_index);
+    this->variables.push_back(info);
+    return this->scopes.back().add_variable(name, info);
 }
 bool ScopeManager::last_scope_has_variable(std::string* name) {
     return this->scopes.back().has_variable(name);
@@ -125,12 +130,18 @@ VariableType ScopeManager::add_variable_headers(VariableType basic_type) {
     if (!this->in_function()) return basic_type;
 
     switch (basic_type) {
-        case VariableType::CONSTANT: return VariableType::FUNCTION_CONSTANT;
-        case VariableType::MUTABLE:  return VariableType::FUNCTION_MUTABLE;
+        case VariableType::GLOBAL_CONSTANT: return VariableType::FUNCTION_CONSTANT;
+        case VariableType::GLOBAL_MUTABLE:  return VariableType::FUNCTION_MUTABLE;
         default:
             throw sg_assert_error("Logic not yet implemented to add variable header to this variable type");
     }
 };
+
+ScopeManager::~ScopeManager() {
+    for (Variable* variable : this->variables) {
+        delete variable;
+    }
+}
 
 bool ScopeManager::native_scope_initialized = false;
 
@@ -149,6 +160,6 @@ void ScopeManager::init_native_scope() {
 
     for (int ind = 0; ind < var_count; ind += 1) {
         var = new std::string(variables[ind]);
-        native_scope.add_variable(var, Variable{ .name = var, .type = VariableType::CONSTANT, .scope = -1 });
+        native_scope.add_variable(var, new Variable(var, VariableType::GLOBAL_CONSTANT, -1, Intermediate::global_function_ind));
     }
 }

@@ -24,17 +24,32 @@
 using Bytecode::OpCode;
 
 namespace Intermediate {
+    // Has to be less than 0 so it doesn't collide with an actual function index
+    const int global_function_ind = -1;
+
     enum VariableType {
-        CONSTANT,
-        MUTABLE,
+        GLOBAL_CONSTANT,
+        GLOBAL_MUTABLE,
         FUNCTION_CONSTANT,
-        FUNCTION_MUTABLE
+        FUNCTION_MUTABLE,
+        CLOSED_CONSTANT,
+        CLOSED_MUTABLE
     };
     const char* variable_type_to_string(VariableType type);
     struct Variable {
         std::string* name;
         VariableType type;
         int scope;
+        /* Index of function the variable is closed to.
+            The global function ind if it is a global. */
+        int function_ind;
+
+        inline bool in_topmost_scope() const { return this->scope == global_function_ind; };
+
+        Variable(std::string *name, VariableType type, int scope, int function_ind);
+
+        /* Turn into a closed function variable */
+        void close();
 
         bool operator==(const Variable &var) const {
             return *name == *var.name && type == var.type && scope == var.scope;
@@ -73,6 +88,8 @@ namespace Intermediate {
         /* Create a reference to a function at the given index, which is a value.
             Argument is index of function. */
         INSTR_GET_FUNCTION_REFERENCE,
+        /* Load a function within a function */
+        INSTR_MAKE_FUNCTION,
         INSTR_RETURN,
 
         INSTR_LOAD,
@@ -105,7 +122,7 @@ namespace Intermediate {
         uint num_arguments;
         uint function_index;
 
-        Variable variable;
+        Variable *variable;
     };
 
     struct Instruction {
@@ -119,7 +136,7 @@ namespace Intermediate {
         Instruction(InstrCode code, std::string* payload);
         Instruction(InstrCode code, Operations::BinOpType bin_op);
         Instruction(InstrCode code, Operations::UnaryOpType unary_op);
-        Instruction(InstrCode code, Variable variable);
+        Instruction(InstrCode code, Variable *variable);
         Instruction(InstrCode code, uint argument);
         /* There is only one instruction that takes this number. */
         Instruction(Values::number_t number);
@@ -246,7 +263,7 @@ namespace Intermediate {
         private:
             Block main = Block();
 
-            std::vector<Block> functions = std::vector<Block>();
+            std::vector<Block*> functions = std::vector<Block*>();
         public:
             inline Block            *get_main() { return &this->main; };
             int   last_function_index();
@@ -254,6 +271,8 @@ namespace Intermediate {
             Block *new_function();
 
             void log_ir() const;
+
+            ~LabelIR();
     };
 };
 

@@ -5,14 +5,34 @@ using namespace Intermediate;
 
 const char* Intermediate::variable_type_to_string(VariableType type) {
     switch (type) {
-        case VariableType::CONSTANT: return "const var";
-        case VariableType::MUTABLE: return "mut var";
+        case VariableType::GLOBAL_CONSTANT: return "const var";
+        case VariableType::GLOBAL_MUTABLE: return "mut var";
         case VariableType::FUNCTION_CONSTANT: return "func mut var";
         case VariableType::FUNCTION_MUTABLE: return "func const var";
+        case VariableType::CLOSED_CONSTANT: return "closed const var";
+        case VariableType::CLOSED_MUTABLE: return "closed mut var";
         default:
             throw sg_assert_error("Unknown variable type in string function");
     }
 };
+
+Variable::Variable(std::string *name, VariableType type, int scope, int function_ind) :
+    name(name), type(type), scope(scope), function_ind(function_ind) {};
+/* Updates type to express that it's closed. You might need to close global variables
+    too if they are not part of the topmost scope. */
+void Variable::close() {
+    switch (this->type) {
+        case GLOBAL_CONSTANT:
+        case FUNCTION_CONSTANT:
+            this->type = CLOSED_CONSTANT;
+            break;
+        case GLOBAL_MUTABLE:
+        case FUNCTION_MUTABLE:
+            this->type = CLOSED_MUTABLE;
+            break;
+        default: break;
+    }
+}
 
 // Constructor overloads >
 Instruction::Instruction(InstrCode code) : code(code) {};
@@ -28,7 +48,7 @@ Instruction::Instruction(InstrCode code, Operations::BinOpType type) :
     code(code), payload(ir_instruction_arg_t{ .bin_op = type }) {};
 Instruction::Instruction(InstrCode code, Operations::UnaryOpType type) :
     code(code), payload(ir_instruction_arg_t{ .unary_op = type }) {};
-Instruction::Instruction(InstrCode code, Variable variable) :
+Instruction::Instruction(InstrCode code, Variable *variable) :
     code(code), payload(ir_instruction_arg_t{ .variable = variable }) {};
 Instruction::Instruction(InstrCode code, uint argument) : code(code) {
     if (code == InstrCode::INSTR_CALL) {
@@ -132,6 +152,8 @@ const char* Intermediate::instr_type_to_string(InstrCode code) {
             return "INSTR_STRING";
         case InstrCode::INSTR_GET_FUNCTION_REFERENCE:
             return "GET_FUNCTION_REFERENCE";
+        case InstrCode::INSTR_MAKE_FUNCTION:
+            return "MAKE_FUNCTION";
         case InstrCode::INSTR_RETURN:
             return "RETURN";
         case InstrCode::INSTR_LOAD:
@@ -224,7 +246,7 @@ void Intermediate::log_instruction(Instruction instr) {
             break;
         case InstrCode::INSTR_STRING:
         {
-            std::string* value = instr.payload.variable.name;
+            std::string* value = instr.payload.variable->name;
 
             argument = '"';
 
@@ -252,7 +274,7 @@ void Intermediate::log_instruction(Instruction instr) {
         case InstrCode::INSTR_LOAD:
         case InstrCode::INSTR_STORE:
         {
-            std::string* name = instr.payload.variable.name;
+            std::string* name = instr.payload.variable->name;
 
             if (name->size() <= MAX_STRING_LENGTH) argument = *name;
             else {
@@ -260,12 +282,14 @@ void Intermediate::log_instruction(Instruction instr) {
                 argument += "...";
             }
 
-            argument += var_ind_to_subscript(instr.payload.variable.scope);
+            argument += var_ind_to_subscript(instr.payload.variable->scope);
 
             std::cout << variable_c << rang::style::underline << argument;
             
             comment = "(";
-            comment += Intermediate::variable_type_to_string(instr.payload.variable.type);
+            comment += Intermediate::variable_type_to_string(instr.payload.variable->type);
+            comment += ", ";
+            comment += std::to_string(instr.payload.variable->function_ind);
             comment += ")";
         }
             break;
@@ -324,11 +348,12 @@ void Block::log_block() const {
 
 // Label IR >
 Block *LabelIR::new_function() {
-    this->functions.push_back(Block());
-    return &this->functions.back();
+    Block *function = new Block();
+    this->functions.push_back(function);
+    return function;
 }
 int LabelIR::last_function_index()  {
-    return this->functions.size() == 0 ? -1 : static_cast<int>(this->functions.size()) - 1;
+    return this->functions.size() == 0 ? global_function_ind : static_cast<int>(this->functions.size()) - 1;
 };
 void LabelIR::log_ir() const {
     std::cout << "-------------------------------------------------------\n";
@@ -345,11 +370,16 @@ void LabelIR::log_ir() const {
         std::cout << "                       Function 0x" << std::hex << func_ind << std::dec << "\n";
         std::cout << rang::style::reset;
 
-        this->functions[func_ind].log_block();
+        this->functions[func_ind]->log_block();
     }
 
     std::cout << "-------------------------------------------------------" << std::endl;
 };
+LabelIR::~LabelIR() {
+    for (Block *function : this->functions) {
+        delete function;
+    }
+}
 // < Label IR
 
 Intermediate::Label::Label(label_index_t* index) : name(index) {};

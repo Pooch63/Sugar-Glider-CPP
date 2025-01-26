@@ -399,7 +399,7 @@ AST::VarDefinition* Parser::parse_var_statement() {
     AST::Node* value = this->parse_expression();
     
     return got_identifier ? new AST::VarDefinition(
-        qualifier.get_type() == TokType::VAR ? Intermediate::VariableType::MUTABLE : Intermediate::VariableType::CONSTANT,
+        qualifier.get_type() == TokType::VAR ? Intermediate::VariableType::GLOBAL_MUTABLE : Intermediate::VariableType::GLOBAL_CONSTANT,
         name,
         value,
         position) : nullptr;

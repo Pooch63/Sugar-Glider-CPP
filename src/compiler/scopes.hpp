@@ -21,7 +21,7 @@ namespace Scopes {
             Intermediate::label_index_t* loop_condition = nullptr;
             Intermediate::label_index_t* loop_end = nullptr;
 
-            std::unordered_map<std::string, Intermediate::Variable> variables = std::unordered_map<std::string, Intermediate::Variable>();
+            std::unordered_map<std::string, Intermediate::Variable*> variables = std::unordered_map<std::string, Intermediate::Variable*>();
 
         public:
             Scope(ScopeType type);
@@ -31,8 +31,8 @@ namespace Scopes {
 
             bool has_variable(std::string* name) const;
             /* Returns false if there was no instance, otherwise returns true and updates the variable info. */
-            bool get_variable(std::string* name, Intermediate::Variable &info) const;
-            void add_variable(std::string* name, Intermediate::Variable info);
+            bool get_variable(std::string* name, Intermediate::Variable *&info) const;
+            Intermediate::Variable *add_variable(std::string *name, Intermediate::Variable *info);
         
             Intermediate::label_index_t * get_loop_condition_label() const;
             Intermediate::label_index_t * get_loop_end() const;
@@ -49,6 +49,9 @@ namespace Scopes {
 
         private:
             std::vector<Scope> scopes = std::vector<Scope>();
+            /* Pool of variable information. The manager handles memory for all variables, NOT
+                the individual scopes. */
+            std::vector<Intermediate::Variable*> variables = std::vector<Intermediate::Variable*>();
 
         public:
             ScopeManager();
@@ -56,9 +59,9 @@ namespace Scopes {
             bool variable_exists(std::string* name) const;
             /* Returns false if there was no instance. Otherwise, returns true and updates the variable info.
                 Goes up through the scope tree to try to find the variable. */
-            bool get_variable(std::string* name, Intermediate::Variable &info) const;
+            bool get_variable(std::string* name, Intermediate::Variable *&info) const;
             /* Add a variable to the current scope. */
-            Intermediate::Variable add_variable(std::string* name, VariableType type);
+            Intermediate::Variable *add_variable(std::string* name, VariableType type, int function_index);
 
             bool last_scope_has_variable(std::string* name);
 
@@ -76,10 +79,12 @@ namespace Scopes {
             Intermediate::label_index_t* get_loop_end() const;
 
             /**
-                @param {VariableType::MUTABLE | VariableType::CONSTANT} - first type
+                @param {VariableType::GLOBAL_MUTABLE | VariableType::GLOBAL_CONSTANT} - first type
                 @return {VariableType} - The type, updated if we're in a function
             */
             VariableType add_variable_headers(VariableType basic_type);
+
+            ~ScopeManager();
     };
 
     extern Scope native_scope;
