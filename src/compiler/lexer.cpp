@@ -158,8 +158,9 @@ char Scanner::peek(int skip_count) const {
 bool Scanner::at_EOF() const {
     return this->ind >= this->str.length();
 }
-void Scanner::skip_whitespace() {
+bool Scanner::skip_whitespace() {
     char curr = this->current();
+    bool skipped = false;
 
     while (
         curr == '\f' ||
@@ -171,7 +172,17 @@ void Scanner::skip_whitespace() {
     ) {
         this->advance();
         curr = this->current();
+        skipped = true;
     }
+    return skipped;
+}
+bool Scanner::skip_comment() {
+    if (this->current() == '/' && this->peek(1) == '/') {
+        while (this->current() != '\n' && !this->at_EOF()) this->advance();
+        return true;
+    }
+
+    return false;
 }
 
 TokenPosition Scanner::make_single_line_position(int length) const {
@@ -342,7 +353,7 @@ std::string* Scanner::parse_string() {
 }
 
 Token Scanner::next_token() {
-    this->skip_whitespace();
+    while (this->skip_whitespace() || this->skip_comment());
 
     /* If we're at the end of the file, just return an EOI.
         Make the length 1 so that errors saying they expected another

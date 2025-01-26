@@ -170,8 +170,11 @@ namespace Scan {
 
             // Other helpers
             /* Skip all whitespace characters, leaving the index at the next instance of
-                a non-whitespace character */
-            void skip_whitespace();
+                a non-whitespace character. Return whether or not whitespace was skipped. */
+            bool skip_whitespace();
+            /* Skip the first comment you find, leaving the index at the next character after
+                the comment. Return whether or not a comment was skipped. */
+            bool skip_comment();
 
             template<int num_hex_digits>
             using hex_payload = typename std::conditional<
