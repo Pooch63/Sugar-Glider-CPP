@@ -13,6 +13,10 @@
 #include <cassert>
 #endif
 
+// Forward declaration for class descibed in runtime/runtime.hpp
+// This is because the bytecode logger function depends on the runtime class
+class Runtime;
+
 namespace Bytecode {
     enum OpCode {
         /* Pops the top value on the stack.
@@ -146,7 +150,7 @@ namespace Bytecode {
             /* From the current byte index in the code, log the instruction
                 and any arguments it has. Then, return the number of bytes we read,
                 starting from the current byte, in order to log it. */
-            int print_instruction(uint current_byte_index);
+            int print_instruction(uint current_byte_index, const Runtime *runtime);
             #endif
         public:
             /* Push an enum into the code.
@@ -211,7 +215,7 @@ namespace Bytecode {
 
             #ifdef DEBUG
             /* Log representation of bytecode to console */
-            void print_code();
+            void print_code(const Runtime *runtime);
             #endif
     };
 };

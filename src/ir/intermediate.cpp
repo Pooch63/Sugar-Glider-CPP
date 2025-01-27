@@ -288,7 +288,7 @@ void Intermediate::log_instruction(Instruction instr) {
             
             comment = "(";
             comment += Intermediate::variable_type_to_string(instr.payload.variable->type);
-            comment += ", ";
+            comment += ", function_scope = ";
             comment += std::to_string(instr.payload.variable->function_ind);
             comment += ")";
         }
