@@ -33,7 +33,8 @@ namespace Intermediate {
         FUNCTION_CONSTANT,
         FUNCTION_MUTABLE,
         CLOSED_CONSTANT,
-        CLOSED_MUTABLE
+        CLOSED_MUTABLE,
+        NATIVE
     };
     const char* variable_type_to_string(VariableType type);
     struct Variable {
