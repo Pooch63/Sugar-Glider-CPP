@@ -18,6 +18,7 @@ bool AST::node_is_expression(NodeType type) {
         case NODE_TERNARY_OP:
         case NODE_VAR_VALUE:
         case NODE_VAR_ASSIGNMENT:
+        case NODE_FUNCTION_CALL:
             return true;
         default:
             return false;
