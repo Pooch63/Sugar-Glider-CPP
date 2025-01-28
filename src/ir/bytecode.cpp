@@ -115,7 +115,7 @@ int Chunk::print_instruction(uint current_byte_index, const Runtime *runtime) {
         {
             call_arguments_t arg_count = this->read_value<call_arguments_t>(current_byte_index + read_count);
             argument = std::to_string(arg_count);
-            read_count += sizeof(address_t);
+            read_count += sizeof(call_arguments_t);
         }
             break;
         case OpCode::OP_NUMBER:

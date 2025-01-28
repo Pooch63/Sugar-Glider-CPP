@@ -130,7 +130,7 @@ namespace Bytecode {
             void insert_value(uint index, insert_type data) {
                 #ifdef DEBUG
                 /* Can't insert into an invalid index */
-                assert(this->code.size() >= index + sizeof(insert_type) + 1);
+                assert(this->code.size() >= index + sizeof(insert_type));
                 #endif
 
                 union {
