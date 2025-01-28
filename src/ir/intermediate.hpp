@@ -47,6 +47,8 @@ namespace Intermediate {
 
         inline bool in_topmost_scope() const { return this->scope == global_function_ind; };
 
+        /* Add this default constructor so the variable can be used as a key in hashmap */
+        inline Variable() {};
         Variable(std::string *name, VariableType type, int scope, int function_ind);
 
         /* Turn into a closed function variable */
@@ -190,6 +192,12 @@ namespace Intermediate {
             assert(this->code == InstrCode::INSTR_GET_FUNCTION_REFERENCE);
             #endif
             return this->payload.function_index;
+        }
+        inline Variable *get_variable() const {
+            #ifdef DEBUG
+            assert(this->code == InstrCode::INSTR_LOAD || this->code == InstrCode::INSTR_STORE);
+            #endif
+            return this->payload.variable;
         }
 
         // < Getters
