@@ -70,8 +70,6 @@ namespace Bytecode {
             Argument is constant_index_t. */
         OP_LOAD_CONST,
 
-        /* Return from the current function */
-        OP_RETURN,
         /* Argument is call_arguments_t, number of arguments that are used to call the function.
             Top value of stack must be the function to call.
             The next n values must be the n arguments, e.g.
@@ -80,6 +78,10 @@ namespace Bytecode {
             2
             1 */
         OP_CALL,
+        /* Return from the current function */
+        OP_RETURN,
+        /* Create a reference to a function at the given index. Index is type variable_index_t */
+        OP_GET_FUNCTION_REFERENCE,
 
         /* Push the value of the variable at the specified index on top of the stack.
             Argument is sizeof(variable_index_t) bytes long, the variable index */

@@ -7,6 +7,32 @@ Jump_Argument::Jump_Argument(Bytecode::address_t byte_address, Intermediate::lab
 
 Transpiler::Transpiler(Runtime &runtime) : runtime(runtime), chunk(runtime.get_main()) {};
 
+void Transpiler::transpile_variable_instruction(Instruction instr) {
+    Bytecode::variable_index_t index;
+    Intermediate::Variable variable = *instr.get_variable();
+    
+    std::cout << *variable.name << std::endl;
+
+    if (variable.type == Intermediate::GLOBAL_CONSTANT || variable.type == Intermediate::GLOBAL_MUTABLE) {
+        auto index_pair = this->variables.find(variable);
+        if (index_pair != this->variables.end()) {
+            index = index_pair->second;
+        }
+        else {
+            index = this->variables.size();
+            // Add it to the hashmap
+            this->variables.emplace(variable, index);
+        }
+
+        if (instr.code == InstrCode::INSTR_LOAD) {
+            chunk->push_opcode(OpCode::OP_LOAD);
+        }
+        else {
+            chunk->push_opcode(OpCode::OP_STORE);
+        }
+        chunk->push_value<Bytecode::variable_index_t>(index);
+    }
+}
 void Transpiler::transpile_ir_instruction(Instruction instr) {
     std::cout << Intermediate::instr_type_to_string(instr.code) << std::endl;
     switch (instr.code) {
@@ -27,6 +53,10 @@ void Transpiler::transpile_ir_instruction(Instruction instr) {
         case InstrCode::INSTR_CALL:
             chunk->push_opcode(OpCode::OP_CALL);
             chunk->push_value<Bytecode::call_arguments_t>(instr.get_argument_count());
+            break;
+        case InstrCode::INSTR_GET_FUNCTION_REFERENCE:
+            chunk->push_opcode(OpCode::OP_GET_FUNCTION_REFERENCE);
+            chunk->push_value<Bytecode::variable_index_t>(static_cast<Bytecode::variable_index_t>(instr.get_function_index()));
             break;
 
         // Push constant instructions
@@ -54,6 +84,14 @@ void Transpiler::transpile_ir_instruction(Instruction instr) {
             chunk->push_address(38104);
         }
             break;
+
+        case InstrCode::INSTR_STORE:
+        case InstrCode::INSTR_LOAD:
+        {
+            this->transpile_variable_instruction(instr);
+        }
+            break;
+
         default: break;
     }
 }

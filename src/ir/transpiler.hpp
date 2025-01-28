@@ -24,6 +24,11 @@ class Transpiler {
         /* A map of byte indices and the bytecode as well as the name of the label whose index they jump to */
         std::vector<Jump_Argument> jump_arguments = std::vector<Jump_Argument>();
 
+        /* A map of IR variables to var indices. Remember to use custom hasher for Variable class. */
+        std::unordered_map<Intermediate::Variable, Bytecode::variable_index_t, Intermediate::VariableHasher> variables =
+            std::unordered_map<Intermediate::Variable, Bytecode::variable_index_t, Intermediate::VariableHasher>();
+
+        void transpile_variable_instruction(Intermediate::Instruction instr);
         void transpile_ir_instruction(Intermediate::Instruction instr);
     public:
         Transpiler(Runtime &runtime);

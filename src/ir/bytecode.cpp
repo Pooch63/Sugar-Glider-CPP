@@ -41,8 +41,11 @@ const char* instruction_to_string(OpCode code) {
         case OpCode::OP_NULL: return "OP_NULL";
         case OpCode::OP_NUMBER: return "OP_NUMBER";
         case OpCode::OP_LOAD_CONST: return "LOAD_CONST";
-        case OpCode::OP_RETURN: return "RETURN";
+        case OpCode::OP_LOAD: return "LOAD";
+        case OpCode::OP_STORE: return "STORE";
         case OpCode::OP_CALL: return "CALL";
+        case OpCode::OP_RETURN: return "RETURN";
+        case OpCode::OP_GET_FUNCTION_REFERENCE: return "GET_FUNCTION_REFERENCE";
         case OpCode::OP_EXIT: return "EXIT";
 
         default:
@@ -111,11 +114,26 @@ int Chunk::print_instruction(uint current_byte_index, const Runtime *runtime) {
             read_count += sizeof(uint32_t);
         }
             break;
+        case OpCode::OP_LOAD:
+        case OpCode::OP_STORE:
+        {
+            variable_index_t index = this->read_value<variable_index_t>(current_byte_index + read_count);
+            argument = std::to_string(index);
+            read_count += sizeof(variable_index_t);
+        }
+            break;
         case OpCode::OP_CALL:
         {
             call_arguments_t arg_count = this->read_value<call_arguments_t>(current_byte_index + read_count);
             argument = std::to_string(arg_count);
             read_count += sizeof(call_arguments_t);
+        }
+            break;
+        case OpCode::OP_GET_FUNCTION_REFERENCE:
+        {
+            variable_index_t index = this->read_value<variable_index_t>(current_byte_index + read_count);
+            argument = std::to_string(index);
+            read_count += sizeof(variable_index_t);
         }
             break;
         case OpCode::OP_NUMBER:
