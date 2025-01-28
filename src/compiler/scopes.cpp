@@ -160,6 +160,6 @@ void ScopeManager::init_native_scope() {
 
     for (int ind = 0; ind < var_count; ind += 1) {
         var = new std::string(variables[ind]);
-        native_scope.add_variable(var, new Variable(var, VariableType::GLOBAL_CONSTANT, -1, Intermediate::global_function_ind));
+        native_scope.add_variable(var, new Variable(var, VariableType::NATIVE, -1, Intermediate::global_function_ind));
     }
 }

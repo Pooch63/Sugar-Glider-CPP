@@ -30,7 +30,7 @@ void Variable::close() {
         case FUNCTION_MUTABLE:
             this->type = CLOSED_MUTABLE;
             break;
-        default: break;
+        default: throw sg_assert_error("tried to close over invalid variable type"); break;
     }
 }
 

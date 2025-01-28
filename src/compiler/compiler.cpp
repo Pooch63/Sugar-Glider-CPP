@@ -143,10 +143,18 @@ void Compiler::compile_variable_assignment(AST::VarAssignment* node) {
             
             if (!this->get_variable_info(node->get_variable()->as_variable_value(), var_info)) return;
 
-            if (var_info->type == Intermediate::VariableType::GLOBAL_CONSTANT) {
-                std::string error_message = "Cannot assign a value to constant variable \"";
+            using namespace Intermediate;
+            VariableType type = var_info->type;
+            if (
+                type == GLOBAL_CONSTANT || type == FUNCTION_CONSTANT ||
+                type == CLOSED_CONSTANT || type == NATIVE
+            ) {
+                std::string error_message;
+                if (type == NATIVE) error_message = "Cannot reassign native variable \"";
+                else error_message = "Cannot assign a value to constant variable";
+
                 error_message += *var_info->name;
-                error_message += "\"";
+                error_message += '"';
                 this->output.error(node->get_position(), error_message, Errors::COMPILE_ERROR);
                 this->error = true;
             }
