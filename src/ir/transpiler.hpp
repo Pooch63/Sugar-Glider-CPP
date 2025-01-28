@@ -5,6 +5,13 @@
 #include "intermediate.hpp"
 #include "../runtime/runtime.hpp"
 
+struct Jump_Argument {
+    Bytecode::address_t byte_address;
+    Intermediate::label_index_t *label;
+
+    Jump_Argument(Bytecode::address_t, Intermediate::label_index_t *);
+};
+
 /* Transpile label intermediate to bytecode.
     Use a class to store state necessary for the transformation.
     No need to save the class. Transpiler().transpile_label_to_bytecode() */
@@ -13,7 +20,9 @@ class Transpiler {
         Runtime &runtime;
         Bytecode::Chunk *chunk;
         /* A map of labels to their byte index */
-        std::unordered_map<Intermediate::label_index_t*, Bytecode::address_t> label_starts = std::unordered_map<Intermediate::label_index_t*, Bytecode::address_t>();
+        std::unordered_map<Intermediate::label_index_t, Bytecode::address_t> label_starts = std::unordered_map<Intermediate::label_index_t, Bytecode::address_t>();
+        /* A map of byte indices and the bytecode as well as the name of the label whose index they jump to */
+        std::vector<Jump_Argument> jump_arguments = std::vector<Jump_Argument>();
 
         void transpile_ir_instruction(Intermediate::Instruction instr);
     public:

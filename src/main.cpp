@@ -5,6 +5,7 @@
 #include "errors.hpp"
 #include "ir/bytecode.hpp"
 #include "ir/intermediate.hpp"
+#include "ir/transpiler.hpp"
 #include "optimizer/label-intermediate.hpp"
 #include "utils.hpp"
 
@@ -13,7 +14,7 @@
 int main() {
     Random::initialize_rng();
 
-    std::string prog = "function _(_) { return _; _ = 5; }; _ = 4; return 4; \"\\U00000065\"; return 4;";
+    std::string prog = "PI = 4; while (true) { var b = 4; var m = 3 * b; function l() { function z() {}; return m; } l(9); }";
 
     Output output(prog);
     Scan::Scanner lexer(prog, output);
@@ -30,8 +31,6 @@ int main() {
         return output.get_error();
     }
 
-    using Bytecode::Chunk;
-    Chunk chunk = Chunk();
     auto block = Intermediate::LabelIR();
 
     Compiler compiler(block, output);
@@ -45,11 +44,21 @@ int main() {
 
     block.log_ir();
 
+    std::cout << "passed compilation" << std::endl;
+
     auto optimized = Intermediate::Block();
     optimize_labels(*block.get_main(), optimized);
 
+    std::cout << "passed optimization" << std::endl;
+
     std::cout << std::endl;
     optimized.log_block();
+
+    Bytecode::Chunk main =  Bytecode::Chunk();
+    Runtime runtime = Runtime(main);
+
+    Transpiler(runtime).transpile_label_to_bytecode(optimized);
+    runtime.get_main()->print_code(&runtime);
 
     delete node;
     return 0;
