@@ -89,6 +89,8 @@ namespace Bytecode {
         /* Store the topmost value on the stack into the specified variable index.
             Argument is sizeof(variable_index_t) bytes long, the variable index. */
         OP_STORE,
+        /* Load native at index variable_index_t */
+        OP_LOAD_NATIVE,
 
         /* Exit the program,
             0 arguments */

@@ -43,6 +43,7 @@ const char* instruction_to_string(OpCode code) {
         case OpCode::OP_LOAD_CONST: return "LOAD_CONST";
         case OpCode::OP_LOAD: return "LOAD";
         case OpCode::OP_STORE: return "STORE";
+        case OpCode::OP_LOAD_NATIVE: return "LOAD_NATIVE";
         case OpCode::OP_CALL: return "CALL";
         case OpCode::OP_RETURN: return "RETURN";
         case OpCode::OP_GET_FUNCTION_REFERENCE: return "GET_FUNCTION_REFERENCE";
@@ -116,6 +117,7 @@ int Chunk::print_instruction(uint current_byte_index, const Runtime *runtime) {
             break;
         case OpCode::OP_LOAD:
         case OpCode::OP_STORE:
+        case OpCode::OP_LOAD_NATIVE:
         {
             variable_index_t index = this->read_value<variable_index_t>(current_byte_index + read_count);
             argument = std::to_string(index);
