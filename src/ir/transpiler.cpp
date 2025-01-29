@@ -120,7 +120,7 @@ void Transpiler::transpile_label_to_bytecode(Intermediate::Block& labels) {
                 // Make sure it's a goto instruction
                 instr.code == InstrCode::INSTR_GOTO &&
                 // Make sure it goes to the next label
-                *instr.get_address() == *labels.get_label_at_numerical_index(instr_ind + 1).name
+                *instr.get_address() == *labels.get_label_at_numerical_index(label_ind + 1).name
             ) {
                 break;
             }
