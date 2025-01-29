@@ -55,6 +55,7 @@ int Runtime::run() {
                     error = std::to_string(num_args);
                     error += " argument(s) passed to function expecting ";
                     error += std::to_string(native.number_arguments);
+                    break;
                 }
 
                 Values::Value result;
