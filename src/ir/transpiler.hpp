@@ -34,6 +34,7 @@ class Transpiler {
         Transpiler(Runtime &runtime);
 
         void transpile_label_to_bytecode(Intermediate::Block& labels);
+        inline size_t num_variable_slots() const { return this->variables.size(); };
 };
 
 #endif
