@@ -56,7 +56,7 @@ int Runtime::run() {
             {
                 Value func = this->stack_pop();
                 if (func.get_type() != Values::NATIVE_FUNCTION) {
-                    error = "Cannot call non-function value";
+                    error = "Cannot call non-function value ";
                     error += func.to_debug_string();
                     break;
                 }
@@ -89,14 +89,14 @@ int Runtime::run() {
             {
                 address_t address = this->main.read_address(ip);
                 Value condition = this->stack_pop();
-                if (!condition.is_truthy()) ip = address;
+                if (!Values::value_is_truthy(condition)) ip = address;
             }
                 break;
             case OpCode::OP_POP_JNZ:
             {
                 address_t address = this->main.read_address(ip);
                 Value condition = this->stack_pop();
-                if (condition.is_truthy()) ip = address;
+                if (Values::value_is_truthy(condition)) ip = address;
             }
                 break;
 

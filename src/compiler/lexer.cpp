@@ -37,6 +37,7 @@ const char* Scan::tok_type_to_string(TokType type) {
         case COLON: return ":";
         case SEMICOLON: return ";";
         case COMMA: return ",";
+        case BANG_EQ: return "!=";
 
         case BREAK: return "break";
         case CONST: return "const";
@@ -44,6 +45,7 @@ const char* Scan::tok_type_to_string(TokType type) {
         case FALSE: return "false";
         case FUNCTION: return "function";
         case IF: return "if";
+        case NULL_TOKEN: return "null";
         case RETURN: return "return";
         case TRUE: return "true";
         case VAR: return "var";
@@ -126,6 +128,7 @@ namespace {
         { "false", TokType::FALSE },
         { "function", TokType::FUNCTION },
         { "if", TokType::IF },
+        { "null", TokType::NULL_TOKEN },
         { "return", TokType::RETURN },
         { "true", TokType::TRUE },
         { "var", TokType::VAR },
@@ -372,8 +375,9 @@ Token Scanner::next_token() {
 
     // Constant symbols
 
-    /* One-character symbols */
+    /* One or two character symbols */
     TokType one_char_type = TokType::ERROR;
+    TokType two_char_type = TokType::ERROR;
     switch (curr) {
         case '+': one_char_type = TokType::PLUS; break;
         case '-': one_char_type = TokType::MINUS; break;
@@ -394,10 +398,19 @@ Token Scanner::next_token() {
         case ':': one_char_type = TokType::COLON; break;
         case ';': one_char_type = TokType::SEMICOLON; break;
         case ',': one_char_type = TokType::COMMA; break;
+        case '!': {
+            if (this->peek(1) == '=') two_char_type = TokType::BANG_EQ;
+        }
+            break;
     };
     if (one_char_type != TokType::ERROR) {
         this->advance();
         return Token(one_char_type, this->make_single_line_position(1));
+    }
+    else if (two_char_type != TokType::ERROR) {
+        this->advance();
+        this->advance();
+        return Token(two_char_type, this->make_single_line_position(2));
     }
 
     // Number?

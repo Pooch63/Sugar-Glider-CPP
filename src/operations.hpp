@@ -11,7 +11,8 @@ namespace Operations {
         BINOP_DIV,
         BINOP_MOD,
         BINOP_LESS_THAN,
-        BINOP_GREATER_THAN
+        BINOP_GREATER_THAN,
+        BINOP_NOT_EQUAL_TO
     };
     enum UnaryOpType {
         UNARY_NEGATE

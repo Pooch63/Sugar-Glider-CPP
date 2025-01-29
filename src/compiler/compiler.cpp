@@ -25,6 +25,9 @@ void Compiler::compile_string(AST::String* node) {
 void Compiler::compile_number(AST::Number* node) {
     this->main_block->add_instruction(Intermediate::Instruction(node->get_number()));
 }
+void Compiler::compile_null_value() {
+    this->main_block->add_instruction(Intermediate::Instruction(Intermediate::INSTR_NULL));
+}
 void Compiler::compile_true_value() {
     this->main_block->add_instruction(Intermediate::Instruction(Intermediate::INSTR_TRUE));
 }
@@ -345,6 +348,9 @@ void Compiler::compile_node(AST::Node* node) {
             break;
         case AST::NodeType::NODE_NUMBER:
             this->compile_number(node->as_number());
+            break;
+        case AST::NodeType::NODE_NULL:
+            this->compile_null_value();
             break;
         case AST::NodeType::NODE_TRUE:
             this->compile_true_value();

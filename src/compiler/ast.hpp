@@ -9,6 +9,7 @@ namespace AST {
     enum NodeType {
         NODE_STRING,
         NODE_NUMBER,
+        NODE_NULL,
         NODE_TRUE,
         NODE_FALSE,
 
@@ -110,6 +111,10 @@ namespace AST {
             Number(Values::number_t number);
 
             inline Values::number_t get_number() const { return this->number; };
+    };
+    class Null : public Node {
+        public:
+            Null();
     };
     class True : public Node {
         public:

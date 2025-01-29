@@ -26,6 +26,7 @@ const char* Operations::bin_op_to_string(BinOpType type) {
         case BinOpType::BINOP_MOD: return "%";
         case BinOpType::BINOP_LESS_THAN: return "<";
         case BinOpType::BINOP_GREATER_THAN: return ">";
+        case BinOpType::BINOP_NOT_EQUAL_TO: return "!=";
         /* Otherwise, there was an error. Unknown binary operation type. */
         default:
             throw sg_assert_error("Tried to convert unknown BinOpType to string");

@@ -160,6 +160,8 @@ VarValue::~VarValue() {
     if (this->name != nullptr) delete this->name;
 }
 
+Null::Null() : Node(NodeType::NODE_NULL) {};
+
 True::True() : Node(NodeType::NODE_TRUE) {};
 
 False::False() : Node(NodeType::NODE_FALSE) {};

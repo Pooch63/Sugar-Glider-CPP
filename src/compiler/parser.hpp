@@ -16,6 +16,7 @@ namespace Parse {
         PREC_NONE,
 
         PREC_ASSIGNMENT_OR_TERNARY, // a = b OR a ? b : c
+        PREC_EQUALITY, // ==, !=
         PREC_RELATIONAL, // <, <=, >, >=
 
         // + or -
@@ -35,8 +36,8 @@ namespace Parse {
         /* The parser will advance to the next token before calling the led or nud function,
             so these functions do not have to and SHOULD NOT.
             E.g., a number nud function does not have to advance past the number token. */
-        typedef AST::Node *(*nud_func_t)(Scan::Token &current, Parser* parser);
-        typedef AST::Node *(*led_func_t)(Scan::Token &current, AST::Node* left, Parser* parser);
+        typedef AST::Node *(*nud_func_t)(Scan::Token &current, Parser *parser);
+        typedef AST::Node *(*led_func_t)(Scan::Token &current, AST::Node *left, Parser *parser);
 
         struct ParseRule {
             /* These are the functions used as a parse rule in a Pratt top-down parser.
@@ -52,21 +53,21 @@ namespace Parse {
         extern std::array<ParseRule, Scan::NUM_TOKEN_TYPES> rules;
 
         /* Rule functions */
-        AST::Node* number(Scan::Token &current, Parser* parser);
-        AST::Node* parse_string(Scan::Token &current, Parser* parser);
+        AST::Node *number(Scan::Token &current, Parser *parser);
+        AST::Node *parse_string(Scan::Token &current, Parser *parser);
         // E.g., true, false, and null
-        AST::Node* keyword_constant(Scan::Token &current, Parser* parser);
+        AST::Node *keyword_constant(Scan::Token &current, Parser *parser);
 
-        AST::Node* unary_op(Scan::Token &current, Parser* parser);
-        AST::Node* binary_op(Scan::Token &current, AST::Node* left, Parser* parser);
-        AST::Node* ternary_op(Scan::Token &current, AST::Node* left, Parser* parser);
-        AST::Node* paren_group(Scan::Token &current, Parser* parser);
+        AST::Node *unary_op(Scan::Token &current, Parser *parser);
+        AST::Node *binary_op(Scan::Token &current, AST::Node *left, Parser *parser);
+        AST::Node *ternary_op(Scan::Token &current, AST::Node *left, Parser *parser);
+        AST::Node *paren_group(Scan::Token &current, Parser *parser);
 
-        AST::Node* function_call(Scan::Token &currrent, AST::Node* left, Parser* parser);
+        AST::Node *function_call(Scan::Token &currrent, AST::Node *left, Parser *parser);
 
-        AST::Node* var_value(Scan::Token &current, Parser* parser);
+        AST::Node *var_value(Scan::Token &current, Parser *parser);
         // Something like x = 3
-        AST::Node* var_assignment(Scan::Token &current, AST::Node* left, Parser* parser);
+        AST::Node *var_assignment(Scan::Token &current, AST::Node *left, Parser *parser);
     };
 
     class Parser {
@@ -104,12 +105,12 @@ namespace Parse {
             void skip_semicolons();
 
             /* Parse an expression within parentheses (()) */
-            AST::Node* parse_parenthesized_expression();
+            AST::Node *parse_parenthesized_expression();
             /* Parse a block within braces ({}) */
             AST::Body* parse_braced_block();
             /* Parse either a block (code surrounded by {}), OR if that's not possible,
                 parse a single statement. */
-            AST::Node* parse_optionally_inlined_block();
+            AST::Node *parse_optionally_inlined_block();
             /* Reusable logic to parse something like var a = 3, b = 4; */
             AST::VarDefinition* parse_var_def_no_header(Intermediate::VariableType type);
         public:
@@ -126,11 +127,11 @@ namespace Parse {
             bool at_EOF() const;
 
             /* Pratt top-down parse expressions with this precedence or higher. */
-            AST::Node* parse_precedence(int prec);
+            AST::Node *parse_precedence(int prec);
 
             /* Parsing functions. These do not consume the semicolon, even if it is necessary.
                 That is the job of the caller. */
-            AST::Node* parse_expression();
+            AST::Node *parse_expression();
             AST::VarDefinition* parse_var_statement();
             AST::If* parse_if_statement();
             AST::While* parse_while_statement();
@@ -141,7 +142,7 @@ namespace Parse {
             std::string* parse_function_parameter();
             AST::Function* parse_function();
 
-            AST::Node* parse_statement();
+            AST::Node *parse_statement();
 
             AST::Body* parse();
 

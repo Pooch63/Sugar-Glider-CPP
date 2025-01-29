@@ -24,6 +24,7 @@ class Compiler {
         /* All the compilation functions for specific nodes */
         void compile_string(AST::String* node);
         void compile_number(AST::Number* node);
+        void compile_null_value();
         void compile_true_value();
         void compile_false_value();
         void compile_bin_op(AST::BinOp* node);

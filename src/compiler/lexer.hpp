@@ -67,6 +67,8 @@ namespace Scan {
         SEMICOLON,
         // ,
         COMMA,
+        // !=
+        BANG_EQ,
         // < Operators
 
         // Keywords >
@@ -76,6 +78,7 @@ namespace Scan {
         FALSE,
         FUNCTION,
         IF,
+        NULL_TOKEN,
         RETURN,
         TRUE,
         VAR,

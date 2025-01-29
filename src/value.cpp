@@ -52,22 +52,22 @@ std::string Value::to_debug_string() const {
     }
 };
 
-bool Value::is_truthy() const {
-    switch (this->get_type()) {
+bool Values::value_is_truthy(const Value &value) {
+    switch (value.get_type()) {
         case ValueType::NULL_VALUE: return false;
         case ValueType::TRUE: return true;
         case ValueType::FALSE: return false;
-        case ValueType::NUMBER: return this->get_number() != 0;
-        case ValueType::STRING: return this->get_string()->size() > 0;
+        case ValueType::NUMBER: return value.get_number() != 0;
+        case ValueType::STRING: return value.get_string()->size() > 0;
         case ValueType::NATIVE_FUNCTION: return true;
         default:
             throw sg_assert_error("Unknown value to get truthy value from");
     }
 };
-bool Value::is_numerical() const {
-    return this->type == ValueType::NUMBER ||
-        this->type == ValueType::TRUE ||
-        this->type == ValueType::FALSE;
+bool Values::value_is_numerical(const Value &value) {
+    return value.get_type() == ValueType::NUMBER ||
+        value.get_type() == ValueType::TRUE ||
+        value.get_type() == ValueType::FALSE;
 };
 Values::number_t Value::to_number() const {
     switch (this->type) {
@@ -78,6 +78,15 @@ Values::number_t Value::to_number() const {
             throw sg_assert_error("Tried to convert non-numeric value type to number");
     }
 }
+
+bool Values::values_are_equal(const Value &a, const Value &b) {
+    if (a.get_type() != b.get_type()) return false;
+    switch (a.get_type()) {
+        case ValueType::STRING: return *a.get_string() == *b.get_string();
+        case ValueType::NATIVE_FUNCTION: return a.get_native_function().func == b.get_native_function().func;
+        default: return true;
+    }
+};
 
 // Calculate a % b. Get the number you must subtract from "a" in order to make
 // "a" a multiple of b.
@@ -101,10 +110,14 @@ bool Values::bin_op(Operations::BinOpType type, Value a, Value b, Value *result,
             *result = Value(
                 ValueType::STRING,
                 new std::string(*a.get_string() + *b.get_string()));
-                return true;
+            return true;
         }
+    if (type == BinOpType::BINOP_NOT_EQUAL_TO) {
+        *result = Value(values_are_equal(a, b) ? ValueType::FALSE : ValueType::TRUE);
+        return true;
+    }
 
-    if (!a.is_numerical() || !b.is_numerical()) {
+    if (!value_is_numerical(a) || !value_is_numerical(b)) {
         if (error != nullptr) {
             *error = "Cannot perform binary operation ";
             *error += Operations::bin_op_to_string(type);
@@ -164,7 +177,7 @@ bool Values::bin_op(Operations::BinOpType type, Value a, Value b, Value *result,
 bool Values::unary_op(Operations::UnaryOpType type, Value arg, Value *result, std::string *error) {
     using Operations::UnaryOpType;
 
-    if (!arg.is_numerical()) {
+    if (!value_is_numerical(arg)) {
         if (error != nullptr) {
             *error = "Cannot perform unary operation ";
             *error += Operations::unary_op_to_string(type);
