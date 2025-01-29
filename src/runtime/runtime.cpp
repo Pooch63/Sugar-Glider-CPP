@@ -85,6 +85,20 @@ int Runtime::run() {
                 ip = address;
             }
                 break;
+            case OpCode::OP_POP_JIZ:
+            {
+                address_t address = this->main.read_address(ip);
+                Value condition = this->stack_pop();
+                if (!condition.is_truthy()) ip = address;
+            }
+                break;
+            case OpCode::OP_POP_JNZ:
+            {
+                address_t address = this->main.read_address(ip);
+                Value condition = this->stack_pop();
+                if (condition.is_truthy()) ip = address;
+            }
+                break;
 
             case OpCode::OP_STORE_GLOBAL:
             {
