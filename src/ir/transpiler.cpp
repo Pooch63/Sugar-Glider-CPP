@@ -1,4 +1,5 @@
 #include "transpiler.hpp"
+#include "../runtime/natives.hpp"
 
 using Intermediate::Instruction, Intermediate::InstrCode, Intermediate::Label, Intermediate::label_index_t, Bytecode::address_t;
 
@@ -10,8 +11,6 @@ Transpiler::Transpiler(Runtime &runtime) : runtime(runtime), chunk(runtime.get_m
 void Transpiler::transpile_variable_instruction(Instruction instr) {
     Bytecode::variable_index_t index;
     Intermediate::Variable variable = *instr.get_variable();
-    
-    std::cout << *variable.name << std::endl;
 
     if (variable.type == Intermediate::GLOBAL_CONSTANT || variable.type == Intermediate::GLOBAL_MUTABLE) {
         auto index_pair = this->variables.find(variable);
@@ -32,9 +31,14 @@ void Transpiler::transpile_variable_instruction(Instruction instr) {
         }
         chunk->push_value<Bytecode::variable_index_t>(index);
     }
+    else if (variable.type == Intermediate::NATIVE) {
+        chunk->push_opcode(OpCode::OP_LOAD_NATIVE);
+        chunk->push_value<Bytecode::variable_index_t>(
+            static_cast<Bytecode::variable_index_t>(Natives::get_native_index(*variable.name))
+        );
+    }
 }
 void Transpiler::transpile_ir_instruction(Instruction instr) {
-    std::cout << Intermediate::instr_type_to_string(instr.code) << std::endl;
     switch (instr.code) {
         // 0 argument instructions
         case InstrCode::INSTR_POP: chunk->push_opcode(OpCode::OP_POP); break;
@@ -92,7 +96,9 @@ void Transpiler::transpile_ir_instruction(Instruction instr) {
         }
             break;
 
-        default: break;
+        case InstrCode::INSTR_MAKE_FUNCTION:
+        {}
+            break;
     }
 }
 
