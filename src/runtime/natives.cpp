@@ -8,14 +8,15 @@ const char *Natives::native_names[native_count] = {
 };
 
 #define NATIVE_FUNCTION_HEADERS() ( \
-    [[maybe_unused]] Value *start, \
+    [[maybe_unused]] const Value * const start, \
     [[maybe_unused]] uint stack_size, \
     [[maybe_unused]] Value &result, \
     [[maybe_unused]] std::string &error_message)
 
 using Values::Value;
+
 bool println NATIVE_FUNCTION_HEADERS() {
-    std::cout << start[0].to_debug_string() << std::endl;
+    std::cout << start[0].to_string() << std::endl;
 
     return true;
 }
@@ -30,10 +31,10 @@ std::unordered_map<std::string, uint> Natives::name_to_native_index = {
     { "PI", 0 },
     { "println", 1 }
 };
-void Natives::create_natives(std::array<Native, native_count> &natives) {
-    natives[0] = Native("PI", Values::Value(Values::NUMBER, 3.14159265358979323));
+void Natives::create_natives(std::array<Value, native_count> &natives) {
+    natives[0] = Values::Value(Values::NUMBER, 3.14159265358979323);
 
-    natives[1] = Native("println", Values::Value(
+    natives[1] = Values::Value(
         Values::native_method_t{ .func = println, .number_arguments = 1 }
-    ));
+    );
 };

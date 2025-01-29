@@ -23,7 +23,7 @@ namespace Natives {
     extern std::unordered_map<std::string, uint> name_to_native_index;
 
     uint get_native_index(std::string native_name);
-    void create_natives(std::array<Native, native_count> &natives);
+    void create_natives(std::array<Values::Value, native_count> &natives);
 };
 
 #endif
