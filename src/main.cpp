@@ -14,7 +14,7 @@
 int main() {
     Random::initialize_rng();
 
-    std::string prog = "var x = \"3\"; println(x + x + x);";
+    std::string prog = "var a = 0; var b = 1; var c = 100; while (c > 1) { c = c - 1; var t = a; a = b; b = b + t; } println(b);";
 
     Output output(prog);
     Scan::Scanner lexer(prog, output);
