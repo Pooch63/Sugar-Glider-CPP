@@ -1,6 +1,7 @@
 #ifndef _SG_CPP_RUNTIME_HPP
 #define _SG_CPP_RUNTIME_HPP
 
+#include "natives.hpp"
 #include "../ir/bytecode.hpp"
 #include "../value.hpp"
 
@@ -19,6 +20,14 @@ class Runtime {
 
         RuntimeValue *runtime_values;
         std::vector<Values::Value> constants = std::vector<Values::Value>();
+
+        /* Make a separate copy for natives so that each individual runtime can update native namespaces */
+        std::array<Values::Value, Natives::native_count> natives = std::array<Values::Value, Natives::native_count>();
+
+        std::vector<Values::Value> stack = std::vector<Values::Value>();
+
+        Values::Value stack_pop();
+        void exit();
     public:
         Runtime(Bytecode::Chunk &main);
 
@@ -27,6 +36,8 @@ class Runtime {
 
         inline Bytecode::Chunk *get_main() { return &this->main; };
         inline Values::Value    get_constant(Bytecode::constant_index_t index) const { return this->constants.at(index); };
+
+        int run();
 };
 
 #endif
