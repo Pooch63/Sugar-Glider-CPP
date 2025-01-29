@@ -14,7 +14,7 @@
 int main() {
     Random::initialize_rng();
 
-    std::string prog = "PI = 4; while (true) { var b = 4; var m = 3 * b; function l() { function z() {}; return m; } l(9); }";
+    std::string prog = "println(\"6333333\");";
 
     Output output(prog);
     Scan::Scanner lexer(prog, output);
@@ -60,6 +60,8 @@ int main() {
     Transpiler(runtime).transpile_label_to_bytecode(optimized);
     runtime.get_main()->print_code(&runtime);
 
+    int code = runtime.run();
+
     delete node;
-    return 0;
+    return code;
 }
