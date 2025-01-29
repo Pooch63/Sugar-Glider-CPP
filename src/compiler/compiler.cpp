@@ -17,11 +17,10 @@ Compiler::Compiler(Intermediate::LabelIR& block, Output &output) : ir(block), ma
 };
 
 void Compiler::compile_string(AST::String* node) {
-    node->save_string();
     this->main_block->add_instruction(
         Intermediate::Instruction(
             Intermediate::INSTR_STRING,
-            node->get_string() ));
+            new std::string(*node->get_string()) ));
 }
 void Compiler::compile_number(AST::Number* node) {
     this->main_block->add_instruction(Intermediate::Instruction(node->get_number()));

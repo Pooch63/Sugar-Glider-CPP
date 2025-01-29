@@ -96,11 +96,9 @@ namespace AST {
     class String : public Node {
         private:
             std::string* str;
-            bool reserve_string = false;
         public:
             String(std::string* str, TokenPosition pos);
 
-            inline void save_string() { this->reserve_string = true; };
             inline std::string* get_string() const { return this->str; };
 
             ~String();

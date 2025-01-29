@@ -84,11 +84,11 @@ Node::Node(NodeType type, TokenPosition position) : node_type(type), position(po
 #define AST_CAST_DEFINE(type, func_name, node_name) type *Node::func_name() { \
     assert(this->node_type == NodeType::node_name); \
     return dynamic_cast<type*>(this); \
-}
+};
 #else
 #define AST_CAST_DEFINE(type, func_name, node_name) type *Node::func_name() { \
     return dynamic_cast<type*>(this); \
-}
+};
 #endif
 AST_CAST_DEFINE(String, as_string, NODE_STRING)
 AST_CAST_DEFINE(Number, as_number, NODE_NUMBER)
@@ -111,7 +111,7 @@ AST_CAST_DEFINE(Body, as_body, NODE_BODY)
 String::String(std::string* str, TokenPosition pos) :
     Node(NodeType::NODE_STRING, pos), str(str) {};
 String::~String() {
-    if (!this->reserve_string) delete this->str;
+    delete this->str;
 }
 
 Number::Number(Values::number_t number) :
