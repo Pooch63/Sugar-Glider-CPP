@@ -80,102 +80,33 @@ const char* AST::node_type_to_string(NodeType type) {
 Node::Node(NodeType type) : node_type(type) {};
 Node::Node(NodeType type, TokenPosition position) : node_type(type), position(position) {};
 
-String* Node::as_string() {
-    #ifdef DEBUG_ASSERT
-    assert(this->node_type == NodeType::NODE_STRING);
-    #endif
-    return dynamic_cast<String*>(this);
+#ifdef DEBUG_ASSERT
+#define AST_CAST_DEFINE(type, func_name, node_name) type *Node::func_name() { \
+    assert(this->node_type == NodeType::node_name); \
+    return dynamic_cast<type*>(this); \
 }
-Number* Node::as_number() {
-    #ifdef DEBUG_ASSERT
-    assert(this->node_type == NodeType::NODE_NUMBER);
-    #endif
-    return dynamic_cast<Number*>(this);
+#else
+#define AST_CAST_DEFINE(type, func_name, node_name) type *Node::func_name() { \
+    return dynamic_cast<type*>(this); \
 }
-BinOp* Node::as_bin_op() {
-    #ifdef DEBUG_ASSERT
-    assert(this->node_type == NodeType::NODE_BINOP);
-    #endif
-    return dynamic_cast<BinOp*>(this);
-}
-UnaryOp* Node::as_unary_op() {
-    #ifdef DEBUG_ASSERT
-    assert(this->node_type == NodeType::NODE_UNARYOP);
-    #endif
-    return dynamic_cast<UnaryOp*>(this);
-}
-TernaryOp* Node::as_ternary_op() {
-    #ifdef DEBUG_ASSERT
-    assert(this->node_type == NodeType::NODE_TERNARY_OP);
-    #endif
-    return dynamic_cast<TernaryOp*>(this);
-}
-VarDefinition* Node::as_variable_definition() {
-    #ifdef DEBUG_ASSERT
-    assert(this->node_type == NodeType::NODE_VAR_DEFINITION);
-    #endif
-    return dynamic_cast<VarDefinition*>(this);
-}
-VarValue* Node::as_variable_value() {
-    #ifdef DEBUG_ASSERT
-    assert(this->node_type == NodeType::NODE_VAR_VALUE);
-    #endif
-    return dynamic_cast<VarValue*>(this);
-};
-VarAssignment* Node::as_variable_assignment() {
-    #ifdef DEBUG_ASSERT
-    assert(this->node_type == NodeType::NODE_VAR_ASSIGNMENT);
-    #endif
-    return dynamic_cast<VarAssignment*>(this);
-};
-If* Node::as_if_statement() {
-    #ifdef DEBUG_ASSERT
-    assert(this->node_type == NodeType::NODE_IF);
-    #endif
-    return dynamic_cast<If*>(this);
-};
-While* Node::as_while_loop() {
-    #ifdef DEBUG_ASSERT
-    assert(this->node_type == NodeType::NODE_WHILE);
-    #endif
-    return dynamic_cast<While*>(this);
-}
-Break* Node::as_break_statement() {
-    #ifdef DEBUG_ASSERT
-    assert(this->node_type == NodeType::NODE_BREAK);
-    #endif
-    return dynamic_cast<Break*>(this);
-}
-Continue* Node::as_continue_statement() {
-    #ifdef DEBUG_ASSERT
-    assert(this->node_type == NodeType::NODE_CONTINUE);
-    #endif
-    return dynamic_cast<Continue*>(this);
-}
-FunctionCall* Node::as_function_call() {
-    #ifdef DEBUG_ASSERT
-    assert(this->node_type == NodeType::NODE_FUNCTION_CALL);
-    #endif
-    return dynamic_cast<FunctionCall*>(this);
-}
-Function* Node::as_function() {
-    #ifdef DEBUG_ASSERT
-    assert(this->node_type == NodeType::NODE_FUNCTION_DEFINITION);
-    #endif
-    return dynamic_cast<Function*>(this);
-}
-Return* Node::as_return_statement() {
-    #ifdef DEBUG_ASSERT
-    assert(this->node_type == NodeType::NODE_RETURN);
-    #endif
-    return dynamic_cast<Return*>(this);
-}
-Body* Node::as_body() {
-    #ifdef DEBUG_ASSERT
-    assert(this->node_type == NodeType::NODE_BODY);
-    #endif
-    return dynamic_cast<Body*>(this);
-}
+#endif
+AST_CAST_DEFINE(String, as_string, NODE_STRING)
+AST_CAST_DEFINE(Number, as_number, NODE_NUMBER)
+AST_CAST_DEFINE(BinOp, as_bin_op, NODE_BINOP)
+AST_CAST_DEFINE(UnaryOp, as_unary_op, NODE_UNARYOP)
+AST_CAST_DEFINE(TernaryOp, as_ternary_op, NODE_TERNARY_OP)
+AST_CAST_DEFINE(VarDefinition, as_variable_definition, NODE_VAR_DEFINITION)
+AST_CAST_DEFINE(VarValue, as_variable_value, NODE_VAR_VALUE)
+AST_CAST_DEFINE(VarAssignment, as_variable_assignment, NODE_VAR_ASSIGNMENT)
+AST_CAST_DEFINE(If, as_if_statement, NODE_IF)
+AST_CAST_DEFINE(While, as_while_loop, NODE_WHILE)
+AST_CAST_DEFINE(Break, as_break_statement, NODE_BREAK)
+AST_CAST_DEFINE(Continue, as_continue_statement, NODE_CONTINUE)
+AST_CAST_DEFINE(FunctionCall, as_function_call, NODE_FUNCTION_CALL)
+AST_CAST_DEFINE(Function, as_function, NODE_FUNCTION_DEFINITION)
+AST_CAST_DEFINE(Return, as_return_statement, NODE_RETURN)
+AST_CAST_DEFINE(Body, as_body, NODE_BODY)
+
 
 String::String(std::string* str, TokenPosition pos) :
     Node(NodeType::NODE_STRING, pos), str(str) {};

@@ -1,5 +1,6 @@
 #include "scopes.hpp"
 #include "../globals.hpp"
+#include "../runtime/natives.hpp"
 
 #ifdef DEBUG_ASSERT
 #include <cassert>
@@ -151,15 +152,10 @@ void ScopeManager::init_native_scope() {
     if (ScopeManager::native_scope_initialized) return;
     ScopeManager::native_scope_initialized = true;
 
-    constexpr int var_count = 1;
-    const char* variables[var_count] = {
-        "PI"
-    };
-
     std::string* var;
 
-    for (int ind = 0; ind < var_count; ind += 1) {
-        var = new std::string(variables[ind]);
+    for (int ind = 0; ind < Natives::native_count; ind += 1) {
+        var = new std::string(Natives::native_names[ind]);
         native_scope.add_variable(var, new Variable(var, VariableType::NATIVE, -1, Intermediate::global_function_ind));
     }
 }
