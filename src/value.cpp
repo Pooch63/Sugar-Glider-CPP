@@ -23,7 +23,9 @@ Value::Value(ValueType type, number_t number) : type(type), value(value_mem_t{ .
     assert(type == ValueType::NUMBER);
     #endif
 };
+Value::Value(native_method_t native) : type(ValueType::NATIVE_FUNCTION), value(value_mem_t{ .native = native }) {};
 Value::Value(ValueType type) : type(type) {};
+Value::Value() : type(ValueType::NULL_VALUE) {};
 
 std::string Value::to_debug_string() const {
     switch (this->get_type()) {

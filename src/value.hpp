@@ -17,16 +17,29 @@ namespace Values {
         NUMBER,
         TRUE,
         FALSE,
+        NULL_VALUE,
 
         NATIVE_FUNCTION
     };
     typedef double number_t;
-    typedef void (*native_function_t)(Value* result);
+    /**
+     * @param {Value*} - start of stack
+     * @param {uint} - stack size
+     * @param {Value&} - return value. MUST be updated
+     * @param {std::string&} - reference to error message that may be updated
+     * @return {bool} - True if okay, false if error
+    */
+    typedef bool (*native_function_t)(Value *start, uint stack_size, Value &result, std::string &error_message);
+
+    struct native_method_t {
+        native_function_t func;
+        int number_arguments;
+    };
 
     union value_mem_t {
         number_t number;
         std::string* str;
-        native_function_t native;
+        native_method_t native;
     };
 
     class Value {
@@ -43,10 +56,13 @@ namespace Values {
             /* For numbers */
             Value(ValueType type, number_t number);
             /* For native functions */
-            Value(ValueType type, native_function_t native);
+            Value(native_method_t native);
 
             /* For literals: true, false, null */
             Value(ValueType type);
+
+            /* Default constructor so that Value can be part of arrays, hashmap, etc. */
+            Value();
 
             std::string to_debug_string() const;
             
