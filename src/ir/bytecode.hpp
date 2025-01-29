@@ -96,6 +96,7 @@ namespace Bytecode {
             0 arguments */
         OP_EXIT
     };
+    const char* instruction_to_string(OpCode code);
 
     /* The address size that instruction codes use */
     typedef uint32_t address_t;
@@ -110,24 +111,6 @@ namespace Bytecode {
     class Chunk {
         private:
             bytecode_t code = bytecode_t();
-
-            /* Read the value, with the first byte starting at the specified index  */
-            template<typename read_type>
-            read_type read_value(uint current_byte_index) const {
-                #ifdef _SGCPP_SYSTEM_IS_BIG_ENDIAN
-                #else
-                union {
-                    read_type data;
-                    uint8_t code[sizeof(read_type)];
-                } payload;
-
-                for (uint_fast8_t byte_index = 0; byte_index < sizeof(read_type); byte_index += 1) {
-                    payload.code[byte_index] = this->read_byte(current_byte_index + byte_index);
-                }
-
-                return payload.data;
-                #endif
-            }
 
             /* Insert a value into the code, with the first byte starting at the specified index */
             template<typename insert_type>
@@ -154,7 +137,7 @@ namespace Bytecode {
             /* From the current byte index in the code, log the instruction
                 and any arguments it has. Then, return the number of bytes we read,
                 starting from the current byte, in order to log it. */
-            int print_instruction(uint current_byte_index, const Runtime *runtime);
+            void print_instruction(uint &current_byte_index, const Runtime *runtime);
             #endif
         public:
             /* Push an enum into the code.
@@ -163,12 +146,19 @@ namespace Bytecode {
             void push_small_enum(enum_t value) {
                 this->code.push_back(get_bottom_byte<enum_t>(value));
             }
+            template<typename enum_t>
+            enum_t read_small_enum(Bytecode::address_t &index) {
+                return static_cast<enum_t>(this->read_byte(index));
+            }
             /* Push necessary enum functions. Separate them, because if
                 they eventually grow to over one byte, we'll need to push
                 more than one byte. */
             void push_opcode(OpCode code);           
             void push_bin_op_type(Operations::BinOpType type);
             void push_unary_op_type(Operations::UnaryOpType type);
+
+            /* Read opcode and update with the new byte index. */
+            OpCode read_opcode(Bytecode::address_t &index);
 
             template<typename push_type>
             void push_value(push_type data) {
@@ -182,7 +172,25 @@ namespace Bytecode {
                     this->code.push_back(reader.bytes[byte]);
                 }
             }
-            
+            /* Read the value, with the first byte starting at the specified index  */
+            template<typename read_type>
+            read_type read_value(Bytecode::address_t &current_byte_index) const {
+                #ifdef _SGCPP_SYSTEM_IS_BIG_ENDIAN
+                #else
+                union {
+                    read_type data;
+                    uint8_t code[sizeof(read_type)];
+                } payload;
+
+                for (uint_fast8_t byte_index = 0; byte_index < sizeof(read_type); byte_index += 1) {
+                    Bytecode::address_t index = current_byte_index + byte_index;
+                    payload.code[byte_index] = this->read_byte(index);
+                }
+
+                current_byte_index += sizeof(read_type);
+                return payload.data;
+                #endif
+            }
 
             /* Push helpers that push the type in individual bytes to the chunk. */
             inline void push_uint32(uint32_t data) {
@@ -197,14 +205,14 @@ namespace Bytecode {
 
             /* Read helpers, read a value of the specified type,
                 with the first byte starting at the specified index  */
-            uint8_t read_byte(uint index) const;
-            inline uint32_t read_uint32(uint current_byte_index) const {
+            uint8_t read_byte(uint &index) const;
+            inline uint32_t read_uint32(uint &current_byte_index) const {
                 return this->read_value<uint32_t>(current_byte_index);
             };
-            inline Values::number_t read_number_value(uint current_byte_index) const {
+            inline Values::number_t read_number_value(uint &current_byte_index) const {
                 return this->read_value<Values::number_t>(current_byte_index);
             };
-            inline address_t read_address(uint current_byte_index) const {
+            inline address_t read_address(uint &current_byte_index) const {
                 return this->read_value<address_t>(current_byte_index);
             }
 

@@ -12,6 +12,10 @@ using namespace Bytecode;
 void Chunk::push_opcode(OpCode code) {
     this->push_small_enum<OpCode>(code);
 }
+OpCode Chunk::read_opcode(Bytecode::address_t &index) {
+    return this->read_small_enum<OpCode>(index);
+};
+
 /* Note that push_bin_op_type and puush_unary_op_type only push the first byte
     of the code because, as of now, there are AT MOST 256 binary op types and
     AT MOST 256 unary op types. */
@@ -22,13 +26,14 @@ void Chunk::push_unary_op_type(Operations::UnaryOpType type) {
     this->push_small_enum<Operations::UnaryOpType>(type);
 };
 
-uint8_t Chunk::read_byte(uint current_byte_index) const {
-    return this->code.at(current_byte_index);
+uint8_t Chunk::read_byte(uint &current_byte_index) const {
+    current_byte_index += 1;
+    return this->code.at(current_byte_index - 1);
 }
 
 #ifdef DEBUG
 
-const char* instruction_to_string(OpCode code) {
+const char* Bytecode::instruction_to_string(OpCode code) {
     switch (code) {
         case OpCode::OP_POP: return "POP";
         case OpCode::OP_GOTO: return "GOTO";
@@ -60,15 +65,12 @@ const char* instruction_to_string(OpCode code) {
 static const int INSTRUCTION_NAME_LENGTH = 30;
 static const int MAX_ARGUMENT_LENGTH = IR_LABEL_LENGTH + 5;
 static const rang::fg comment_c = rang::fg::green;
-int Chunk::print_instruction(uint current_byte_index, const Runtime *runtime) {
+void Chunk::print_instruction(uint &current_byte_index, const Runtime *runtime) {
     OpCode code = static_cast<OpCode>(this->read_byte(current_byte_index));
-    /* The number of bytes we'll need to read. The first is the instruction */
-    int read_count = 1;
-
     std::string output = "";
 
     // Add the instruction name
-    output = instruction_to_string(code);
+    output = Bytecode::instruction_to_string(code);
 
     // Add spaces
     uint instr_name_length = output.size();
@@ -84,65 +86,57 @@ int Chunk::print_instruction(uint current_byte_index, const Runtime *runtime) {
         case OpCode::OP_GOTO:
         case OpCode::OP_POP_JIZ:
         case OpCode::OP_POP_JNZ:
-            argument = std::to_string(this->read_address(current_byte_index + read_count));
-            read_count += sizeof(address_t);
+            argument = std::to_string(this->read_address(current_byte_index));
             break;
         case OpCode::OP_BIN:
         {
-            Operations::BinOpType type = static_cast<Operations::BinOpType>(this->read_byte(current_byte_index + read_count));
+            Operations::BinOpType type = static_cast<Operations::BinOpType>(this->read_byte(current_byte_index));
             argument = std::to_string(static_cast<uint>(type));
             argument += " (";
             argument += Operations::bin_op_to_string(type);
             argument += ')';
-            read_count += 1;
         }
             break;
         case OpCode::OP_UNARY:
         {
-            Operations::UnaryOpType type = static_cast<Operations::UnaryOpType>(this->read_byte(current_byte_index + read_count));
+            Operations::UnaryOpType type = static_cast<Operations::UnaryOpType>(this->read_byte(current_byte_index));
             argument = std::to_string(static_cast<uint>(type));
             argument += " (";
             argument += Operations::unary_op_to_string(type);
             argument += ')';
-            read_count += 1;
         }
             break;
         case OpCode::OP_LOAD_CONST:
         {
-            constant_index_t constant_index = this->read_value<constant_index_t>(current_byte_index + read_count);
+            constant_index_t constant_index = this->read_value<constant_index_t>(current_byte_index);
             argument = std::to_string(constant_index);
             comment = runtime->get_constant(constant_index).to_debug_string();
-            read_count += sizeof(uint32_t);
         }
             break;
         case OpCode::OP_LOAD:
         case OpCode::OP_STORE:
         case OpCode::OP_LOAD_NATIVE:
         {
-            variable_index_t index = this->read_value<variable_index_t>(current_byte_index + read_count);
+            variable_index_t index = this->read_value<variable_index_t>(current_byte_index);
             argument = std::to_string(index);
-            read_count += sizeof(variable_index_t);
         }
             break;
         case OpCode::OP_CALL:
         {
-            call_arguments_t arg_count = this->read_value<call_arguments_t>(current_byte_index + read_count);
+            call_arguments_t arg_count = this->read_value<call_arguments_t>(current_byte_index);
             argument = std::to_string(arg_count);
-            read_count += sizeof(call_arguments_t);
         }
             break;
         case OpCode::OP_GET_FUNCTION_REFERENCE:
         {
-            variable_index_t index = this->read_value<variable_index_t>(current_byte_index + read_count);
+            variable_index_t index = this->read_value<variable_index_t>(current_byte_index);
             argument = std::to_string(index);
-            read_count += sizeof(variable_index_t);
         }
             break;
         case OpCode::OP_NUMBER:
         {
-            Values::number_t number = this->read_number_value(current_byte_index + read_count);
+            Values::number_t number = this->read_number_value(current_byte_index);
             argument = std::to_string(number);
-            read_count += sizeof(Values::number_t);
         }
             break;
 
@@ -160,8 +154,6 @@ int Chunk::print_instruction(uint current_byte_index, const Runtime *runtime) {
     }
 
     std::cout << rang::style::reset;
-
-    return read_count;
 }
 
 void Chunk::print_code(const Runtime *runtime) {
@@ -178,7 +170,7 @@ void Chunk::print_code(const Runtime *runtime) {
         std::cout << "  " << std::to_string(byte_index) << " |  ";
 
         /* Log the instruction, and add the number of bytes we advanced to the byte index. */
-        byte_index += this->print_instruction(byte_index, runtime);
+        this->print_instruction(byte_index, runtime);
 
         std::cout << '\n';
     }
