@@ -46,8 +46,8 @@ const char* Bytecode::instruction_to_string(OpCode code) {
         case OpCode::OP_NULL: return "OP_NULL";
         case OpCode::OP_NUMBER: return "OP_NUMBER";
         case OpCode::OP_LOAD_CONST: return "LOAD_CONST";
-        case OpCode::OP_LOAD: return "LOAD";
-        case OpCode::OP_STORE: return "STORE";
+        case OpCode::OP_LOAD_GLOBAL: return "LOAD";
+        case OpCode::OP_STORE_GLOBAL: return "STORE";
         case OpCode::OP_LOAD_NATIVE: return "LOAD_NATIVE";
         case OpCode::OP_CALL: return "CALL";
         case OpCode::OP_RETURN: return "RETURN";
@@ -113,8 +113,8 @@ void Chunk::print_instruction(uint &current_byte_index, const Runtime *runtime) 
             comment = runtime->get_constant(constant_index).to_debug_string();
         }
             break;
-        case OpCode::OP_LOAD:
-        case OpCode::OP_STORE:
+        case OpCode::OP_LOAD_GLOBAL:
+        case OpCode::OP_STORE_GLOBAL:
         case OpCode::OP_LOAD_NATIVE:
         {
             variable_index_t index = this->read_value<variable_index_t>(current_byte_index);

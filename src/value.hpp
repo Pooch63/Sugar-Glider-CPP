@@ -94,10 +94,23 @@ namespace Values {
             Values::number_t to_number() const;
     };
 
-    /* Calculation functions. Return nullptr if there was an error, otherwise a pointer to a heap-allocated value if the operation was successful.
-        Meant for optimizations, since these functions doesn't create an error if there is one. */
-    Value* bin_op(Operations::BinOpType type, Value a, Value b);
-    Value* unary_op(Operations::UnaryOpType type, Value arg);
+    /**
+     * @param {BinOpType} type
+     * @param {Value} a
+     * @param {Value} b
+     * @param {Value*} result - The place to add the result
+     * @param {std::string*} place to write error message. If you don't want an error, pass nullptr
+     * @return {bool} - True if ok, false if error
+     */
+    bool bin_op(Operations::BinOpType type, Value a, Value b, Value *result, std::string *error);
+    /**
+     * @param {BinOpType} type
+     * @param {Value} argument
+     * @param {Value*} result - The place to add the result
+     * @param {std::string*} place to write error message. If you don't want an error, pass nullptr
+     * @return {bool} - True if ok, false if error
+     */
+    bool unary_op(Operations::UnaryOpType type, Value a, Value *result, std::string *error);
 }
 
 #endif

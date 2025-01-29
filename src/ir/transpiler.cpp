@@ -24,10 +24,10 @@ void Transpiler::transpile_variable_instruction(Instruction instr) {
         }
 
         if (instr.code == InstrCode::INSTR_LOAD) {
-            chunk->push_opcode(OpCode::OP_LOAD);
+            chunk->push_opcode(OpCode::OP_LOAD_GLOBAL);
         }
         else {
-            chunk->push_opcode(OpCode::OP_STORE);
+            chunk->push_opcode(OpCode::OP_STORE_GLOBAL);
         }
         chunk->push_value<Bytecode::variable_index_t>(index);
     }

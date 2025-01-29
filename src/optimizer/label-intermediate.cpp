@@ -52,9 +52,10 @@ void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized) {
                 Values::Value a = label.at(label.size() - 2).payload_to_value();
                 Values::Value b = last.payload_to_value();
                 
-                Values::Value* result = Values::bin_op(instr.get_bin_op(), a, b);
+                Values::Value result;
+                bool valid = Values::bin_op(instr.get_bin_op(), a, b, &result, nullptr);
 
-                if (result == nullptr) {
+                if (!valid) {
                     // Just push the binop
                     label.push_back(instr);
 
@@ -62,41 +63,38 @@ void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized) {
                     a.mark_payload();
                     b.mark_payload();
 
-                    delete result;
                     continue;
                 }
 
-                result->mark_payload();
+                result.mark_payload();
 
                 // Pop the last two loads
                 label.pop_back();
                 label.pop_back();
                 // Push the result
-                label.push_back(Instruction::value_to_instruction(*result));
+                label.push_back(Instruction::value_to_instruction(result));
 
                 label.at(label.size() - 2).free_payload();
                 last.free_payload();
 
-                delete result;
                 continue;
             }
             /* Unary op folding */
             if (last.is_constant() && instr.code == InstrCode::INSTR_UNARY_OP) {
-                Values::Value* result = Values::unary_op(instr.get_unary_op(), last.payload_to_value());
+                Values::Value result;
+                bool valid = Values::unary_op(instr.get_unary_op(), last.payload_to_value(), &result, nullptr);
 
-                if (result == nullptr) {
+                if (!valid) {
                     // Just push the unary op
                     label.push_back(instr);
-                    delete result;
                     continue;
                 }
 
                 // Pop the argument load
                 label.pop_back();
                 // Push the result
-                label.push_back(Instruction::value_to_instruction(*result));
+                label.push_back(Instruction::value_to_instruction(result));
 
-                delete result;
                 continue;
             }
             /* Unnecessary constant folding */

@@ -79,6 +79,45 @@ int Runtime::run() {
                 this->stack_pop();
             }
                 break;
+            case OpCode::OP_GOTO:
+            {
+                address_t address = this->main.read_address(ip);
+                ip = address;
+            }
+                break;
+
+            case OpCode::OP_STORE_GLOBAL:
+            {
+                variable_index_t index = this->main.read_value<variable_index_t>(ip);
+                Value value = this->stack_pop();
+                this->global_variables[index] = value;
+            }
+                break;
+            case OpCode::OP_LOAD_GLOBAL:
+            {
+                variable_index_t index = this->main.read_value<variable_index_t>(ip);
+                this->stack.push_back(this->global_variables[index]);
+            }
+                break;
+
+            case OpCode::OP_TRUE: this->stack.push_back(Value(Values::TRUE)); break;
+            case OpCode::OP_FALSE: this->stack.push_back(Value(Values::FALSE)); break;
+            case OpCode::OP_NULL: this->stack.push_back(Value(Values::NULL_VALUE)); break;
+            
+            case OpCode::OP_BIN:
+            {
+                Operations::BinOpType type = this->main.read_small_enum<Operations::BinOpType>(ip);
+                Value b = this->stack_pop();
+                Value a = this->stack_pop();
+                Value result;
+                bool valid = Values::bin_op(type, a, b, &result, &error);
+
+                if (!valid) break;
+
+                this->stack.push_back(result);
+            }
+                break;
+
             case OpCode::OP_EXIT:
                 this->exit();
                 break;

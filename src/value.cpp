@@ -79,20 +79,29 @@ static Values::number_t mod(Values::number_t a, Values::number_t b) {
     return fmod(a, b);
 }
 
-Value* Values::bin_op(Operations::BinOpType type, Value a, Value b) {
+bool Values::bin_op(Operations::BinOpType type, Value a, Value b, Value *result, std::string *error) {
     using Operations::BinOpType;
 
     if (
         type == BinOpType::BINOP_ADD &&
         a.get_type() == ValueType::STRING &&
         b.get_type() == ValueType::STRING) {
-            return new Value(
+            *result = Value(
                 ValueType::STRING,
                 new std::string(*a.get_string() + *b.get_string()));
+                return true;
         }
 
     if (!a.is_numerical() || !b.is_numerical()) {
-        return nullptr;
+        if (error != nullptr) {
+            *error = "Cannot perform binary operation ";
+            *error += Operations::bin_op_to_string(type);
+            *error += " on values ";
+            *error += a.to_debug_string();
+            *error += " and ";
+            *error += b.to_debug_string();
+        }
+        return false;
     }
 
     Values::number_t first = a.to_number(),
@@ -106,29 +115,47 @@ Value* Values::bin_op(Operations::BinOpType type, Value a, Value b) {
         secondI = floor(second);
 
         /* Bitwise operation error on floats */
-        if (first != firstI && second != secondI) return nullptr;
+        if (first != firstI && second != secondI) {
+            if (error != nullptr) {
+                *error = "Cannot perform bitwise operation ";
+                *error += Operations::bin_op_to_string(type);
+                *error += " on non-integer values ";
+                *error += a.to_debug_string();
+                *error += " and ";
+                *error += b.to_debug_string();
+            }
+            return false;
+        }
     }
 
     switch (type) {
         case BinOpType::BINOP_ADD:
-            return new Value(ValueType::NUMBER, first + second);
+            *result = Value(ValueType::NUMBER, first + second); break;
         case BinOpType::BINOP_SUB:
-            return new Value(ValueType::NUMBER, first - second);
+            *result = Value(ValueType::NUMBER, first - second); break;
         case BinOpType::BINOP_MUL:
-            return new Value(ValueType::NUMBER, first * second);
+            *result = Value(ValueType::NUMBER, first * second); break;
         case BinOpType::BINOP_DIV:
-            return new Value(ValueType::NUMBER, first / second);
+            *result = Value(ValueType::NUMBER, first / second); break;
         case BinOpType::BINOP_MOD:
-            return new Value(ValueType::NUMBER, mod(first, second));
+            *result = Value(ValueType::NUMBER, mod(first, second)); break;
         default:
             throw sg_assert_error("Tried to compute unknown binary operation on two values");
     }
+
+    return true;
 };
-Value* Values::unary_op(Operations::UnaryOpType type, Value arg) {
+bool Values::unary_op(Operations::UnaryOpType type, Value arg, Value *result, std::string *error) {
     using Operations::UnaryOpType;
 
     if (!arg.is_numerical()) {
-        return nullptr;
+        if (error != nullptr) {
+            *error = "Cannot perform unary operation ";
+            *error += Operations::unary_op_to_string(type);
+            *error += " on value ";
+            *error += arg.to_debug_string();
+        }
+        return false;
     }
 
     Values::number_t num = arg.to_number();
@@ -140,12 +167,20 @@ Value* Values::unary_op(Operations::UnaryOpType type, Value arg) {
         argI = floor(num);
 
         /* Bitwise operation error on floats */
-        if (num != argI) return nullptr;
+        if (num != argI) {
+            if (error != nullptr) {
+                *error = "Cannot perform bitwise operation ";
+                *error += Operations::unary_op_to_string(type);
+                *error += " on non-integer value ";
+                *error += arg.to_debug_string();
+            }
+            return false;
+        }
     }
 
     switch (type) {
         case UnaryOpType::UNARY_NEGATE:
-            return new Value(ValueType::NUMBER, -num);
+            *result = Value(ValueType::NUMBER, -num); break;
         default:
             throw sg_assert_error("Tried to compute unknown unary operation on value");
     }

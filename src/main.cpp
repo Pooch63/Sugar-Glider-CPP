@@ -14,7 +14,7 @@
 int main() {
     Random::initialize_rng();
 
-    std::string prog = "println(\"6333333\");";
+    std::string prog = "var x = \"3\"; println(x + x + x);";
 
     Output output(prog);
     Scan::Scanner lexer(prog, output);

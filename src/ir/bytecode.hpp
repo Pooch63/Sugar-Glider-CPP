@@ -85,15 +85,14 @@ namespace Bytecode {
 
         /* Push the value of the variable at the specified index on top of the stack.
             Argument is sizeof(variable_index_t) bytes long, the variable index */
-        OP_LOAD,
+        OP_LOAD_GLOBAL,
         /* Store the topmost value on the stack into the specified variable index.
             Argument is sizeof(variable_index_t) bytes long, the variable index. */
-        OP_STORE,
+        OP_STORE_GLOBAL,
         /* Load native at index variable_index_t */
         OP_LOAD_NATIVE,
 
-        /* Exit the program,
-            0 arguments */
+        /* Exit the program, 0 arguments */
         OP_EXIT
     };
     const char* instruction_to_string(OpCode code);
