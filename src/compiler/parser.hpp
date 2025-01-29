@@ -16,6 +16,7 @@ namespace Parse {
         PREC_NONE,
 
         PREC_ASSIGNMENT_OR_TERNARY, // a = b OR a ? b : c
+        PREC_RELATIONAL, // <, <=, >, >=
 
         // + or -
         PREC_TERM,
@@ -109,6 +110,8 @@ namespace Parse {
             /* Parse either a block (code surrounded by {}), OR if that's not possible,
                 parse a single statement. */
             AST::Node* parse_optionally_inlined_block();
+            /* Reusable logic to parse something like var a = 3, b = 4; */
+            AST::VarDefinition* parse_var_def_no_header(Intermediate::VariableType type);
         public:
             Parser(Scan::Scanner& scanner, Output& output);
 

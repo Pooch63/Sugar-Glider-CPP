@@ -30,10 +30,13 @@ const char* Scan::tok_type_to_string(TokType type) {
         case RPAREN: return ")";
         case LBRACKET: return "{";
         case RBRACKET: return "}";
+        case LESS_THAN: return "<";
+        case GREATER_THAN: return ">";
 
         case QUESTION_MARK: return "?";
         case COLON: return ":";
         case SEMICOLON: return ";";
+        case COMMA: return ",";
 
         case BREAK: return "break";
         case CONST: return "const";
@@ -384,6 +387,8 @@ Token Scanner::next_token() {
         case ')': one_char_type = TokType::RPAREN; break;
         case '{': one_char_type = TokType::LBRACKET; break;
         case '}': one_char_type = TokType::RBRACKET; break;
+        case '<': one_char_type = TokType::LESS_THAN; break;
+        case '>': one_char_type = TokType::GREATER_THAN; break;
 
         case '?': one_char_type = TokType::QUESTION_MARK; break;
         case ':': one_char_type = TokType::COLON; break;

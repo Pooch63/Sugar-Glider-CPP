@@ -9,7 +9,9 @@ namespace Operations {
         BINOP_SUB,
         BINOP_MUL,
         BINOP_DIV,
-        BINOP_MOD
+        BINOP_MOD,
+        BINOP_LESS_THAN,
+        BINOP_GREATER_THAN
     };
     enum UnaryOpType {
         UNARY_NEGATE

@@ -55,6 +55,10 @@ namespace Scan {
         LBRACKET,
         // }
         RBRACKET,
+        // <
+        LESS_THAN,
+        // >
+        GREATER_THAN,
         // ?
         QUESTION_MARK,
         // :

@@ -79,6 +79,14 @@ AST::Node* Parse::Rules::binary_op(Scan::Token &current, AST::Node* left, Parser
             type = Operations::BINOP_MOD;
             prec = Precedence::PREC_FACTOR;
             break;
+        case TokType::LESS_THAN:
+            type = Operations::BINOP_LESS_THAN;
+            prec = Precedence::PREC_RELATIONAL;
+            break;
+        case TokType::GREATER_THAN:
+            type = Operations::BINOP_GREATER_THAN;
+            prec = Precedence::PREC_RELATIONAL;
+            break;
         default:
             throw sg_assert_error("Parser tried to parse unknown token as binary operator");
     }
@@ -201,6 +209,13 @@ void Parser::initialize_parse_rules() {
             .nud = nullptr,
             .led = Rules::binary_op,
             .precedence = Precedence::PREC_FACTOR
+        };
+
+    rules[TokType::LESS_THAN] = rules[TokType::GREATER_THAN] =
+        ParseRule{
+            .nud = nullptr,
+            .led = Rules::binary_op,
+            .precedence = Precedence::PREC_RELATIONAL
         };
 
     rules[TokType::LPAREN] = ParseRule{
@@ -388,14 +403,10 @@ AST::Node* Parser::parse_expression() {
     return this->parse_precedence(Precedence::PREC_NONE);
 }
 
-AST::VarDefinition* Parser::parse_var_statement() {
-    // Is it a const or a var?
-    Scan::Token qualifier = this->curr();
-    this->advance();
-
+AST::VarDefinition *Parser::parse_var_def_no_header(Intermediate::VariableType type) {
     bool got_identifier = this->expect_symbol(TokType::IDENTIFIER, "Expected identifier after var keyword");
 
-    std::string* name = nullptr;
+    std::string *name = nullptr;
     TokenPosition position;
 
     /* Make sure to keep the identifier, so mark it if it exists. */
@@ -404,16 +415,27 @@ AST::VarDefinition* Parser::parse_var_statement() {
         position = this->previous_token.get_position();
         this->previous_token.mark_payload();
     }
-    
-    this->expect_symbol(TokType::EQUALS, "Expected equals sign after variable definition.");
 
+    this->expect_symbol(TokType::EQUALS, "Expected equals sign after variable definition.");
     AST::Node* value = this->parse_expression();
-    
+
     return got_identifier ? new AST::VarDefinition(
-        qualifier.get_type() == TokType::VAR ? Intermediate::VariableType::GLOBAL_MUTABLE : Intermediate::VariableType::GLOBAL_CONSTANT,
+        type,
         name,
         value,
         position) : nullptr;
+}
+AST::VarDefinition *Parser::parse_var_statement() {
+    // Is it a const or a var?
+    Scan::Token qualifier = this->curr();
+    this->advance();
+
+    Intermediate::VariableType type =
+        qualifier.get_type() == TokType::VAR ? Intermediate::VariableType::GLOBAL_MUTABLE : Intermediate::VariableType::GLOBAL_CONSTANT;
+
+    AST::VarDefinition *def = this->parse_var_def_no_header(type);
+    
+    return def;
 }
 
 AST::If* Parser::parse_if_statement() {
