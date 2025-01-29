@@ -90,7 +90,7 @@ void Output::warning(Position::TokenPosition position, std::string warning) {
 }
 
 std::runtime_error log_assert(const char* message) {
-    std::cerr << rang::style::bold << rang::fg::red << "internal error\n";
+    std::cerr << '\n' << rang::style::bold << rang::fg::red << "internal error\n";
     std::cerr << rang::style::reset << "Please report this issue\n";
     return std::runtime_error(message);
 }
