@@ -5,6 +5,7 @@
 #include "../ir/bytecode.hpp"
 #include "../value.hpp"
 
+#include <array>
 #include <vector>
 
 // Linked list of runtime values that we can clean up later
@@ -24,12 +25,15 @@ class Runtime {
         /* Make a separate copy for natives so that each individual runtime can update native namespaces */
         std::array<Values::Value, Natives::native_count> natives = std::array<Values::Value, Natives::native_count>();
 
+        Values::Value *global_variables = nullptr;
         std::vector<Values::Value> stack = std::vector<Values::Value>();
 
         Values::Value stack_pop();
         void exit();
     public:
         Runtime(Bytecode::Chunk &main);
+
+        void init_global_pool(size_t num_globals);
 
         // Generate new constant in the pool and return index in the constant pool
         Bytecode::variable_index_t new_constant(Values::Value value);
@@ -38,6 +42,8 @@ class Runtime {
         inline Values::Value    get_constant(Bytecode::constant_index_t index) const { return this->constants.at(index); };
 
         int run();
+
+        ~Runtime();
 };
 
 #endif

@@ -42,12 +42,12 @@ namespace Scopes {
 
     class ScopeManager {
         using VariableType = Intermediate::VariableType;
-        private:
-            static bool native_scope_initialized;
-        public:
-            static void init_native_scope();
 
         private:
+            Scope native_scope = Scope(ScopeType::NORMAL);
+
+            void init_native_scope();
+
             std::vector<Scope> scopes = std::vector<Scope>();
             /* Pool of variable information. The manager handles memory for all variables, NOT
                 the individual scopes. */
@@ -86,8 +86,6 @@ namespace Scopes {
 
             ~ScopeManager();
     };
-
-    extern Scope native_scope;
 }
 
 #endif

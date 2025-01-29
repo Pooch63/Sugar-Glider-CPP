@@ -3,6 +3,13 @@
 Runtime::Runtime(Bytecode::Chunk &main) : main(main) {
     Natives::create_natives(this->natives);
 };
+void Runtime::init_global_pool(size_t num_globals) {
+    // Make sure we haven't already initialized the variable pool
+    #ifdef DEBUG
+    assert(this->global_variables == nullptr);
+    #endif
+    this->global_variables = new Values::Value[num_globals];
+}
 
 Bytecode::variable_index_t Runtime::new_constant(Values::Value value) {
     this->constants.push_back(value);
@@ -20,6 +27,10 @@ Values::Value Runtime::stack_pop() {
 void Runtime::exit() {}
 
 int Runtime::run() {
+    #ifdef DEBUG
+    assert(this->global_variables != nullptr && "Runtime global variable pool must be initialized before running");
+    #endif
+
     address_t ip = 0;
 
     std::string error = "";
@@ -80,4 +91,12 @@ int Runtime::run() {
     }
 
     return 0;
+}
+
+Runtime::~Runtime() {
+    for (Value value : this->constants) {
+        value.free_payload();
+    }
+
+    delete [] this->global_variables;
 }

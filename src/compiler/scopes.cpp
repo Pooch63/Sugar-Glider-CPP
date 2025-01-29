@@ -54,8 +54,7 @@ label_index_t* Scope::get_loop_end() const {
 };
 
 ScopeManager::ScopeManager() {
-    if (!ScopeManager::native_scope_initialized) ScopeManager::init_native_scope();
-
+    this->init_native_scope();
     this->scopes.push_back(native_scope);
 }
 
@@ -144,18 +143,15 @@ ScopeManager::~ScopeManager() {
     }
 }
 
-bool ScopeManager::native_scope_initialized = false;
-
-Scope Scopes::native_scope = Scope(ScopeType::NORMAL);
-
 void ScopeManager::init_native_scope() {
-    if (ScopeManager::native_scope_initialized) return;
-    ScopeManager::native_scope_initialized = true;
-
-    std::string* var;
+    std::string* var_name;
 
     for (int ind = 0; ind < Natives::native_count; ind += 1) {
-        var = new std::string(Natives::native_names[ind]);
-        native_scope.add_variable(var, new Variable(var, VariableType::NATIVE, -1, Intermediate::global_function_ind));
+        var_name = new std::string(Natives::native_names[ind]);
+
+        Variable *variable = new Variable(var_name, VariableType::NATIVE, -1, Intermediate::global_function_ind);
+        this->variables.push_back(variable);
+
+        this->native_scope.add_variable(var_name, variable);
     }
 }

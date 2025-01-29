@@ -57,8 +57,11 @@ int main() {
     Bytecode::Chunk main =  Bytecode::Chunk();
     Runtime runtime = Runtime(main);
 
-    Transpiler(runtime).transpile_label_to_bytecode(optimized);
+    Transpiler transpiler = Transpiler(runtime);
+    transpiler.transpile_label_to_bytecode(optimized);
     runtime.get_main()->print_code(&runtime);
+
+    runtime.init_global_pool(transpiler.num_variable_slots());
 
     int code = runtime.run();
 

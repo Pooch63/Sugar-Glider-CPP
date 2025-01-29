@@ -48,7 +48,7 @@ namespace Values {
             value_mem_t value;
 
             // Whether or not the value class is responsible for freeing the payload
-            bool free_payload = true;
+            bool should_free_payload = true;
 
         public:
             /* For strings */
@@ -87,7 +87,8 @@ namespace Values {
                 return this->value.native;
             }
 
-            inline void mark_payload() { this->free_payload = true; }
+            inline void mark_payload() { this->should_free_payload = true; }
+            void free_payload();
 
             bool is_numerical() const;
             Values::number_t to_number() const;

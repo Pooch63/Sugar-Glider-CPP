@@ -150,3 +150,11 @@ Value* Values::unary_op(Operations::UnaryOpType type, Value arg) {
             throw sg_assert_error("Tried to compute unknown unary operation on value");
     }
 };
+
+void Value::free_payload() {
+    if (!this->should_free_payload) return;
+    switch (this->type) {
+        case ValueType::STRING: delete this->get_string(); break;
+        default: break;
+    }
+};
