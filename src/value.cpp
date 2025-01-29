@@ -27,12 +27,25 @@ Value::Value(native_method_t native) : type(ValueType::NATIVE_FUNCTION), value(v
 Value::Value(ValueType type) : type(type) {};
 Value::Value() : type(ValueType::NULL_VALUE) {};
 
-std::string Value::to_debug_string() const {
+std::string Value::to_string() const {
     switch (this->get_type()) {
         case ValueType::NUMBER: return std::to_string(this->get_number());
         case ValueType::TRUE:   return "true";
         case ValueType::FALSE:  return "false";
         case ValueType::STRING: return *this->get_string();
+        case ValueType::NULL_VALUE: return "null";
+        case ValueType::NATIVE_FUNCTION: return "[native function]";
+        default:
+            throw sg_assert_error("Unknown value to log as string");
+    }
+};
+std::string Value::to_debug_string() const {
+    switch (this->get_type()) {
+        case ValueType::NUMBER: return std::to_string(this->get_number());
+        case ValueType::TRUE:   return "true";
+        case ValueType::FALSE:  return "false";
+        case ValueType::STRING: return '"' + *this->get_string() + '"';
+        case ValueType::NULL_VALUE: return "null";
         case ValueType::NATIVE_FUNCTION: return "[native function]";
         default:
             throw sg_assert_error("Unknown value to log as string");

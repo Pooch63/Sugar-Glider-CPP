@@ -24,12 +24,12 @@ namespace Values {
     typedef double number_t;
     /**
      * @param {Value*} - start of stack
-     * @param {uint} - stack size
+     * @param {uint} - number of arguments passed
      * @param {Value&} - return value. MUST be updated
      * @param {std::string&} - reference to error message that may be updated
      * @return {bool} - True if okay, false if error
     */
-    typedef bool (*native_function_t)(Value *start, uint stack_size, Value &result, std::string &error_message);
+    typedef bool (*native_function_t)(const Value * const start, uint arg_count, Value &result, std::string &error_message);
 
     struct native_method_t {
         native_function_t func;
@@ -64,6 +64,7 @@ namespace Values {
             /* Default constructor so that Value can be part of arrays, hashmap, etc. */
             Value();
 
+            std::string to_string() const;
             std::string to_debug_string() const;
             
             inline ValueType get_type() const { return this->type; };
@@ -78,6 +79,12 @@ namespace Values {
                 assert(this->type == ValueType::STRING);
                 #endif
                 return this->value.str;
+            }
+            inline native_method_t get_native_function() const {
+                #ifdef DEBUG
+                assert(this->type == ValueType::NATIVE_FUNCTION);
+                #endif
+                return this->value.native;
             }
 
             inline void mark_payload() { this->free_payload = true; }
