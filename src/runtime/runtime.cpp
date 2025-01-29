@@ -113,7 +113,17 @@ int Runtime::run() {
                 bool valid = Values::bin_op(type, a, b, &result, &error);
 
                 if (!valid) break;
+                this->stack.push_back(result);
+            }
+                break;
+            case OpCode::OP_UNARY:
+            {
+                Operations::UnaryOpType type = this->main.read_small_enum<Operations::UnaryOpType>(ip);
+                Value arg = this->stack_pop();
+                Value result;
+                bool valid = Values::unary_op(type, arg, &result, &error);
 
+                if (!valid) break;
                 this->stack.push_back(result);
             }
                 break;

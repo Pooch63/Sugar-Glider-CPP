@@ -184,6 +184,8 @@ bool Values::unary_op(Operations::UnaryOpType type, Value arg, Value *result, st
         default:
             throw sg_assert_error("Tried to compute unknown unary operation on value");
     }
+
+    return true;
 };
 
 void Value::free_payload() {
