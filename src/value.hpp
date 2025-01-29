@@ -90,10 +90,12 @@ namespace Values {
             inline void mark_payload() { this->should_free_payload = true; }
             void free_payload();
 
-            bool is_truthy() const;
-            bool is_numerical() const;
             Values::number_t to_number() const;
     };
+
+    bool value_is_truthy(const Value &value);
+    bool value_is_numerical(const Value &value);
+    bool values_are_equal(const Value &a, const Value &b);
 
     /**
      * @param {BinOpType} type
