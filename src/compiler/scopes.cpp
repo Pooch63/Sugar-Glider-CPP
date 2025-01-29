@@ -76,7 +76,7 @@ Variable *ScopeManager::add_variable(std::string* name, VariableType type, int f
     #endif
 
     Variable *info = new Variable(
-        name,
+        new std::string(*name),
         type,
         this->scopes.size() <= 2 ? Intermediate::global_function_ind : static_cast<int>(this->scopes.size()) - 1,
         function_index);
@@ -139,6 +139,7 @@ VariableType ScopeManager::add_variable_headers(VariableType basic_type) {
 
 ScopeManager::~ScopeManager() {
     for (Variable* variable : this->variables) {
+        delete variable->name;
         delete variable;
     }
 }
