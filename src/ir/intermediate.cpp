@@ -11,6 +11,7 @@ const char* Intermediate::variable_type_to_string(VariableType type) {
         case VariableType::FUNCTION_MUTABLE: return "func const var";
         case VariableType::CLOSED_CONSTANT: return "closed const var";
         case VariableType::CLOSED_MUTABLE: return "closed mut var";
+        case VariableType::NATIVE: return "native";
         default:
             throw sg_assert_error("Unknown variable type in string function");
     }
@@ -93,6 +94,10 @@ Values::Value Instruction::payload_to_value() const {
             return Values::Value(Values::ValueType::TRUE);
         case InstrCode::INSTR_FALSE:
             return Values::Value(Values::ValueType::FALSE);
+        case InstrCode::INSTR_NULL:
+            return Values::Value(Values::ValueType::NULL_VALUE);
+        case InstrCode::INSTR_STRING:
+            return Values::Value(Values::ValueType::STRING, new std::string(*this->payload.str));
         default:
             throw sg_assert_error("Tried to convert instruction payload to value that could not become a value");
     }
@@ -246,7 +251,7 @@ void Intermediate::log_instruction(Instruction instr) {
             break;
         case InstrCode::INSTR_STRING:
         {
-            std::string* value = instr.payload.variable->name;
+            std::string* value = instr.payload.str;
 
             argument = '"';
 
