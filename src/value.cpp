@@ -41,17 +41,29 @@ std::string Value::to_string() const {
 };
 std::string Value::to_debug_string() const {
     switch (this->get_type()) {
+        case ValueType::NULL_VALUE: return "null";
         case ValueType::NUMBER: return std::to_string(this->get_number());
         case ValueType::TRUE:   return "true";
         case ValueType::FALSE:  return "false";
         case ValueType::STRING: return '"' + *this->get_string() + '"';
-        case ValueType::NULL_VALUE: return "null";
         case ValueType::NATIVE_FUNCTION: return "[native function]";
         default:
             throw sg_assert_error("Unknown value to log as string");
     }
 };
 
+bool Value::is_truthy() const {
+    switch (this->get_type()) {
+        case ValueType::NULL_VALUE: return false;
+        case ValueType::TRUE: return true;
+        case ValueType::FALSE: return false;
+        case ValueType::NUMBER: return this->get_number() != 0;
+        case ValueType::STRING: return this->get_string()->size() > 0;
+        case ValueType::NATIVE_FUNCTION: return true;
+        default:
+            throw sg_assert_error("Unknown value to get truthy value from");
+    }
+};
 bool Value::is_numerical() const {
     return this->type == ValueType::NUMBER ||
         this->type == ValueType::TRUE ||
@@ -139,6 +151,10 @@ bool Values::bin_op(Operations::BinOpType type, Value a, Value b, Value *result,
             *result = Value(ValueType::NUMBER, first / second); break;
         case BinOpType::BINOP_MOD:
             *result = Value(ValueType::NUMBER, mod(first, second)); break;
+        case BinOpType::BINOP_LESS_THAN:
+            *result = Value(first < second ? ValueType::TRUE : ValueType::FALSE); break;
+        case BinOpType::BINOP_GREATER_THAN:
+            *result = Value(first > second ? ValueType::TRUE : ValueType::FALSE); break;
         default:
             throw sg_assert_error("Tried to compute unknown binary operation on two values");
     }

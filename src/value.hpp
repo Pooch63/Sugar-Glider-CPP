@@ -90,6 +90,7 @@ namespace Values {
             inline void mark_payload() { this->should_free_payload = true; }
             void free_payload();
 
+            bool is_truthy() const;
             bool is_numerical() const;
             Values::number_t to_number() const;
     };
