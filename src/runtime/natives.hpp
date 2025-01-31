@@ -7,9 +7,7 @@
 #include <unordered_map>
 
 namespace Natives {
-    const int native_count = 2;
-    /* Update this list when you add a new native, and remove it when you take out a native. */
-    extern const char *native_names[native_count];
+    const int native_count = 3;
 
     struct Native {
         const char *native_name;

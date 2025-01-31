@@ -147,8 +147,8 @@ ScopeManager::~ScopeManager() {
 void ScopeManager::init_native_scope() {
     std::string* var_name;
 
-    for (int ind = 0; ind < Natives::native_count; ind += 1) {
-        var_name = new std::string(Natives::native_names[ind]);
+    for (auto &name : Natives::name_to_native_index) {
+        var_name = new std::string(name.first);
 
         Variable *variable = new Variable(var_name, VariableType::NATIVE, -1, Intermediate::global_function_ind);
         this->variables.push_back(variable);
