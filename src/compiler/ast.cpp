@@ -28,6 +28,7 @@ bool AST::node_may_be_function(NodeType type) {
     switch (type) {
         case NODE_VAR_VALUE:
         case NODE_VAR_ASSIGNMENT:
+        case NODE_FUNCTION_CALL:
             return true;
         default:
             return false;
