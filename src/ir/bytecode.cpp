@@ -46,8 +46,8 @@ const char* Bytecode::instruction_to_string(OpCode code) {
         case OpCode::OP_NULL: return "OP_NULL";
         case OpCode::OP_NUMBER: return "OP_NUMBER";
         case OpCode::OP_LOAD_CONST: return "LOAD_CONST";
-        case OpCode::OP_LOAD_GLOBAL: return "LOAD";
-        case OpCode::OP_STORE_GLOBAL: return "STORE";
+        case OpCode::OP_LOAD_GLOBAL: return "LOAD_GLOBAL";
+        case OpCode::OP_STORE_GLOBAL: return "STORE_GLOBAL";
         case OpCode::OP_LOAD_NATIVE: return "LOAD_NATIVE";
         case OpCode::OP_CALL: return "CALL";
         case OpCode::OP_RETURN: return "RETURN";
