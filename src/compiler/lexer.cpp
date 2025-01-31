@@ -86,7 +86,6 @@ void Token::free() {
     if (!this->free_payload) return;
 
     if (this->has_string_payload()) {
-        printf("DEBUG freed string \"%s\" (%p)\n", this->get_string()->c_str(), static_cast<void*>(this->get_string()));
         delete this->get_string();
     }
 }

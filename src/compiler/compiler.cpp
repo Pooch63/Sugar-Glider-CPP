@@ -121,7 +121,6 @@ void Compiler::compile_variable_value(AST::VarValue* node) {
     
     if (!this->get_variable_info(node, var_info)) return;
 
-    auto k = Intermediate::Instruction(Intermediate::INSTR_LOAD, var_info);(void)k;
     this->main_block->begin();
     this->main_block->add_instruction(
         Intermediate::Instruction(
