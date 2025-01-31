@@ -6,6 +6,7 @@
 #include "bytecode.hpp"
 #include "../globals.hpp"
 #include "../utils.hpp"
+#include "../value.hpp"
 
 #ifdef DEBUG
 #include <cassert> // For getters

@@ -98,6 +98,8 @@ Values::Value Instruction::payload_to_value() const {
             return Values::Value(Values::ValueType::NULL_VALUE);
         case InstrCode::INSTR_STRING:
             return Values::Value(Values::ValueType::STRING, new std::string(*this->payload.str));
+        case InstrCode::INSTR_GET_FUNCTION_REFERENCE:
+            return Values::Value(this->get_function_index(), Values::ValueType::PROGRAM_FUNCTION);
         default:
             throw sg_assert_error("Tried to convert instruction payload to value that could not become a value");
     }
