@@ -51,7 +51,6 @@ const char* Bytecode::instruction_to_string(OpCode code) {
         case OpCode::OP_LOAD_NATIVE: return "LOAD_NATIVE";
         case OpCode::OP_CALL: return "CALL";
         case OpCode::OP_RETURN: return "RETURN";
-        case OpCode::OP_GET_FUNCTION_REFERENCE: return "GET_FUNCTION_REFERENCE";
         case OpCode::OP_EXIT: return "EXIT";
 
         default:
@@ -125,12 +124,6 @@ void Chunk::print_instruction(uint &current_byte_index, const Runtime *runtime) 
         {
             call_arguments_t arg_count = this->read_value<call_arguments_t>(current_byte_index);
             argument = std::to_string(arg_count);
-        }
-            break;
-        case OpCode::OP_GET_FUNCTION_REFERENCE:
-        {
-            variable_index_t index = this->read_value<variable_index_t>(current_byte_index);
-            argument = std::to_string(index);
         }
             break;
         case OpCode::OP_NUMBER:

@@ -4,7 +4,6 @@
 #include "../bit-converter.hpp"
 #include "../globals.hpp"
 #include "../operations.hpp"
-#include "../value.hpp"
 
 #include <vector>
 
@@ -80,8 +79,6 @@ namespace Bytecode {
         OP_CALL,
         /* Return from the current function */
         OP_RETURN,
-        /* Create a reference to a function at the given index. Index is type variable_index_t */
-        OP_GET_FUNCTION_REFERENCE,
 
         /* Push the value of the variable at the specified index on top of the stack.
             Argument is sizeof(variable_index_t) bytes long, the variable index */

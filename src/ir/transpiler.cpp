@@ -58,10 +58,6 @@ void Transpiler::transpile_ir_instruction(Instruction instr) {
             chunk->push_opcode(OpCode::OP_CALL);
             chunk->push_value<Bytecode::call_arguments_t>(instr.get_argument_count());
             break;
-        case InstrCode::INSTR_GET_FUNCTION_REFERENCE:
-            chunk->push_opcode(OpCode::OP_GET_FUNCTION_REFERENCE);
-            chunk->push_value<Bytecode::variable_index_t>(static_cast<Bytecode::variable_index_t>(instr.get_function_index()));
-            break;
 
         // Push constant instructions
         case InstrCode::INSTR_TRUE: chunk->push_opcode(OpCode::OP_TRUE); break;
@@ -69,6 +65,7 @@ void Transpiler::transpile_ir_instruction(Instruction instr) {
         case InstrCode::INSTR_NULL: chunk->push_opcode(OpCode::OP_NULL); break;
         case InstrCode::INSTR_NUMBER:
         case InstrCode::INSTR_STRING:
+        case InstrCode::INSTR_GET_FUNCTION_REFERENCE:
             chunk->push_opcode(OpCode::OP_LOAD_CONST);
             chunk->push_value<Bytecode::constant_index_t>(this->runtime.new_constant(instr.payload_to_value()));
             instr.free_payload();
