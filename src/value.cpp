@@ -23,6 +23,13 @@ Value::Value(ValueType type, number_t number) : type(type), value(value_mem_t{ .
     assert(type == ValueType::NUMBER);
     #endif
 };
+Value::Value(Bytecode::constant_index_t prog_func_index, ValueType type) :
+    type(type), value(value_mem_t{ .prog_func_index = prog_func_index })
+{
+    #ifdef DEBUG_ASSERT
+    assert(type == ValueType::PROGRAM_FUNCTION);
+    #endif
+};
 Value::Value(native_method_t native) : type(ValueType::NATIVE_FUNCTION), value(value_mem_t{ .native = native }) {};
 Value::Value(ValueType type) : type(type) {};
 Value::Value() : type(ValueType::NULL_VALUE) {};
@@ -34,6 +41,7 @@ std::string Value::to_string() const {
         case ValueType::FALSE:  return "false";
         case ValueType::STRING: return *this->get_string();
         case ValueType::NULL_VALUE: return "null";
+        case ValueType::PROGRAM_FUNCTION: return "IMPLEMENT PROGRAM FUNCTION TO STRING LOGIC";
         case ValueType::NATIVE_FUNCTION: return "[native function]";
         default:
             throw sg_assert_error("Unknown value to log as string");
@@ -46,6 +54,7 @@ std::string Value::to_debug_string() const {
         case ValueType::TRUE:   return "true";
         case ValueType::FALSE:  return "false";
         case ValueType::STRING: return '"' + *this->get_string() + '"';
+        case ValueType::PROGRAM_FUNCTION: return "IMPLEMENT PROGRAM FUNCTION TO STRING LOGIC";
         case ValueType::NATIVE_FUNCTION: return "[native function]";
         default:
             throw sg_assert_error("Unknown value to log as string");

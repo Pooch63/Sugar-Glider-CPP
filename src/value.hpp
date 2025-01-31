@@ -2,6 +2,7 @@
 #define _SGCPP_VALUE_HPP
 
 #include "globals.hpp"
+#include "ir/bytecode.hpp"
 #include "operations.hpp"
 
 #ifdef DEBUG
@@ -19,9 +20,9 @@ namespace Values {
         FALSE,
         NULL_VALUE,
 
+        PROGRAM_FUNCTION,
         NATIVE_FUNCTION
     };
-    typedef double number_t;
     /**
      * @param {Value*} - start of stack
      * @param {uint} - number of arguments passed
@@ -40,6 +41,7 @@ namespace Values {
         number_t number;
         std::string* str;
         native_method_t native;
+        Bytecode::constant_index_t prog_func_index;
     };
 
     class Value {
@@ -55,6 +57,8 @@ namespace Values {
             Value(ValueType type, std::string* str);
             /* For numbers */
             Value(ValueType type, number_t number);
+            /* For program functions */
+            Value(Bytecode::constant_index_t prog_func_index, ValueType type);
             /* For native functions */
             Value(native_method_t native);
 
@@ -90,7 +94,7 @@ namespace Values {
             inline void mark_payload() { this->should_free_payload = true; }
             void free_payload();
 
-            Values::number_t to_number() const;
+            number_t to_number() const;
     };
 
     bool value_is_truthy(const Value &value);
