@@ -28,7 +28,8 @@ static void cli_error(std::string error) {
 static bool cli_read_file(std::string path, std::string &buffer) {
     std::ifstream file(path);
     if (file.is_open()) {
-        while (std::getline(file, buffer));
+        std::string line;
+        while (std::getline(file, line)) buffer += line + '\n';
         file.close();
         return true;
     }

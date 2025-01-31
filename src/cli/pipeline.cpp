@@ -40,8 +40,9 @@ int run_file(std::string prog) {
 
     Transpiler transpiler = Transpiler(runtime);
     transpiler.transpile_label_to_bytecode(optimized);
-    runtime.init_global_pool(transpiler.num_variable_slots());
+    runtime.get_main()->print_code(&runtime);
 
+    runtime.init_global_pool(transpiler.num_variable_slots());
     int code = runtime.run();
 
     delete node;
