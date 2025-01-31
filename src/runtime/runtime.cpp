@@ -20,6 +20,10 @@ using Values::Value;
 using namespace Bytecode;
 
 Values::Value Runtime::stack_pop() {
+    #ifdef DEBUG
+    assert(this->stack.size() > 0);
+    #endif
+
     Values::Value back = this->stack.back();
     this->stack.pop_back();
     return back;
@@ -71,6 +75,7 @@ int Runtime::run() {
 
                 Values::Value result;
                 native.func(this->stack.data(), this->stack.size(), result, error);
+                this->stack.push_back(result);
             }
                 break;
 
@@ -145,10 +150,10 @@ int Runtime::run() {
             case OpCode::OP_EXIT:
                 this->exit();
                 break;
-            default: break;
+            default: std::cout << "unhandled " << instruction_to_string(code) << std::endl; break;
         }
         if (error.size() > 0) {
-            std::cout << rang::fg::red << "runtime error: " << rang::style::reset << error << std::endl;
+            std::cerr << rang::fg::red << "runtime error: " << rang::style::reset << error << std::endl;
             return -1;
         }
     }
