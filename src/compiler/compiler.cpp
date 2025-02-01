@@ -294,12 +294,21 @@ void Compiler::compile_function_definition(AST::Function* node) {
     }
 
     Intermediate::Block *old_compile = this->main_block;
-    this->main_block = this->ir.new_function();
+    Intermediate::Function *function = this->ir.new_function();
+
+    this->main_block = function->get_block();
 
     int last_function_index = this->function_index;
     this->function_index = this->ir.last_function_index();
 
+    /* Add function arguments */
     this->scopes.new_scope(Scopes::FUNCTION);
+
+    for (std::string *arg : *node) {
+        Intermediate::Variable *var = this->scopes.add_variable(arg, Intermediate::FUNCTION_MUTABLE, this->function_index);
+        function->add_argument(var);
+    }
+
     this->compile_node(node->get_body());
     this->scopes.pop_scope();
 
