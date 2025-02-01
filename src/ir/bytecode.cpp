@@ -109,7 +109,7 @@ void Chunk::print_instruction(uint &current_byte_index, const Runtime *runtime) 
         {
             constant_index_t constant_index = this->read_value<constant_index_t>(current_byte_index);
             argument = std::to_string(constant_index);
-            comment = runtime->get_constant(constant_index).to_debug_string();
+            comment = Values::value_to_debug_string(runtime->get_constant(constant_index));
         }
             break;
         case OpCode::OP_LOAD_GLOBAL:

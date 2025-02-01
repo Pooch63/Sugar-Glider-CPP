@@ -12,7 +12,7 @@ using namespace Natives;
 using Values::Value;
 
 bool println NATIVE_FUNCTION_HEADERS() {
-    std::cout << start[0].to_string() << std::endl;
+    std::cout << Values::value_to_string(start[0]) << std::endl;
 
     return true;
 }

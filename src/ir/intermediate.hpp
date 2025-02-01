@@ -12,6 +12,7 @@
 #include <cassert> // For getters
 #endif
 
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
@@ -269,16 +270,27 @@ namespace Intermediate {
 
             ~Block();
     };
+    class Function {
+        private:
+            std::unique_ptr<Block> block;
+            // NOT RESPONSIBLE for variable management
+            std::vector<Intermediate::Variable*> arguments = std::vector<Intermediate::Variable*>();
+        public:
+            Function(Block *block);
+
+            inline Block *get_block() const { return this->block.get(); };
+            void add_argument(Intermediate::Variable *argument);
+    };
     class LabelIR {
         private:
             Block main = Block();
 
-            std::vector<Block*> functions = std::vector<Block*>();
+            std::vector<Function*> functions = std::vector<Function*>();
         public:
             inline Block            *get_main() { return &this->main; };
-            int   last_function_index();
+            int   last_function_index() const;
 
-            Block *new_function();
+            Function *new_function();
 
             void log_ir() const;
 

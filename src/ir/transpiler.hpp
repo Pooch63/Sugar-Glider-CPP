@@ -30,10 +30,12 @@ class Transpiler {
 
         void transpile_variable_instruction(Intermediate::Instruction instr);
         void transpile_ir_instruction(Intermediate::Instruction instr);
+        void transpile_single_block(Intermediate::Block *labels);
     public:
         Transpiler(Runtime &runtime);
 
-        void transpile_label_to_bytecode(Intermediate::Block& labels);
+        void transpile_ir_to_bytecode(Intermediate::LabelIR &main);
+
         inline size_t num_variable_slots() const { return this->variables.size(); };
 };
 

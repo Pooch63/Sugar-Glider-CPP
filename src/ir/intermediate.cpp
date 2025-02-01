@@ -106,11 +106,11 @@ Values::Value Instruction::payload_to_value() const {
 };
 
 Instruction Instruction::value_to_instruction(Values::Value value) {
-    switch (value.get_type()) {
+    switch (Values::get_value_type(value)) {
         case Values::ValueType::STRING:
-            return Instruction(InstrCode::INSTR_STRING, value.get_string());
+            return Instruction(InstrCode::INSTR_STRING, Values::get_value_string(value));
         case Values::ValueType::NUMBER:
-            return Instruction(value.get_number());
+            return Instruction(Values::get_value_number(value));
         case Values::ValueType::TRUE:
             return Instruction(InstrCode::INSTR_TRUE);
         case Values::ValueType::FALSE:
@@ -353,13 +353,20 @@ void Block::log_block() const {
     }
 }
 
+// Function >
+Function::Function(Block *block) : block(std::unique_ptr<Block>(block)) {};
+void Function::add_argument(Intermediate::Variable *argument) {
+    this->arguments.push_back(argument);
+}
+// < Function
+
 // Label IR >
-Block *LabelIR::new_function() {
-    Block *function = new Block();
+Function *LabelIR::new_function() {
+    Function *function = new Function(new Block());
     this->functions.push_back(function);
     return function;
 }
-int LabelIR::last_function_index()  {
+int LabelIR::last_function_index() const {
     return this->functions.size() == 0 ? global_function_ind : static_cast<int>(this->functions.size()) - 1;
 };
 void LabelIR::log_ir() const {
@@ -372,18 +379,18 @@ void LabelIR::log_ir() const {
     this->main.log_block();
 
     for (uint func_ind = 0; func_ind < this->functions.size(); func_ind += 1) {
-    std::cout << "-------------------------------------------------------\n";
+        std::cout << "-------------------------------------------------------\n";
         std::cout << '\n' << rang::fg::green;
         std::cout << "                       Function 0x" << std::hex << func_ind << std::dec << "\n";
         std::cout << rang::style::reset;
 
-        this->functions[func_ind]->log_block();
+        this->functions[func_ind]->get_block()->log_block();
     }
 
     std::cout << "-------------------------------------------------------" << std::endl;
 };
 LabelIR::~LabelIR() {
-    for (Block *function : this->functions) {
+    for (Function *function : this->functions) {
         delete function;
     }
 }

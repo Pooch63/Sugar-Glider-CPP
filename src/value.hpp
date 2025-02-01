@@ -68,34 +68,44 @@ namespace Values {
             /* Default constructor so that Value can be part of arrays, hashmap, etc. */
             Value();
 
-            std::string to_string() const;
-            std::string to_debug_string() const;
+            friend std::string value_to_string(const Value &value);
+            friend std::string value_to_debug_string(const Value &value);
             
-            inline ValueType get_type() const { return this->type; };
-            inline number_t get_number() const {
-                #ifdef DEBUG
-                assert(this->type == ValueType::NUMBER);
-                #endif
-                return this->value.number;
-            }
-            inline std::string* get_string() const {
-                #ifdef DEBUG
-                assert(this->type == ValueType::STRING);
-                #endif
-                return this->value.str;
-            }
-            inline native_method_t get_native_function() const {
-                #ifdef DEBUG
-                assert(this->type == ValueType::NATIVE_FUNCTION);
-                #endif
-                return this->value.native;
-            }
+            friend ValueType get_value_type(const Value &value);
+            friend number_t get_value_number(const Value &value);
+            friend std::string *get_value_string(const Value &value);
+            friend native_method_t get_value_native_function(const Value &value);
 
             inline void mark_payload() { this->should_free_payload = true; }
             void free_payload();
 
             number_t to_number() const;
     };
+
+    std::string value_to_string(const Value &value);
+    std::string value_to_debug_string(const Value &value);
+
+    inline ValueType get_value_type(const Value &value) {
+        return value.type;
+    };
+    inline number_t get_value_number(const Value &value) {
+        #ifdef DEBUG
+        assert(get_value_type(value) == ValueType::NUMBER);
+        #endif
+        return value.value.number;
+    };
+    inline std::string* get_value_string(const Value &value) {
+        #ifdef DEBUG
+        assert(get_value_type(value) == ValueType::STRING);
+        #endif
+        return value.value.str;
+    }
+    inline native_method_t get_value_native_function(const Value &value) {
+        #ifdef DEBUG
+        assert(get_value_type(value) == ValueType::NATIVE_FUNCTION);
+        #endif
+        return value.value.native;
+    }
 
     bool value_is_truthy(const Value &value);
     bool value_is_numerical(const Value &value);

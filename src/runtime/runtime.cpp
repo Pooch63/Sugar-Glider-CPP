@@ -16,7 +16,7 @@ Bytecode::variable_index_t Runtime::new_constant(Values::Value value) {
     return this->constants.size() - 1;
 }
 
-using Values::Value;
+using namespace Values;
 using namespace Bytecode;
 
 Values::Value Runtime::stack_pop() {
@@ -59,12 +59,12 @@ int Runtime::run() {
             case OpCode::OP_CALL:
             {
                 Value func = this->stack_pop();
-                if (func.get_type() != Values::NATIVE_FUNCTION) {
+                if (get_value_type(func) != Values::NATIVE_FUNCTION) {
                     error = "Cannot call non-function value ";
-                    error += func.to_debug_string();
+                    error += value_to_string(func);
                     break;
                 }
-                Values::native_method_t native = func.get_native_function();
+                Values::native_method_t native = get_value_native_function(func);
                 call_arguments_t num_args = this->main.read_value<call_arguments_t>(ip);
                 if (num_args != native.number_arguments) {
                     error = std::to_string(num_args);

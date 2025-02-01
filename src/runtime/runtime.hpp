@@ -19,6 +19,8 @@ class Runtime {
     private:
         Bytecode::Chunk main = Bytecode::Chunk();
 
+        std::vector<Bytecode::Chunk> functions = std::vector<Bytecode::Chunk>();
+
         RuntimeValue *runtime_values;
         std::vector<Values::Value> constants = std::vector<Values::Value>();
 
@@ -37,9 +39,11 @@ class Runtime {
 
         // Generate new constant in the pool and return index in the constant pool
         Bytecode::variable_index_t new_constant(Values::Value value);
+        // Add a function to the function list
+        void add_function(Bytecode::Chunk &chunk);
 
-        inline Bytecode::Chunk *get_main() { return &this->main; };
-        inline Values::Value    get_constant(Bytecode::constant_index_t index) const { return this->constants.at(index); };
+        inline Bytecode::Chunk * get_main() { return &this->main; };
+        inline Values::Value           get_constant(Bytecode::constant_index_t index) const { return this->constants.at(index); };
 
         int run();
 

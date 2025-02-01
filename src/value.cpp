@@ -34,12 +34,12 @@ Value::Value(native_method_t native) : type(ValueType::NATIVE_FUNCTION), value(v
 Value::Value(ValueType type) : type(type) {};
 Value::Value() : type(ValueType::NULL_VALUE) {};
 
-std::string Value::to_string() const {
-    switch (this->get_type()) {
-        case ValueType::NUMBER: return std::to_string(this->get_number());
+std::string Values::value_to_string(const Value &value) {
+    switch (get_value_type(value)) {
+        case ValueType::NUMBER: return std::to_string(get_value_number(value));
         case ValueType::TRUE:   return "true";
         case ValueType::FALSE:  return "false";
-        case ValueType::STRING: return *this->get_string();
+        case ValueType::STRING: return *get_value_string(value);
         case ValueType::NULL_VALUE: return "null";
         case ValueType::PROGRAM_FUNCTION: return "IMPLEMENT PROGRAM FUNCTION TO STRING LOGIC";
         case ValueType::NATIVE_FUNCTION: return "[native function]";
@@ -47,13 +47,13 @@ std::string Value::to_string() const {
             throw sg_assert_error("Unknown value to log as string");
     }
 };
-std::string Value::to_debug_string() const {
-    switch (this->get_type()) {
+std::string Values::value_to_debug_string(const Value &value) {
+    switch (get_value_type(value)) {
         case ValueType::NULL_VALUE: return "null";
-        case ValueType::NUMBER: return std::to_string(this->get_number());
+        case ValueType::NUMBER: return std::to_string(get_value_number(value));
         case ValueType::TRUE:   return "true";
         case ValueType::FALSE:  return "false";
-        case ValueType::STRING: return '"' + *this->get_string() + '"';
+        case ValueType::STRING: return '"' + *get_value_string(value) + '"';
         case ValueType::PROGRAM_FUNCTION: return "IMPLEMENT PROGRAM FUNCTION TO STRING LOGIC";
         case ValueType::NATIVE_FUNCTION: return "[native function]";
         default:
@@ -62,21 +62,21 @@ std::string Value::to_debug_string() const {
 };
 
 bool Values::value_is_truthy(const Value &value) {
-    switch (value.get_type()) {
+    switch (get_value_type(value)) {
         case ValueType::NULL_VALUE: return false;
         case ValueType::TRUE: return true;
         case ValueType::FALSE: return false;
-        case ValueType::NUMBER: return value.get_number() != 0;
-        case ValueType::STRING: return value.get_string()->size() > 0;
+        case ValueType::NUMBER: return get_value_type(value) != 0;
+        case ValueType::STRING: return get_value_string(value)->size() > 0;
         case ValueType::NATIVE_FUNCTION: return true;
         default:
             throw sg_assert_error("Unknown value to get truthy value from");
     }
 };
 bool Values::value_is_numerical(const Value &value) {
-    return value.get_type() == ValueType::NUMBER ||
-        value.get_type() == ValueType::TRUE ||
-        value.get_type() == ValueType::FALSE;
+    return get_value_type(value) == ValueType::NUMBER ||
+        get_value_type(value) == ValueType::TRUE ||
+        get_value_type(value) == ValueType::FALSE;
 };
 Values::number_t Value::to_number() const {
     switch (this->type) {
@@ -89,10 +89,10 @@ Values::number_t Value::to_number() const {
 }
 
 bool Values::values_are_equal(const Value &a, const Value &b) {
-    if (a.get_type() != b.get_type()) return false;
-    switch (a.get_type()) {
-        case ValueType::STRING: return *a.get_string() == *b.get_string();
-        case ValueType::NATIVE_FUNCTION: return a.get_native_function().func == b.get_native_function().func;
+    if (get_value_type(a) != get_value_type(b)) return false;
+    switch (get_value_type(a)) {
+        case ValueType::STRING: return *get_value_string(a) == *get_value_string(b);
+        case ValueType::NATIVE_FUNCTION: return get_value_native_function(a).func == get_value_native_function(b).func;
         default: return true;
     }
 };
@@ -114,11 +114,11 @@ bool Values::bin_op(Operations::BinOpType type, Value a, Value b, Value *result,
 
     if (
         type == BinOpType::BINOP_ADD &&
-        a.get_type() == ValueType::STRING &&
-        b.get_type() == ValueType::STRING) {
+        get_value_type(a) == ValueType::STRING &&
+        get_value_type(b) == ValueType::STRING) {
             *result = Value(
                 ValueType::STRING,
-                new std::string(*a.get_string() + *b.get_string()));
+                new std::string(*get_value_string(a) + *get_value_string(b)));
             return true;
         }
     if (type == BinOpType::BINOP_NOT_EQUAL_TO) {
@@ -131,9 +131,9 @@ bool Values::bin_op(Operations::BinOpType type, Value a, Value b, Value *result,
             *error = "Cannot perform binary operation ";
             *error += Operations::bin_op_to_string(type);
             *error += " on values ";
-            *error += a.to_debug_string();
+            *error += value_to_string(a);
             *error += " and ";
-            *error += b.to_debug_string();
+            *error += value_to_string(b);
         }
         return false;
     }
@@ -154,9 +154,9 @@ bool Values::bin_op(Operations::BinOpType type, Value a, Value b, Value *result,
                 *error = "Cannot perform bitwise operation ";
                 *error += Operations::bin_op_to_string(type);
                 *error += " on non-integer values ";
-                *error += a.to_debug_string();
+                *error += value_to_string(a);
                 *error += " and ";
-                *error += b.to_debug_string();
+                *error += value_to_string(b);
             }
             return false;
         }
@@ -191,7 +191,7 @@ bool Values::unary_op(Operations::UnaryOpType type, Value arg, Value *result, st
             *error = "Cannot perform unary operation ";
             *error += Operations::unary_op_to_string(type);
             *error += " on value ";
-            *error += arg.to_debug_string();
+            *error += value_to_string(arg);
         }
         return false;
     }
@@ -210,7 +210,7 @@ bool Values::unary_op(Operations::UnaryOpType type, Value arg, Value *result, st
                 *error = "Cannot perform bitwise operation ";
                 *error += Operations::unary_op_to_string(type);
                 *error += " on non-integer value ";
-                *error += arg.to_debug_string();
+                *error += value_to_string(arg);
             }
             return false;
         }
@@ -229,7 +229,7 @@ bool Values::unary_op(Operations::UnaryOpType type, Value arg, Value *result, st
 void Value::free_payload() {
     if (!this->should_free_payload) return;
     switch (this->type) {
-        case ValueType::STRING: delete this->get_string(); break;
+        case ValueType::STRING: delete get_value_string(*this); break;
         default: break;
     }
 };

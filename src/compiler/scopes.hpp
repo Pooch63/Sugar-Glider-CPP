@@ -64,7 +64,6 @@ namespace Scopes {
             Intermediate::Variable *add_variable(std::string* name, VariableType type, int function_index);
 
             bool last_scope_has_variable(std::string* name);
-
             bool in_function() const;
 
             void new_scope(ScopeType type);

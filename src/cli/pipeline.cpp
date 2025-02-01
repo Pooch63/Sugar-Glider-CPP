@@ -32,14 +32,14 @@ int run_file(std::string prog) {
         return Errors::COMPILE_ERROR;
     }
 
-    auto optimized = Intermediate::Block();
-    optimize_labels(*block.get_main(), optimized);
+    auto optimized = Intermediate::LabelIR();
+    optimize_labels(block, optimized);
 
-    Bytecode::Chunk main =  Bytecode::Chunk();
+    Bytecode::Chunk main = Bytecode::Chunk();
     Runtime runtime = Runtime(main);
 
     Transpiler transpiler = Transpiler(runtime);
-    transpiler.transpile_label_to_bytecode(optimized);
+    transpiler.transpile_ir_to_bytecode(optimized);
     runtime.get_main()->print_code(&runtime);
 
     runtime.init_global_pool(transpiler.num_variable_slots());

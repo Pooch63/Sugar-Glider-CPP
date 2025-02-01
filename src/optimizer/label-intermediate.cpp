@@ -4,7 +4,7 @@
 
 using Intermediate::intermediate_set_t, Intermediate::Instruction, Intermediate::InstrCode;
 
-void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized) {
+static void optimize_block(Intermediate::Block * const old, Intermediate::Block * const optimized) {
     using Intermediate::Label, Intermediate::label_index_t;
 
     /* Maximum size of a label to be unrolled */
@@ -14,8 +14,8 @@ void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized) {
     std::vector<Label> labels = std::vector<Label>();
 
     /* Constant folding optimizer. */
-    for (uint label_ind = 0; label_ind < old.label_count(); label_ind += 1) {
-        Label &old_label = old.get_label_at_numerical_index(label_ind);
+    for (uint label_ind = 0; label_ind < old->label_count(); label_ind += 1) {
+        Label &old_label = old->get_label_at_numerical_index(label_ind);
         labels.push_back(Label(old_label.name));
         intermediate_set_t &label = labels.back().instructions;
 
@@ -210,9 +210,13 @@ void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized) {
 
     /* Transfer instructions */
     for (Label label : labels) {
-        optimized.new_label(new std::string(*label.name));
+        optimized->new_label(new std::string(*label.name));
         for (Instruction instr : label.instructions) {
-            optimized.add_instruction(instr);
+            optimized->add_instruction(instr);
         }
     }
+}
+
+void optimize_labels(Intermediate::LabelIR &old, Intermediate::LabelIR &optimized) {
+    optimize_block(old.get_main(), optimized.get_main());
 }

@@ -7,6 +7,6 @@
 
 /* Optimizes label IR. After optimization is done, assume that the old optimization block
     CANNOT be used nor copied anymore. */
-void optimize_labels(Intermediate::Block &old, Intermediate::Block &optimized);
+void optimize_labels(Intermediate::LabelIR &old, Intermediate::LabelIR &optimized);
 
 #endif

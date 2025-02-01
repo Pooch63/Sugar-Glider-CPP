@@ -6,7 +6,7 @@ using Intermediate::Instruction, Intermediate::InstrCode, Intermediate::Label, I
 Jump_Argument::Jump_Argument(Bytecode::address_t byte_address, Intermediate::label_index_t *label) :
     byte_address(byte_address), label(label) {};
 
-Transpiler::Transpiler(Runtime &runtime) : runtime(runtime), chunk(runtime.get_main()) {};
+Transpiler::Transpiler(Runtime &runtime) : runtime(runtime) {};
 
 void Transpiler::transpile_variable_instruction(Instruction instr) {
     Bytecode::variable_index_t index;
@@ -100,9 +100,9 @@ void Transpiler::transpile_ir_instruction(Instruction instr) {
     }
 }
 
-void Transpiler::transpile_label_to_bytecode(Intermediate::Block& labels) {
-    for (size_t label_ind = 0; label_ind < labels.label_count(); label_ind += 1) {
-        Label label = labels.get_label_at_numerical_index(label_ind);
+void Transpiler::transpile_single_block(Intermediate::Block *labels) {
+    for (size_t label_ind = 0; label_ind < labels->label_count(); label_ind += 1) {
+        Label label = labels->get_label_at_numerical_index(label_ind);
         label_starts[*label.name] = chunk->code_byte_count();
         for (size_t instr_ind = 0; instr_ind < label.instructions.size(); instr_ind += 1) {
             Instruction instr = label.instructions.at(instr_ind);
@@ -111,13 +111,13 @@ void Transpiler::transpile_label_to_bytecode(Intermediate::Block& labels) {
             // This was necessary for the IR but redundant
             if (
                 // Make sure this is not the last label
-                label_ind < labels.label_count() - 1 &&
+                label_ind < labels->label_count() - 1 &&
                 // Make sure this is the last instruction in the label
                 instr_ind == label.instructions.size() - 1 &&
                 // Make sure it's a goto instruction
                 instr.code == InstrCode::INSTR_GOTO &&
                 // Make sure it goes to the next label
-                *instr.get_address() == *labels.get_label_at_numerical_index(label_ind + 1).name
+                *instr.get_address() == *labels->get_label_at_numerical_index(label_ind + 1).name
             ) {
                 break;
             }
@@ -128,7 +128,16 @@ void Transpiler::transpile_label_to_bytecode(Intermediate::Block& labels) {
 
     // Insert jump arguments now that we know the positions of labels
     for (const Jump_Argument &jump : this->jump_arguments) {
-        Bytecode::address_t address = this->label_starts[*jump.label];(void)address;
+        Bytecode::address_t address = this->label_starts[*jump.label];
         chunk->insert_address(jump.byte_address, address);
     }
+
+
+    /* Clear label starts info, since it's only specific to this label.
+        But make sure not to clear variable info */
+    this->label_starts.clear();
 };
+void Transpiler::transpile_ir_to_bytecode(Intermediate::LabelIR &ir) {
+    this->chunk = runtime.get_main();
+    this->transpile_single_block(ir.get_main());
+}

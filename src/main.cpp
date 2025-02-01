@@ -1,4 +1,7 @@
 #include "cli/cli.hpp"
+#include "utils.hpp"
+
+/* I'm keeping all the library includes for nostalgic purposes. I'm weird :)
 #include "compiler/ast.hpp"
 #include "compiler/compiler.hpp"
 #include "compiler/lexer.hpp"
@@ -8,7 +11,7 @@
 #include "ir/intermediate.hpp"
 #include "ir/transpiler.hpp"
 #include "optimizer/label-intermediate.hpp"
-#include "utils.hpp"
+*/
 
 #include <iostream>
 

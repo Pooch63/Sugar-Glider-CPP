@@ -23,4 +23,8 @@ for reaching the end of control flow without returning. */
 
 typedef unsigned int uint;
 
+namespace Values {
+    typedef double number_t;
+};
+
 #endif
