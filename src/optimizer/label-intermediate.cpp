@@ -218,5 +218,5 @@ static void optimize_block(Intermediate::Block * const old, Intermediate::Block 
 }
 
 void optimize_labels(Intermediate::LabelIR &old, Intermediate::LabelIR &optimized) {
-    optimize_block(old.get_main(), optimized.get_main());
+    optimize_block(old.get_main()->get_block(), optimized.get_main()->get_block());
 }
