@@ -55,16 +55,16 @@ namespace Values {
 
         public:
             /* For strings */
-            Value(ValueType type, std::string* str);
+            explicit Value(ValueType type, std::string* str);
             /* For numbers */
-            Value(ValueType type, number_t number);
+            explicit Value(ValueType type, number_t number);
             /* For program functions */
-            Value(Bytecode::constant_index_t prog_func_index, ValueType type);
+            explicit Value(Bytecode::constant_index_t prog_func_index, ValueType type);
             /* For native functions */
-            Value(native_method_t native);
+            explicit Value(native_method_t native);
 
             /* For literals: true, false, null */
-            Value(ValueType type);
+            explicit Value(ValueType type);
 
             /* Default constructor so that Value can be part of arrays, hashmap, etc. */
             Value();

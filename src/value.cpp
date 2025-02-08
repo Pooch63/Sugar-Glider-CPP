@@ -41,7 +41,7 @@ std::string Values::value_to_string(const Value &value) {
         case ValueType::FALSE:  return "false";
         case ValueType::STRING: return *get_value_string(value);
         case ValueType::NULL_VALUE: return "null";
-        case ValueType::PROGRAM_FUNCTION: return "IMPLEMENT PROGRAM FUNCTION TO STRING LOGIC";
+        case ValueType::PROGRAM_FUNCTION: return "function";
         case ValueType::NATIVE_FUNCTION: return "[native function]";
         default:
             throw sg_assert_error("Unknown value to log as string");
@@ -54,7 +54,7 @@ std::string Values::value_to_debug_string(const Value &value) {
         case ValueType::TRUE:   return "true";
         case ValueType::FALSE:  return "false";
         case ValueType::STRING: return '"' + *get_value_string(value) + '"';
-        case ValueType::PROGRAM_FUNCTION: return "IMPLEMENT PROGRAM FUNCTION TO STRING LOGIC";
+        case ValueType::PROGRAM_FUNCTION: return "function";
         case ValueType::NATIVE_FUNCTION: return "[native function]";
         default:
             throw sg_assert_error("Unknown value to log as string");
