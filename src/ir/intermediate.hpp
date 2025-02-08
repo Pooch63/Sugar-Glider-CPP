@@ -48,6 +48,12 @@ namespace Intermediate {
         int function_ind;
 
         inline bool in_topmost_scope() const { return this->scope == global_function_ind; };
+        inline bool is_global() const {
+            return this->type == VariableType::GLOBAL_CONSTANT || this->type == VariableType::GLOBAL_MUTABLE;
+        }
+        inline bool is_local_function_var() const {
+            return this->type == VariableType::FUNCTION_CONSTANT || this->type == VariableType::FUNCTION_MUTABLE;
+        }
 
         /* Add this default constructor so the variable can be used as a key in hashmap */
         inline Variable() {};
@@ -280,17 +286,22 @@ namespace Intermediate {
 
             inline Block *get_block() const { return this->block.get(); };
             void add_argument(Intermediate::Variable *argument);
+            
+            inline size_t argument_count() const { return this->arguments.size(); };
     };
     class LabelIR {
         private:
-            Block main = Block();
+            Function main;
 
             std::vector<Function*> functions = std::vector<Function*>();
         public:
-            inline Block            *get_main() { return &this->main; };
+            LabelIR();
+
+            inline Function            *get_main() { return &this->main; };
             int   last_function_index() const;
 
             Function *new_function();
+            inline Function *get_function(int index) { return this->functions.at(index); };
 
             void log_ir() const;
 

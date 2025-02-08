@@ -361,6 +361,8 @@ void Function::add_argument(Intermediate::Variable *argument) {
 // < Function
 
 // Label IR >
+LabelIR::LabelIR() : main(Function(new Block())) {}
+
 Function *LabelIR::new_function() {
     Function *function = new Function(new Block());
     this->functions.push_back(function);
@@ -376,7 +378,7 @@ void LabelIR::log_ir() const {
               << "                       =>MAIN<=\n";
     std::cout << rang::style::reset;
 
-    this->main.log_block();
+    this->main.get_block()->log_block();
 
     for (uint func_ind = 0; func_ind < this->functions.size(); func_ind += 1) {
         std::cout << "-------------------------------------------------------\n";
@@ -388,7 +390,7 @@ void LabelIR::log_ir() const {
     }
 
     std::cout << "-------------------------------------------------------" << std::endl;
-};
+}
 LabelIR::~LabelIR() {
     for (Function *function : this->functions) {
         delete function;
