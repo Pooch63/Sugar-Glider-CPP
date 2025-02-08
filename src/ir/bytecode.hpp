@@ -86,6 +86,11 @@ namespace Bytecode {
         /* Store the topmost value on the stack into the specified variable index.
             Argument is sizeof(variable_index_t) bytes long, the variable index. */
         OP_STORE_GLOBAL,
+        /* Load call frame variable. Argument is sizeof(variable_index_t) bytes long. */
+        OP_LOAD_FRAME_VAR,
+        /* Store topmost value on the stack into the frame variable.
+            Argument is sizeof(variable_index_t) bytes long. */
+        OP_STORE_FRAME_VAR,
         /* Load native at index variable_index_t */
         OP_LOAD_NATIVE,
 
