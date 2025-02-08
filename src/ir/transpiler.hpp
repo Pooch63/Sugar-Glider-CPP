@@ -28,9 +28,9 @@ class Transpiler {
         std::unordered_map<Intermediate::Variable, Bytecode::variable_index_t, Intermediate::VariableHasher> variables =
             std::unordered_map<Intermediate::Variable, Bytecode::variable_index_t, Intermediate::VariableHasher>();
 
-        void transpile_variable_instruction(Intermediate::Instruction instr);
-        void transpile_ir_instruction(Intermediate::Instruction instr);
-        void transpile_single_block(Intermediate::Block *labels);
+        void transpile_variable_instruction(Intermediate::Instruction instr, Intermediate::Function *func);
+        void transpile_ir_instruction(Intermediate::Instruction instr, Intermediate::Function *func);
+        void transpile_single_block(Intermediate::Function *func);
     public:
         Transpiler(Runtime &runtime);
 

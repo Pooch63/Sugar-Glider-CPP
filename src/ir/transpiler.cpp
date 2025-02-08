@@ -8,11 +8,11 @@ Jump_Argument::Jump_Argument(Bytecode::address_t byte_address, Intermediate::lab
 
 Transpiler::Transpiler(Runtime &runtime) : runtime(runtime) {};
 
-void Transpiler::transpile_variable_instruction(Instruction instr) {
-    Bytecode::variable_index_t index;
+void Transpiler::transpile_variable_instruction(Instruction instr, Intermediate::Function *func) {
     Intermediate::Variable variable = *instr.get_variable();
 
-    if (variable.type == Intermediate::GLOBAL_CONSTANT || variable.type == Intermediate::GLOBAL_MUTABLE) {
+    if (variable.is_global()) {
+        Bytecode::variable_index_t index;
         auto index_pair = this->variables.find(variable);
         if (index_pair != this->variables.end()) {
             index = index_pair->second;
@@ -31,14 +31,24 @@ void Transpiler::transpile_variable_instruction(Instruction instr) {
         }
         chunk->push_value<Bytecode::variable_index_t>(index);
     }
+    else if (variable.is_local_function_var()) {
+        #ifdef DEBUG
+        assert(func != nullptr && "Tried to compile function var that wasn't in a function");
+        #endif
+
+        // Bytecode::variable_index_t index;
+
+        // chunk->push_value<Bytecode::variable_index_t>(index);
+    }
     else if (variable.type == Intermediate::NATIVE) {
         chunk->push_opcode(OpCode::OP_LOAD_NATIVE);
+
         chunk->push_value<Bytecode::variable_index_t>(
             static_cast<Bytecode::variable_index_t>(Natives::get_native_index(*variable.name))
         );
     }
 }
-void Transpiler::transpile_ir_instruction(Instruction instr) {
+void Transpiler::transpile_ir_instruction(Instruction instr, Intermediate::Function *func) {
     switch (instr.code) {
         // 0 argument instructions
         case InstrCode::INSTR_POP: chunk->push_opcode(OpCode::OP_POP); break;
@@ -90,7 +100,7 @@ void Transpiler::transpile_ir_instruction(Instruction instr) {
         case InstrCode::INSTR_STORE:
         case InstrCode::INSTR_LOAD:
         {
-            this->transpile_variable_instruction(instr);
+            this->transpile_variable_instruction(instr, func);
         }
             break;
 
@@ -100,7 +110,8 @@ void Transpiler::transpile_ir_instruction(Instruction instr) {
     }
 }
 
-void Transpiler::transpile_single_block(Intermediate::Block *labels) {
+void Transpiler::transpile_single_block(Intermediate::Function *func) {
+    Intermediate::Block *labels = func->get_block();
     for (size_t label_ind = 0; label_ind < labels->label_count(); label_ind += 1) {
         Label label = labels->get_label_at_numerical_index(label_ind);
         label_starts[*label.name] = chunk->code_byte_count();
@@ -122,7 +133,7 @@ void Transpiler::transpile_single_block(Intermediate::Block *labels) {
                 break;
             }
 
-            this->transpile_ir_instruction(instr);
+            this->transpile_ir_instruction(instr, func);
         }
     }
 
@@ -132,7 +143,6 @@ void Transpiler::transpile_single_block(Intermediate::Block *labels) {
         chunk->insert_address(jump.byte_address, address);
     }
 
-
     /* Clear label starts info, since it's only specific to this label.
         But make sure not to clear variable info */
     this->label_starts.clear();
@@ -140,4 +150,17 @@ void Transpiler::transpile_single_block(Intermediate::Block *labels) {
 void Transpiler::transpile_ir_to_bytecode(Intermediate::LabelIR &ir) {
     this->chunk = runtime.get_main();
     this->transpile_single_block(ir.get_main());
+
+    std::cout << "LAST FUNC IND: " << ir.last_function_index() << std::endl;
+    for (int func_ind = 0; func_ind <= ir.last_function_index(); func_ind += 1) {
+        auto chunk = Bytecode::Chunk();
+        this->chunk = &chunk;
+        Intermediate::Function *func = ir.get_function(func_ind);
+        this->transpile_single_block(func);
+
+        std::cout << "ADDING FUNC " << func_ind << std::endl;
+
+        RuntimeFunction runtime_func = RuntimeFunction(chunk, static_cast<Bytecode::call_arguments_t>(func->argument_count()));
+        this->runtime.add_function(runtime_func);
+    }
 }
