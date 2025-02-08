@@ -44,6 +44,7 @@ namespace Values {
         Bytecode::constant_index_t prog_func_index;
     };
 
+
     class Value {
         private:
             ValueType type;
@@ -75,6 +76,7 @@ namespace Values {
             friend number_t get_value_number(const Value &value);
             friend std::string *get_value_string(const Value &value);
             friend native_method_t get_value_native_function(const Value &value);
+            friend Bytecode::constant_index_t get_value_program_function(const Value &value);
 
             inline void mark_payload() { this->should_free_payload = true; }
             void free_payload();
@@ -106,6 +108,12 @@ namespace Values {
         #endif
         return value.value.native;
     }
+    inline Bytecode::constant_index_t get_value_program_function(const Value &value) {
+        #ifdef DEBUG
+        assert(get_value_type(value) == ValueType::PROGRAM_FUNCTION);
+        #endif
+        return value.value.prog_func_index;
+    };
 
     bool value_is_truthy(const Value &value);
     bool value_is_numerical(const Value &value);
