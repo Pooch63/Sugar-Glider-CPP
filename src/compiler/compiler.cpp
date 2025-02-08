@@ -12,7 +12,7 @@ using namespace Bytecode;
 using Intermediate::ir_instruction_arg_t, Intermediate::label_index_t, Intermediate::Variable;
 using Scopes::ScopeType;
 
-Compiler::Compiler(Intermediate::LabelIR& block, Output &output) : ir(block), main_block(block.get_main()), output(output) {
+Compiler::Compiler(Intermediate::LabelIR& block, Output &output) : ir(block), main_block(block.get_main()->get_block()), output(output) {
     this->scopes.new_scope(ScopeType::NORMAL);
 };
 
@@ -152,7 +152,7 @@ void Compiler::compile_variable_assignment(AST::VarAssignment* node) {
             ) {
                 std::string error_message;
                 if (type == NATIVE) error_message = "Cannot reassign native variable \"";
-                else error_message = "Cannot assign a value to constant variable";
+                else error_message = "Cannot assign a value to constant variable \"";
 
                 error_message += *var_info->name;
                 error_message += '"';
@@ -282,7 +282,7 @@ void Compiler::compile_function_definition(AST::Function* node) {
     // Add top level function
     if (!this->scopes.in_function()) {
         /* Add the variable to scopes */
-        Intermediate::Variable *variable = this->scopes.add_variable(node->get_name(), Intermediate::GLOBAL_MUTABLE, this->function_index);
+        Intermediate::Variable *variable = this->scopes.add_variable(node->get_name(), Intermediate::GLOBAL_CONSTANT, this->function_index);
         this->main_block->add_instruction(
             Intermediate::Instruction(
                 Intermediate::INSTR_STORE,
