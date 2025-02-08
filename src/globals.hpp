@@ -6,6 +6,7 @@
 
 #define IR_LABEL_LENGTH 20 // length of label name in IR. Reduce for memory-tight constraints, but too small and label collisions will occur.
 #define MAX_FUNCTION_ARGUMENTS 255
+#define MAX_CALL_STACK_SIZE 40 * 1024 // in bytes
 #define STRINGIFY(x) #x
 
 #ifdef DEBUG
