@@ -68,14 +68,17 @@ static void optimize_block(Intermediate::Block * const old, Intermediate::Block 
 
                 result.mark_payload();
 
+                label.at(label.size() - 2).free_payload();
+                last.free_payload();
+
                 // Pop the last two loads
                 label.pop_back();
                 label.pop_back();
                 // Push the result
-                label.push_back(Instruction::value_to_instruction(result));
+                Instruction value = Instruction::value_to_instruction(result);
+                label.push_back(value);
 
-                label.at(label.size() - 2).free_payload();
-                last.free_payload();
+                Intermediate::log_instruction(Instruction::value_to_instruction(result));
 
                 continue;
             }
@@ -90,6 +93,7 @@ static void optimize_block(Intermediate::Block * const old, Intermediate::Block 
                     continue;
                 }
 
+                last.free_payload();
                 // Pop the argument load
                 label.pop_back();
                 // Push the result
@@ -111,6 +115,8 @@ static void optimize_block(Intermediate::Block * const old, Intermediate::Block 
             label.push_back(instr);
         }
     }
+
+    std::cout << "got past CF optimization\n";
 
     /* DCE: Remove unreachable code within labels */
     std::vector<Label> reachable = std::vector<Label>();
@@ -219,4 +225,5 @@ static void optimize_block(Intermediate::Block * const old, Intermediate::Block 
 
 void optimize_labels(Intermediate::LabelIR &old, Intermediate::LabelIR &optimized) {
     optimize_block(old.get_main()->get_block(), optimized.get_main()->get_block());
+    std::cout << "got past opt\n";
 }

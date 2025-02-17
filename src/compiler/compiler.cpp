@@ -17,6 +17,7 @@ Compiler::Compiler(Intermediate::LabelIR& block, Output &output) : ir(block), ma
 };
 
 void Compiler::compile_string(AST::String* node) {
+    std::cout << "COMPILING STRING " << *node->get_string() << std::endl;
     this->main_block->add_instruction(
         Intermediate::Instruction(
             Intermediate::INSTR_STRING,

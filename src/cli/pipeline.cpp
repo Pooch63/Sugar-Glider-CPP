@@ -26,23 +26,33 @@ int run_file(std::string prog) {
     Compiler compiler(block, output);
     bool compile_success = compiler.compile(node);
 
+    std::cout << "got past compilaton\n";
+
     /* If there was a compiler error, don't continue. */
     if (!compile_success) {
         delete node;
         return Errors::COMPILE_ERROR;
     }
 
+    block.log_ir();
+
     auto optimized = Intermediate::LabelIR();
     optimize_labels(block, optimized);
+
+    std::cout << "got past optimization\n";
+
+    block.log_ir();
 
     Bytecode::Chunk main = Bytecode::Chunk();
     Runtime runtime = Runtime(main);
 
     Transpiler transpiler = Transpiler(runtime);
-    transpiler.transpile_ir_to_bytecode(optimized);
-    runtime.get_main()->print_code(&runtime);
+    transpiler.transpile_ir_to_bytecode(block);
 
     runtime.init_global_pool(transpiler.num_variable_slots());
+
+    runtime.log_instructions();
+
     int code = runtime.run();
 
     delete node;

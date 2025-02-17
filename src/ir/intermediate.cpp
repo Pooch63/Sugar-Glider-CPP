@@ -39,9 +39,11 @@ void Variable::close() {
 Instruction::Instruction(InstrCode code) : code(code) {};
 Instruction::Instruction(InstrCode code, std::string* payload) : code(code) {
     if (code == InstrCode::INSTR_STRING) {
+        std::cout << "ADDING INSTR STRING WITH PAYLOAD=" << *payload << std::endl;
         this->payload.str = payload;
     }
     else {
+        std::cout << "ADDING LABEL .L" << *payload << std::endl;
         this->payload.label = payload;
     }
 };
