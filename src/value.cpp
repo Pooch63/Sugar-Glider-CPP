@@ -115,12 +115,13 @@ bool Values::bin_op(Operations::BinOpType type, Value a, Value b, Value *result,
     if (
         type == BinOpType::BINOP_ADD &&
         get_value_type(a) == ValueType::STRING &&
-        get_value_type(b) == ValueType::STRING) {
-            *result = Value(
-                ValueType::STRING,
-                new std::string(*get_value_string(a) + *get_value_string(b)));
-            return true;
-        }
+        get_value_type(b) == ValueType::STRING
+    ) {
+        *result = Value(
+            ValueType::STRING,
+            new std::string(*get_value_string(a) + *get_value_string(b)));
+        return true;
+    }
     if (type == BinOpType::BINOP_NOT_EQUAL_TO) {
         *result = Value(values_are_equal(a, b) ? ValueType::FALSE : ValueType::TRUE);
         return true;
