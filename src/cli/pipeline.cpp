@@ -47,6 +47,7 @@ int run_file(std::string prog) {
     Runtime runtime = Runtime(main);
 
     Transpiler transpiler = Transpiler(runtime);
+    // Use optimized bytecode for program
     transpiler.transpile_ir_to_bytecode(optimized);
 
     runtime.init_global_pool(transpiler.num_variable_slots());
