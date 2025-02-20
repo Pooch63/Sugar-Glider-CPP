@@ -41,13 +41,13 @@ int run_file(std::string prog) {
 
     std::cout << "got past optimization\n";
 
-    block.log_ir();
+    optimized.log_ir();
 
     Bytecode::Chunk main = Bytecode::Chunk();
     Runtime runtime = Runtime(main);
 
     Transpiler transpiler = Transpiler(runtime);
-    transpiler.transpile_ir_to_bytecode(block);
+    transpiler.transpile_ir_to_bytecode(optimized);
 
     runtime.init_global_pool(transpiler.num_variable_slots());
 
