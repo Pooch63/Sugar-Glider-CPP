@@ -207,6 +207,12 @@ namespace Intermediate {
             #endif
             return this->payload.variable;
         }
+        inline std::string *get_string() const {
+            #ifdef DEBUG
+            assert(this->code == InstrCode::INSTR_STRING);
+            #endif
+            return this->payload.str;
+        }
 
         // < Getters
 
