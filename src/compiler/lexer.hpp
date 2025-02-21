@@ -17,7 +17,7 @@
 using Position::TokenPosition;
 
 inline bool is_digit(char c) { return c >= '0' && c <= '9'; }
-static bool is_hex_digit(char c) { return is_digit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); };
+inline bool is_hex_digit(char c) { return is_digit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); };
 static uint8_t hex_digit_to_number(char c) {
     if (is_digit(c)) return c - '0';
     if (c >= 'a' && c <= 'f') return c - 'a' + 10;
@@ -221,6 +221,8 @@ namespace Scan {
             /* Should be called while the current character is the delimeter,
                 e.g., current is "" or ' */
             std::string* parse_string();
+            /* Should be called when the first character is a '.' or a digit */
+            Token parse_number();
 
             std::string &str;
             Output &output;

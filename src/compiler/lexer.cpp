@@ -123,7 +123,7 @@ namespace {
     bool is_identifier_middle(char c) {
         return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
     }
-    static std::unordered_map<std::string, TokType> keywords = {
+    std::unordered_map<std::string, TokType> keywords = {
         { "break", TokType::BREAK },
         { "const", TokType::CONST },
         { "continue", TokType::CONTINUE },
@@ -134,8 +134,24 @@ namespace {
         { "return", TokType::RETURN },
         { "true", TokType::TRUE },
         { "var", TokType::VAR },
-        { "while", TokType::WHILE },
+        { "while", TokType::WHILE }
     };
+
+    enum Base {
+        BINARY = 2,
+        OCTAL = 8,
+        DECIMAL = 10,
+        HEXADECIMAL = 16
+    };
+    const char *base_to_string(Base base) {
+        switch (base) {
+            case BINARY: return "binary";
+            case OCTAL: return "octal";
+            case DECIMAL: return "decimal";
+            case HEXADECIMAL: return "hexadecimal";
+            default: return "(error -- unknown base to convert)";
+        }
+    }
 };
 
 Scanner::Scanner(std::string &str, Output &output) : str(str), output(output) {};
@@ -376,6 +392,138 @@ std::string* Scanner::parse_string() {
 
     return str;
 }
+Token Scanner::parse_number() {
+    Base base = DECIMAL;
+    if (this->current() == '0') {
+        switch (this->peek(1)) {
+            case 'b': base = BINARY; break;
+            case 'o': base = OCTAL; break;
+            case 'x': base = HEXADECIMAL; break;
+            default: break;
+        }
+        // If we changed the base, go through those two characters
+        if (base != DECIMAL) {
+            this->advance();
+            this->advance();
+        }
+    }
+    const char *base_str = base_to_string(base);
+
+    // Certain errors mean the number is no longer processable,
+    // so we shouldn't add a number to the number string
+    bool aggregate_characters = true;
+    bool dec = false;
+
+    // Number of characters we've consumed.
+    // We need this because there are some characters we consume
+    // (e.g. '_') that we can't include in the number string
+    int length = 0;
+    bool last_underscore = false;
+
+    bool too_many_underscores = false;
+    bool underscore_before_decimal = false;
+    bool invalid_decimal_base = false;
+    // If it changes from NULL, we see the invalid character
+    char invalid_base_character = '\0';
+
+    std::string number_string = "";
+
+    int col = this->col;
+
+    while (!this->at_EOF()) {
+        char curr = this->current();
+
+        if (curr == '.') {
+            // We can't have two decimal places in one number, so if we've
+            // already found one, exit
+            if (dec) break;
+
+            // If we only find a decimal after underscores, e.g., 4_.,
+            // that's an error
+            if (last_underscore) underscore_before_decimal = true;
+            // We can only have a decimal point on a base-10 number,
+            // so something like 0b11.001 isn't possible
+            if (base != 10) {
+                invalid_decimal_base = true;
+                aggregate_characters = false;
+            }
+
+            else {
+                number_string += '.';
+                dec = true;
+            }
+        }
+        else if (curr == '_') {
+            if (last_underscore) too_many_underscores = true;
+        }
+        // If we didn't find a number or decimal place, break out of the loop
+        else {
+            if (
+                is_digit(curr) ||
+                (base == HEXADECIMAL && is_hex_digit(curr))
+            ) {
+                if (
+                    (base == BINARY && !(curr == '0' || curr == '1')) ||
+                    (base == OCTAL && !is_octal_digit(curr))
+                ) {
+                    invalid_base_character = curr;
+                }
+                else if (aggregate_characters) number_string += curr;
+            }
+            else break;
+        };
+
+        length += 1;
+        last_underscore = curr == '_';
+        // Only advance if it was a valid character.
+        this->advance();
+    }
+
+    // We need the number for errors
+    Values::number_t number;
+    try {
+        if (base != 10) {
+            number = static_cast<Values::number_t>(std::stoi(number_string, 0, base));
+        }
+        else number = static_cast<Values::number_t>(std::stod(number_string));
+    } catch (const std::exception&) {
+        // If we catch an exception, that means the number failed to parse
+        // That's an internal error and we should warn the user
+        std::string error_message = "Lexer failed to parse number ";
+        error_message += number_string;
+        throw log_assert(error_message);
+    };
+
+    TokenPosition position = TokenPosition{ .line = this->line, .col = col, .length = length };
+    Token error_tok = Token(number, position);
+
+    if (too_many_underscores) {
+        this->output.error(position, "Only one '_' digit seperator may appear in a row", Errors::LEX_ERROR);
+        return error_tok;
+    }
+    if (underscore_before_decimal) {
+        this->output.error(position, "Underscore may not appear directly before decimal point", Errors::LEX_ERROR);
+        return error_tok;
+    }
+    if (last_underscore) {
+        this->output.error(position, "Underscore may not appear at the end of number", Errors::LEX_ERROR);
+        return error_tok;
+    }
+    if (invalid_decimal_base) {
+        this->output.error(position, "A decimal point may only appear in a base-10 decimal number", Errors::LEX_ERROR);
+        return error_tok;
+    }
+    if (invalid_base_character != '\0') {
+        std::string error = "Invalid character '";
+        error += invalid_base_character;
+        error += "' in ";
+        error += base_str;
+        error += " number";
+        this->output.error(position, error, Errors::LEX_ERROR);
+    }
+
+    return Token(number, this->make_single_line_position(length));
+}
 
 Token Scanner::next_token() {
     while (this->skip_whitespace() || this->skip_comment());
@@ -442,39 +590,7 @@ Token Scanner::next_token() {
 
     // Number?
     if ( is_digit(curr) || (curr == '.' && is_digit(this->peek(1))) ) {
-        bool dec = false;
-
-        int length = 0;
-
-        std::string number_string = "";
-
-        while (!this->at_EOF()) {
-            char curr = this->current();
-            if (is_digit(curr)) number_string += curr;
-            else if (curr == '.') {
-                // We can't have two decimal places in one number, so if we've
-                // already found one, exit
-                if (dec) break;
-                number_string += '.';
-                dec = true;
-            }
-            // If we didn't find a number or decimal place, break out of the loop
-            else break;
-
-            length += 1;
-            // Only advance if it was a valid character.
-            this->advance();
-        }
-
-        Values::number_t number;
-        try {
-            number = static_cast<Values::number_t>(std::stod(number_string));
-        } catch (const std::exception&) {
-            // If we catch an exception, that means the number failed to parse
-            return Token(TokType::ERROR, Position::null_token_position);
-        };
-
-        return Token(number, this->make_single_line_position(length));
+        return this->parse_number();
     }
 
     // String
