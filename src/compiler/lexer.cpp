@@ -206,7 +206,6 @@ bool Scanner::skip_comment() {
         return true;
     }
     if (this->current() == '/' && this->peek(1) == '*') {
-        std::cout << "skipping comment?\n";
         while (this->current() != '*' || this->peek(1) != '/') {
             if (this->at_EOF()) {
                 this->output.error(
