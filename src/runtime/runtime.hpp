@@ -57,6 +57,7 @@ class Runtime {
         size_t call_stack_size = 0;
 
         Bytecode::address_t main_ip;
+        std::string error = "";
 
         void exit();
 

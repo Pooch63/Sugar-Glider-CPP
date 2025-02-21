@@ -42,6 +42,12 @@ RuntimeValue::RuntimeValue(Values::Value &value, RuntimeValue *next) :
 
 RuntimeValue *Runtime::get_runtime_value(Values::Value &value) {
     RuntimeValue *runtime_value = new RuntimeValue(value, this->runtime_values);
+
+    if (runtime_value == nullptr) {
+        this->error = "Sugar Glider Runtime ran out of memory. Heap allocation failed.";
+        return nullptr;
+    }
+
     this->runtime_values = runtime_value;
     return runtime_value;
 };
@@ -141,7 +147,6 @@ int Runtime::run() {
     #endif
 
     main_ip = 0;
-    std::string error = "";
 
     while (this->call_stack.size() > 0 || this->main_ip < this->main.code_byte_count()) {
         Bytecode::address_t &prog_ip = 
@@ -171,14 +176,14 @@ int Runtime::run() {
                 if (get_value_type(func) == Values::NATIVE_FUNCTION) {
                     Values::native_method_t native = get_value_native_function(func);
                     if (num_args != native.number_arguments) {
-                        error = std::to_string(num_args);
-                        error += " argument(s) passed to function expecting ";
-                        error += std::to_string(native.number_arguments);
+                        this->error = std::to_string(num_args);
+                        this->error += " argument(s) passed to function expecting ";
+                        this->error += std::to_string(native.number_arguments);
                         break;
                     }
 
                     Values::Value result;
-                    native.func(this->stack.data(), this->stack.size(), result, error);
+                    native.func(this->stack.data(), this->stack.size(), result, this->error);
 
                     // Pop arguments
                     for (int pop = 0; pop < native.number_arguments; pop += 1) {
@@ -198,19 +203,19 @@ int Runtime::run() {
                     this->call_stack_size += stack_size;
 
                     if (this->call_stack_size > MAX_CALL_STACK_SIZE) {
-                        error = "Maximum call stack size exceeded. ";
-                        error = std::to_string(this->call_stack_size / 1024.0);
-                        error += " KB necessary, but maximum is ";
-                        error += std::to_string(MAX_CALL_STACK_SIZE);
-                        error += " KB";
+                        this->error = "Maximum call stack size exceeded. ";
+                        this->error = std::to_string(this->call_stack_size / 1024.0);
+                        this->error += " KB necessary, but maximum is ";
+                        this->error += std::to_string(MAX_CALL_STACK_SIZE);
+                        this->error += " KB";
                         break;
                     }
 
                     this->call_stack_size -= stack_size;
                 }
                 else {
-                    error = "Cannot call non-function value ";
-                    error += value_to_string(func);
+                    this->error = "Cannot call non-function value ";
+                    this->error += value_to_string(func);
                     break;
                 }
             }
@@ -262,6 +267,7 @@ int Runtime::run() {
                 this->stack.push_back(this->call_stack.back().get_variable(index));
             }
                 break;
+    return -1;
 
             case OpCode::OP_TRUE: this->push_stack_value(Value(Values::TRUE)); break;
             case OpCode::OP_FALSE: this->push_stack_value(Value(Values::FALSE)); break;
@@ -273,7 +279,7 @@ int Runtime::run() {
                 Value b = this->stack_pop();
                 Value a = this->stack_pop();
                 Value result;
-                bool valid = Values::bin_op(type, a, b, &result, &error);
+                bool valid = Values::bin_op(type, a, b, &result, &this->error);
 
                 if (!valid) break;
                 this->push_stack_value(result);
@@ -284,7 +290,7 @@ int Runtime::run() {
                 Operations::UnaryOpType type = this->get_running_block().read_small_enum<Operations::UnaryOpType>(prog_ip);
                 Value arg = this->stack_pop();
                 Value result;
-                bool valid = Values::unary_op(type, arg, &result, &error);
+                bool valid = Values::unary_op(type, arg, &result, &this->error);
 
                 if (!valid) break;
                 this->push_stack_value(result);
@@ -297,16 +303,16 @@ int Runtime::run() {
 
             case OpCode::OP_EXIT:
                 this->exit();
-                break;
+                return 0;
             default: std::cerr << "unhandled " << instruction_to_string(code) << std::endl; break;
         }
-        if (error.size() > 0) {
-            std::cerr << rang::fg::red << "runtime error: " << rang::style::reset << error << std::endl;
+        if (this->error.size() > 0) {
+            std::cerr << rang::fg::red << "runtime this->error: " << rang::style::reset << this->error << std::endl;
             return -1;
         }
     }
 
-    return 0;
+    throw std::runtime_error("Reached end of runtime loop, but the exit command completely returns. Logic error");
 }
 
 Runtime::~Runtime() {
