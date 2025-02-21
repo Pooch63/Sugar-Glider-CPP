@@ -53,6 +53,10 @@ namespace Scopes {
                 the individual scopes. */
             std::vector<Intermediate::Variable*> variables = std::vector<Intermediate::Variable*>();
 
+            inline int get_function_scope() const {
+                return this->scopes.size() <= 2 ? Intermediate::global_function_ind : static_cast<int>(this->scopes.size()) - 1;
+            };
+
         public:
             ScopeManager();
 

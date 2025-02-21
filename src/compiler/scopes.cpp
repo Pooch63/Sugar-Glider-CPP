@@ -78,7 +78,7 @@ Variable *ScopeManager::add_variable(std::string* name, VariableType type, int f
     Variable *info = new Variable(
         new std::string(*name),
         type,
-        this->scopes.size() <= 2 ? Intermediate::global_function_ind : static_cast<int>(this->scopes.size()) - 1,
+        this->get_function_scope(),
         function_index);
     this->variables.push_back(info);
     return this->scopes.back().add_variable(name, info);

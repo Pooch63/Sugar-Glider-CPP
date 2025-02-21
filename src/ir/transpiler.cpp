@@ -6,6 +6,8 @@ using Intermediate::Instruction, Intermediate::InstrCode, Intermediate::Label, I
 Jump_Argument::Jump_Argument(Bytecode::address_t byte_address, Intermediate::label_index_t *label) :
     byte_address(byte_address), label(label) {};
 
+func_var_info_t::func_var_info_t(Intermediate::Function *func) : func(func) {}
+
 Transpiler::Transpiler(Runtime &runtime) : runtime(runtime) {};
 
 void Transpiler::transpile_variable_instruction(Instruction instr, Intermediate::Function *func) {
@@ -37,15 +39,28 @@ void Transpiler::transpile_variable_instruction(Instruction instr, Intermediate:
         #endif
 
         Bytecode::variable_index_t index;
-        var_hash_t &hash = this->func_variables.at(variable.function_ind);
-        auto index_pair = hash.find(variable);
-        if (index_pair != hash.end()) {
-            index = index_pair->second;
+        bool is_arg = false;
+        func_var_info_t &info = this->func_variables.at(variable.function_ind);
+
+        // First check to see if it's an argument
+        for (uint arg_ind = 0; arg_ind < info.func->argument_count(); arg_ind += 1) {
+            Intermediate::Variable *arg = info.func->get_argument(arg_ind);
+            if (*arg == variable) {
+                index = arg_ind;
+                is_arg = true;
+            }
         }
-        else {
-            index = hash.size();
-            // Add it to the hashmap
-            hash.emplace(variable, index);
+
+        if (!is_arg) {
+            auto index_pair = info.hash.find(variable);
+            if (index_pair != info.hash.end()) {
+                index = index_pair->second;
+            }
+            else {
+                index = info.hash.size();
+                // Add it to the hashmap
+                info.hash.emplace(variable, index);
+            }
         }
 
         if (instr.code == InstrCode::INSTR_LOAD) {
@@ -179,15 +194,19 @@ void Transpiler::transpile_ir_to_bytecode(Intermediate::LabelIR &ir) {
     this->transpile_single_block(ir.get_main());
 
     for (int func_ind = 0; func_ind <= ir.last_function_index(); func_ind += 1) {
-        // Add new variable to index hashmap
-        this->func_variables.push_back(var_hash_t());
-
         auto chunk = Bytecode::Chunk();
         this->chunk = &chunk;
         Intermediate::Function *func = ir.get_function(func_ind);
+
+        // Add new variable to index hashmap
+        this->func_variables.push_back(func_var_info_t(func));
+
         this->transpile_single_block(func);
 
-        RuntimeFunction runtime_func = RuntimeFunction(chunk, static_cast<Bytecode::call_arguments_t>(func->argument_count()));
+        Bytecode::call_arguments_t num_arguments = static_cast<Bytecode::call_arguments_t>(func->argument_count());
+        Bytecode::variable_index_t total_variables = num_arguments + this->func_variables.back().func->argument_count();
+
+        RuntimeFunction runtime_func = RuntimeFunction(chunk, num_arguments, total_variables);
         this->runtime.add_function(runtime_func);
     }
 }

@@ -5,8 +5,8 @@
 using namespace Values;
 using namespace Bytecode;
 
-RuntimeFunction::RuntimeFunction(Bytecode::Chunk chunk, Bytecode::call_arguments_t num_arguments) :
-    chunk(chunk), num_arguments(num_arguments) {};
+RuntimeFunction::RuntimeFunction(Bytecode::Chunk chunk, Bytecode::call_arguments_t num_arguments, Bytecode::variable_index_t total_variables) :
+    chunk(chunk), num_arguments(num_arguments), total_variables(total_variables) {};
 RuntimeCallFrame::RuntimeCallFrame(Bytecode::constant_index_t func_index, Bytecode::call_arguments_t arg_count, std::vector<Values::Value> &stack) :
     func_index(func_index), variables(std::vector<Values::Value>(arg_count)) {
         for (int var_ind = arg_count - 1; var_ind >= 0; var_ind -= 1) {
@@ -36,7 +36,7 @@ void Runtime::add_object(Object *obj) {
     #ifdef DEBUG_STRESS_GC
         std::cout << "GC: Allocating value (" << obj << ") " <<
             object_to_debug_string(obj) << " on heap\n";
-        this->run_gc();
+        // this->run_gc();
     #endif
 
     this->gc_size += sizeof(Object*);
@@ -81,17 +81,17 @@ void Runtime::mark_values() {
     // Mark every value referenced by variables
 
     // Unmark everything. We're only saving the values we need to
-    for (Values::Value &value : this->global_variables) {
+    Object *obj = this->runtime_values;
+    while (obj != nullptr) {
         // When the global pool is initialized, all variable slots are set to nullptr,
         // so don't mark those
-        if (get_value_type(value) == ValueType::OBJ) {
-            Object *obj = get_value_object(value);
-            #ifdef DEBUG_GC
-            std::cout << "GC: Unmarking value " << value_to_debug_string(value) <<
-                " at " << get_value_object(value) << '\n';
-            #endif
-            obj->marked_for_save = false;
-        }
+        #ifdef DEBUG_GC
+        std::cout << "GC: Unmarking value " << object_to_debug_string(obj) <<
+            " at " << obj << '\n';
+        #endif
+        obj->marked_for_save = false;
+
+        obj = obj->next;
     }
 
     // Now mark
@@ -102,6 +102,7 @@ void Runtime::mark_values() {
 
     // Next, everything on the stack
     for (Values::Value &value : this->stack) {
+        std::cout << "GC: Moving to mark stack value " << value_to_debug_string(value) << std::endl;
         mark_object(value);
     }
 }
@@ -125,6 +126,10 @@ void Runtime::delete_values() {
             // std::cout << "freed " << '\n';
         }
         else {
+            #ifdef DEBUG_GC
+            std::cout << "GC: Saving value " << object_to_debug_string(current) <<
+                " at " << current << '\n';
+            #endif
             current->next = this->runtime_values;
             this->runtime_values = current;
         }

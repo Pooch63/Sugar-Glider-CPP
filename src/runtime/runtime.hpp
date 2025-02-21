@@ -11,8 +11,10 @@
 struct RuntimeFunction {
     Bytecode::Chunk chunk;
     Bytecode::call_arguments_t num_arguments;
+    // Number of variable slots, including arguments
+    Bytecode::variable_index_t total_variables;
 
-    RuntimeFunction(Bytecode::Chunk chunk, Bytecode::call_arguments_t num_arguments);
+    RuntimeFunction(Bytecode::Chunk chunk, Bytecode::call_arguments_t num_arguments, Bytecode::variable_index_t total_variables);
 };
 struct RuntimeCallFrame {
     Bytecode::constant_index_t func_index;
