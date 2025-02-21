@@ -8,7 +8,7 @@ RuntimeFunction::RuntimeFunction(Bytecode::Chunk chunk, Bytecode::call_arguments
 RuntimeCallFrame::RuntimeCallFrame(Bytecode::constant_index_t func_index, Bytecode::call_arguments_t arg_count, std::vector<Values::Value> &stack) :
     func_index(func_index), variables(std::vector<Values::Value>(arg_count)) {
         for (int var_ind = arg_count - 1; var_ind >= 0; var_ind -= 1) {
-            variables.emplace(variables.begin() + var_ind, stack.back());
+            variables[var_ind] = stack.back();
             stack.pop_back();
         }
     };
@@ -321,7 +321,7 @@ int Runtime::run() {
                     this->stack.push_back(array->at(floor(index)));
                 }
                 else {
-                    array->emplace(array->begin() + index, set_value);
+                    (*array)[static_cast<uint>(floor(index))] = set_value;
                     this->stack.push_back(set_value);
                 }
             }

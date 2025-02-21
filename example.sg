@@ -1,5 +1,13 @@
 var g = [ "a", "b" ];
+g[0] = [ 1, 2, [ 3, 4 ] ];
+
+println(g[1]);
 println(g);
-println(g[1]);
-g[1] = [ 1, 2, [ 3, 4 ] ];
-println(g[1]);
+
+/* var l = [];
+var i = 0;
+while (i < 100) {
+    append(l, i);
+    i = i + 1;
+}
+println(l); */

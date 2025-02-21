@@ -7,7 +7,7 @@
 #include <unordered_map>
 
 namespace Natives {
-    const int native_count = 3;
+    const int native_count = 5;
 
     struct Native {
         const char *native_name;
