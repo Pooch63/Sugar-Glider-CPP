@@ -46,6 +46,8 @@ namespace Scan {
 
         // =
         EQUALS,
+        // ==
+        EQUALS_EQUALS,
 
         // (
         LPAREN,

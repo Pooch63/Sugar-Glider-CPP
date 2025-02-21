@@ -25,9 +25,12 @@ const char* Scan::tok_type_to_string(TokType type) {
         case PERCENT: return "%";
 
         case EQUALS: return "=";
+        case EQUALS_EQUALS: return "==";
 
         case LPAREN: return "(";
         case RPAREN: return ")";
+        case LBRACE: return "[";
+        case RBRACE: return "]";
         case LBRACKET: return "{";
         case RBRACKET: return "}";
         case LESS_THAN: return "<";
@@ -401,7 +404,13 @@ Token Scanner::next_token() {
         case '/': one_char_type = TokType::SLASH; break;
         case '%': one_char_type = TokType::PERCENT; break;
 
-        case '=': one_char_type = TokType::EQUALS; break;
+        case '=': {
+            if (this->peek(1) == '=') {
+                two_char_type = TokType::EQUALS_EQUALS;
+            }
+            else one_char_type = TokType::EQUALS;
+            break;
+        }
 
         case '(': one_char_type = TokType::LPAREN; break;
         case ')': one_char_type = TokType::RPAREN; break;

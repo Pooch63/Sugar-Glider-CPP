@@ -131,6 +131,10 @@ AST::Node* Parse::Rules::binary_op(Scan::Token &current, AST::Node* left, Parser
             type = Operations::BINOP_NOT_EQUAL_TO;
             prec = Precedence::PREC_EQUALITY;
             break;
+        case TokType::EQUALS_EQUALS:
+            type = Operations::BINOP_EQUAL_TO;
+            prec = Precedence::PREC_EQUALITY;
+            break;
         default:
             throw sg_assert_error("Parser tried to parse unknown token as binary operator");
     }
@@ -262,7 +266,7 @@ void Parser::initialize_parse_rules() {
             .led = Rules::binary_op,
             .precedence = Precedence::PREC_RELATIONAL
         };
-    rules[TokType::BANG_EQ] = ParseRule{
+    rules[TokType::BANG_EQ] = rules[TokType::EQUALS_EQUALS] = ParseRule{
         .nud = nullptr,
         .led = Rules::binary_op,
         .precedence = Precedence::PREC_EQUALITY

@@ -153,6 +153,10 @@ bool Values::bin_op(Operations::BinOpType type, Value a, Value b, Value *result,
         *result = Value(values_are_equal(a, b) ? ValueType::FALSE : ValueType::TRUE);
         return true;
     }
+    if (type == BinOpType::BINOP_EQUAL_TO) {
+        *result = Value(values_are_equal(a, b) ? ValueType::TRUE : ValueType::FALSE);
+        return true;
+    }
 
     if (!value_is_numerical(a) || !value_is_numerical(b)) {
         if (error != nullptr) {
