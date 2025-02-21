@@ -116,8 +116,6 @@ static void optimize_block(Intermediate::Block * const old, Intermediate::Block 
         }
     }
 
-    std::cout << "got past CF optimization\n";
-
     /* DCE: Remove unreachable code within labels */
     std::vector<Label> reachable = std::vector<Label>();
     for (Label label : labels) {
@@ -225,5 +223,16 @@ static void optimize_block(Intermediate::Block * const old, Intermediate::Block 
 
 void optimize_labels(Intermediate::LabelIR &old, Intermediate::LabelIR &optimized) {
     optimize_block(old.get_main()->get_block(), optimized.get_main()->get_block());
-    std::cout << "got past opt\n";
+
+    // Transfer functions
+    for (int func_index = 0; func_index < old.last_function_index() + 1; func_index += 1) {
+        Intermediate::Function *function = old.get_function(func_index);
+
+        Intermediate::Function *new_func = optimized.new_function();
+        for (uint arg_ind = 0; arg_ind < function->argument_count(); arg_ind += 1) {
+            new_func->add_argument(function->get_argument(arg_ind));
+        }
+
+        optimize_block(function->get_block(), new_func->get_block());
+    }
 }

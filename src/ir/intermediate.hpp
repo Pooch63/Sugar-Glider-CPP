@@ -294,6 +294,7 @@ namespace Intermediate {
             void add_argument(Intermediate::Variable *argument);
             
             inline size_t argument_count() const { return this->arguments.size(); };
+            inline auto     get_argument(uint index) const { return this->arguments.at(index); };
     };
     class LabelIR {
         private:
