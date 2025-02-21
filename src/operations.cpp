@@ -4,11 +4,8 @@
 #include <cassert>
 #endif
 
-bool Operations::bin_op_is_bitwise_operator(BinOpType type) {
-    switch (type) {
-        default:
-            return false;
-    }
+bool Operations::bin_op_is_bitwise_operator([[maybe_unused]] BinOpType type) {
+    return false;
 };
 bool Operations::unary_is_bitwise_operator(UnaryOpType type) {
     switch (type) {
