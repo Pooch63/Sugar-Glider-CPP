@@ -1,0 +1,5 @@
+function l(o) {
+    var m = o;
+    println(m);
+}
+l(2);

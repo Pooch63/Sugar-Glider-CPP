@@ -1,0 +1,10 @@
+var l = [];
+var m = "a";
+m = m + "k";
+
+append(l, m);
+
+l = 3;
+m = 2;
+
+var d = [];
