@@ -36,9 +36,25 @@ void Transpiler::transpile_variable_instruction(Instruction instr, Intermediate:
         assert(func != nullptr && "Tried to compile function var that wasn't in a function");
         #endif
 
-        // Bytecode::variable_index_t index;
+        Bytecode::variable_index_t index;
+        var_hash_t &hash = this->func_variables.at(variable.function_ind);
+        auto index_pair = hash.find(variable);
+        if (index_pair != hash.end()) {
+            index = index_pair->second;
+        }
+        else {
+            index = hash.size();
+            // Add it to the hashmap
+            hash.emplace(variable, index);
+        }
 
-        // chunk->push_value<Bytecode::variable_index_t>(index);
+        if (instr.code == InstrCode::INSTR_LOAD) {
+            chunk->push_opcode(OpCode::OP_LOAD_FRAME_VAR);
+        }
+        else {
+            chunk->push_opcode(OpCode::OP_STORE_FRAME_VAR);
+        }
+        chunk->push_value<Bytecode::variable_index_t>(index);
     }
     else if (variable.type == Intermediate::NATIVE) {
         chunk->push_opcode(OpCode::OP_LOAD_NATIVE);
@@ -151,14 +167,14 @@ void Transpiler::transpile_ir_to_bytecode(Intermediate::LabelIR &ir) {
     this->chunk = runtime.get_main();
     this->transpile_single_block(ir.get_main());
 
-    std::cout << "LAST FUNC IND: " << ir.last_function_index() << std::endl;
     for (int func_ind = 0; func_ind <= ir.last_function_index(); func_ind += 1) {
+        // Add new variable to index hashmap
+        this->func_variables.push_back(var_hash_t());
+
         auto chunk = Bytecode::Chunk();
         this->chunk = &chunk;
         Intermediate::Function *func = ir.get_function(func_ind);
         this->transpile_single_block(func);
-
-        std::cout << "ADDING FUNC " << func_ind << std::endl;
 
         RuntimeFunction runtime_func = RuntimeFunction(chunk, static_cast<Bytecode::call_arguments_t>(func->argument_count()));
         this->runtime.add_function(runtime_func);
