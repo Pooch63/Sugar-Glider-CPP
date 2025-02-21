@@ -55,25 +55,23 @@ static void optimize_block(Intermediate::Block * const old, Intermediate::Block 
                 Values::Value result;
                 bool valid = Values::bin_op(instr.get_bin_op(), a, b, &result, nullptr);
 
+                // We don't need to save the values of a and b because they were deep clones
+                free_value_if_object(a);
+                free_value_if_object(b);
+
                 if (!valid) {
                     // Just push the binop
                     label.push_back(instr);
 
-                    // Make sure the faulty instructions' payloads are still valid
-                    a.mark_payload();
-                    b.mark_payload();
-
                     continue;
                 }
 
-                result.mark_payload();
-
+                // Pop the last value two loads
                 label.at(label.size() - 2).free_payload();
                 last.free_payload();
+                label.pop_back();
+                label.pop_back();
 
-                // Pop the last two loads
-                label.pop_back();
-                label.pop_back();
                 // Push the result
                 Instruction value = Instruction::value_to_instruction(result);
                 label.push_back(value);

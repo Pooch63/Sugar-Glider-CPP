@@ -10,15 +10,13 @@
 #include <cassert>
 #endif
 
-struct RuntimeValue;
 class Runtime;
 
 namespace Values {
     class Value;
 
     enum ValueType {
-        ARRAY,
-        STRING,
+        OBJ,
         NUMBER,
         TRUE,
         FALSE,
@@ -42,15 +40,15 @@ namespace Values {
     };
 
     class Value;
-
+    class Object;
+    
     /* With arrays, the value class is responsible for the container. It is NOT
         responsible for the elements inside, nor their free. */
     union value_mem_t {
         number_t number;
-        std::string *str;
         native_method_t native;
         Bytecode::constant_index_t prog_func_index;
-        std::vector<RuntimeValue*> *array;
+        Object *obj;
     };
 
     class Value {
@@ -58,14 +56,9 @@ namespace Values {
             ValueType type;
             value_mem_t value;
 
-            // Whether or not the value class is responsible for freeing the payload
-            bool should_free_payload = true;
-
         public:
-            /* For arrays */
-            explicit Value(ValueType type, std::vector<RuntimeValue*> *array);
-            /* For strings */
-            explicit Value(ValueType type, std::string* str);
+            /* For arrays or strings */
+            explicit Value(ValueType type, Object *obj);
             /* For numbers */
             explicit Value(ValueType type, number_t number);
             /* For program functions */
@@ -85,18 +78,41 @@ namespace Values {
             friend ValueType get_value_type(const Value &value);
             friend number_t get_value_number(const Value &value);
             friend std::string *get_value_string(const Value &value);
-            friend std::vector<RuntimeValue*> *get_value_array(const Value &value);
+            friend std::vector<Value> *get_value_array(const Value &value);
             friend native_method_t get_value_native_function(const Value &value);
             friend Bytecode::constant_index_t get_value_program_function(const Value &value);
-
-            inline void mark_payload() { this->should_free_payload = true; }
-            void free_payload();
+            friend Object *get_value_object(const Value &value);
 
             number_t to_number() const;
     };
 
+    union obj_mem_t {
+        std::string *str;
+        std::vector<Value> *array;
+    };
+    enum ObjectType {
+        STRING,
+        ARRAY
+    };
+    // For values that need to be allocated on the heap
+    struct Object {
+        ObjectType type;
+        obj_mem_t memory;
+        bool marked_for_save = false;
+        Object *next;
+
+        Object(std::string *str, Object *next);
+        Object(std::vector<Value> *str, Object *next);
+
+        ~Object();
+    };
+
     std::string value_to_string(const Value &value);
     std::string value_to_debug_string(const Value &value);
+    std::string object_to_debug_string(Object *obj);
+
+    // Free value payload if necessary
+    void free_value_if_object(Value &value);
 
     inline ValueType get_value_type(const Value &value) {
         return value.type;
@@ -109,15 +125,17 @@ namespace Values {
     };
     inline std::string* get_value_string(const Value &value) {
         #ifdef DEBUG
-        assert(get_value_type(value) == ValueType::STRING);
+        assert(get_value_type(value) == ValueType::OBJ &&
+            get_value_object(value)->type == ObjectType::STRING);
         #endif
-        return value.value.str;
+        return value.value.obj->memory.str;
     }
-    inline std::vector<RuntimeValue*>* get_value_array(const Value &value) {
+    inline std::vector<Value>* get_value_array(const Value &value) {
         #ifdef DEBUG
-        assert(get_value_type(value) == ValueType::ARRAY);
+        assert(get_value_type(value) == ValueType::OBJ &&
+            get_value_object(value)->type == ObjectType::ARRAY);
         #endif
-        return value.value.array;
+        return value.value.obj->memory.array;
     }
     inline native_method_t get_value_native_function(const Value &value) {
         #ifdef DEBUG
@@ -131,6 +149,14 @@ namespace Values {
         #endif
         return value.value.prog_func_index;
     };
+    inline Object *get_value_object(const Value &value) {
+        #ifdef DEBUG
+        assert(get_value_type(value) == ValueType::OBJ);
+        #endif
+        return value.value.obj;
+    };
+    // Returns nullptr if the value is not an object
+    Object *safe_get_value_object(const Value &value);
 
     bool value_is_truthy(const Value &value);
     bool value_is_numerical(const Value &value);
@@ -141,10 +167,14 @@ namespace Values {
      * @param {Value} a
      * @param {Value} b
      * @param {Value*} result - The place to add the result
-     * @param {std::string*} place to write error message. If you don't want an error, pass nullptr
      * @return {bool} - True if ok, false if error
      */
-    bool bin_op(Operations::BinOpType type, Value a, Value b, Value *result, std::string *error);
+    bool bin_op(
+        Operations::BinOpType type,
+        Value a,
+        Value b,
+        Value *result,
+        std::string *error);
     /**
      * @param {BinOpType} type
      * @param {Value} argument

@@ -230,7 +230,8 @@ namespace Intermediate {
         // < Getters
 
         /* Convert payload to a value object. Only call if it CAN be converted, e.g.
-            if it's a number, true, false, null, etc. */
+            if it's a number, true, false, null, etc. In the case of object types,
+            it will make a deep copy that another function can take full responsibility of. */
         Values::Value payload_to_value() const;
 
         /* If it's a string, free the payload */

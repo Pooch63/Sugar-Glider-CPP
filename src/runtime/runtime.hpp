@@ -8,16 +8,6 @@
 #include <array>
 #include <vector>
 
-// Linked list of runtime values that we can clean up later
-struct RuntimeValue {
-    Values::Value value;
-    // Used by the GC
-    bool marked_to_save;
-    RuntimeValue *next;
-
-    RuntimeValue(Values::Value &value, RuntimeValue *next);
-    ~RuntimeValue();
-};
 struct RuntimeFunction {
     Bytecode::Chunk chunk;
     Bytecode::call_arguments_t num_arguments;
@@ -42,7 +32,7 @@ class Runtime {
         std::vector<RuntimeFunction> functions = std::vector<RuntimeFunction>();
         /* Make a separate copy for natives so that each individual runtime can update native namespaces */
         std::array<Values::Value, Natives::native_count> natives = std::array<Values::Value, Natives::native_count>();
-        RuntimeValue *runtime_values = nullptr;
+        Values::Object *runtime_values = nullptr;
 
         std::vector<Values::Value> stack = std::vector<Values::Value>();
         // Add value to stack that needs to be allocated at runtime
@@ -50,7 +40,7 @@ class Runtime {
         Values::Value stack_pop();
 
         std::vector<Values::Value> constants = std::vector<Values::Value>();
-        std::vector<RuntimeValue*> global_variables;
+        std::vector<Values::Value> global_variables;
 
         std::vector<Bytecode::Chunk*> running_blocks = std::vector<Bytecode::Chunk*>();
         std::vector<RuntimeCallFrame> call_stack = std::vector<RuntimeCallFrame>();
@@ -70,7 +60,8 @@ class Runtime {
         void exit();
 
         // GC
-        void mark_value(RuntimeValue *value);
+        void add_object(Values::Object *obj);
+        void mark_object(Values::Value value);
         void mark_values();
         void delete_values();
         void run_gc();
@@ -88,10 +79,7 @@ class Runtime {
         void add_function(RuntimeFunction &chunk);
 
         inline Bytecode::Chunk * get_main() { return &this->main; };
-        inline Values::Value           get_constant(Bytecode::constant_index_t index) const { return this->constants.at(index); };
-
-        // Convert value into runtime value, then attach it to the current value list
-        RuntimeValue *get_runtime_value(Values::Value &value);
+        inline Values::Value     get_constant(Bytecode::constant_index_t index) const { return this->constants.at(index); };
 
         void log_instructions();
         int run();

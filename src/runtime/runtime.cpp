@@ -2,9 +2,11 @@
 
 #include <math.h>
 
+using namespace Values;
+using namespace Bytecode;
+
 RuntimeFunction::RuntimeFunction(Bytecode::Chunk chunk, Bytecode::call_arguments_t num_arguments) :
     chunk(chunk), num_arguments(num_arguments) {};
-
 RuntimeCallFrame::RuntimeCallFrame(Bytecode::constant_index_t func_index, Bytecode::call_arguments_t arg_count, std::vector<Values::Value> &stack) :
     func_index(func_index), variables(std::vector<Values::Value>(arg_count)) {
         for (int var_ind = arg_count - 1; var_ind >= 0; var_ind -= 1) {
@@ -19,9 +21,8 @@ Runtime::Runtime(Bytecode::Chunk &main) : main(main) {
 };
 
 void Runtime::init_global_pool(size_t num_globals) {
-    this->global_variables = std::vector<RuntimeValue*>(num_globals);
+    this->global_variables = std::vector<Value>(num_globals);
 }
-
 Bytecode::variable_index_t Runtime::new_constant(Values::Value value) {
     this->constants.push_back(value);
     return this->constants.size() - 1;
@@ -30,56 +31,49 @@ void Runtime::add_function(RuntimeFunction &func) {
     this->functions.push_back(func);
 }
 
-using namespace Values;
-using namespace Bytecode;
 
-RuntimeValue::RuntimeValue(Value &value, RuntimeValue *next) :
-    value(value),  marked_to_save(false), next(next) {}
-RuntimeValue::~RuntimeValue() {
-    this->value.free_payload();
-}
-
-RuntimeValue *Runtime::get_runtime_value(Values::Value &value) {
-    try {
-        RuntimeValue *runtime_value = new RuntimeValue(value, this->runtime_values);
-
-        #ifdef DEBUG_GC
-        std::cout << "GC: Allocating value " << value_to_debug_string(value)
-            << "(" << runtime_value << ") on heap\n";
-        #endif
-        #ifdef DEBUG_STRESS_GC
+void Runtime::add_object(Object *obj) {
+    #ifdef DEBUG_STRESS_GC
+        std::cout << "GC: Allocating value (" << obj << ") " <<
+            object_to_debug_string(obj) << " on heap\n";
         this->run_gc();
-        #endif
+    #endif
 
-        this->runtime_values = runtime_value;
-        this->gc_size += sizeof(RuntimeValue);
-
-        return runtime_value;
-    } catch (std::runtime_error &err) {
-        this->error = "Sugar Glider Runtime ran out of memory. Heap allocation failed.";
-        return nullptr;
+    this->gc_size += sizeof(Object*);
+    switch (obj->type) {
+        case ObjectType::ARRAY: 
+            this->gc_size += sizeof(obj_mem_t::array) + sizeof(*obj_mem_t::array);
+            break;
+        case ObjectType::STRING:
+            this->gc_size += sizeof(obj_mem_t::str) + sizeof(*obj_mem_t::str) + obj->memory.str->size();;
+            break;
     }
+
+    std::cout << "gc_size=" << this->gc_size << std::endl;
+
+    obj->next = this->runtime_values;
+    this->runtime_values = obj;
 };
 
 void Runtime::push_stack_value(Values::Value value) {
-    switch (get_value_type(value)) {
-        case ValueType::STRING:
-            this->get_runtime_value(value);
-            this->stack.push_back(value);
-            break;
-        // Any other value doesn't need to be allocated
-        default:
-            this->stack.push_back(value);
-    }
+    this->stack.push_back(value);
 };
 
-void Runtime::mark_value(RuntimeValue *value) {
-    value->marked_to_save = true;
+void Runtime::mark_object(Values::Value value) {
+    Object *obj = safe_get_value_object(value);
+    if (obj == nullptr) return;
+
+    #ifdef DEBUG_GC
+    std::cout << "GC: Marking value " << value_to_debug_string(value) <<
+        " at " << get_value_object(value) << "\n";
+    #endif
+
+    obj->marked_for_save = true;
 
     // If it's array, get all of ITS values as well
-    if (get_value_type(value->value)) {
-        for (RuntimeValue *value : *get_value_array(value->value)) {
-            mark_value(value);
+    if (obj->type == ObjectType::ARRAY) {
+        for (Values::Value &value : *get_value_array(value)) {
+            mark_object(value);
         }
     }
 };
@@ -87,45 +81,44 @@ void Runtime::mark_values() {
     // Mark every value referenced by variables
 
     // Unmark everything. We're only saving the values we need to
-    for (RuntimeValue *value : this->global_variables) {
+    for (Values::Value &value : this->global_variables) {
         // When the global pool is initialized, all variable slots are set to nullptr,
         // so don't mark those
-        if (value != nullptr) {
+        if (get_value_type(value) == ValueType::OBJ) {
+            Object *obj = get_value_object(value);
             #ifdef DEBUG_GC
-            std::cout << "GC: Unmarking value " << value_to_debug_string(value->value) <<
-                " at " << value << '\n';
+            std::cout << "GC: Unmarking value " << value_to_debug_string(value) <<
+                " at " << get_value_object(value) << '\n';
             #endif
-            value->marked_to_save = false;
+            obj->marked_for_save = false;
         }
     }
 
+    // Now mark
     // First, globals
-    for (RuntimeValue *value : this->global_variables) {
-        // Once again, runtime value slots are initialized to nullptr
-        if (value != nullptr) {
-            #ifdef DEBUG_GC
-            std::cout << "GC: Marking value " << value_to_debug_string(value->value) <<
-                " at " << value << "\n";
-            #endif
-            mark_value(value);
-        }
+    for (Values::Value &value : this->global_variables) {
+        mark_object(value);
+    }
+
+    // Next, everything on the stack
+    for (Values::Value &value : this->stack) {
+        mark_object(value);
     }
 }
 void Runtime::delete_values() {
-    RuntimeValue *current = this->runtime_values;
+    Object *current = this->runtime_values;
     this->runtime_values = nullptr;
 
     std::cout << "DELETING VALUES\n";
 
     while (current != nullptr) {
-        std::cout << "running " << current << std::endl;
+        Object *next = current->next;
+        std::cout << "Checking for mark " << current << std::endl;
 
-        RuntimeValue *next = current->next;
-
-        if (!current->marked_to_save) {
-            this->gc_size -= sizeof(RuntimeValue);
+        if (!current->marked_for_save) {
+            this->gc_size -= sizeof(Object) + sizeof(Object*);
             #ifdef DEBUG_GC
-            std::cout << "GC: Freeing value " << value_to_debug_string(current->value) <<
+            std::cout << "GC: Freeing value " << object_to_debug_string(current) <<
                 " at " << current << '\n';
             #endif
             delete current;
@@ -140,12 +133,6 @@ void Runtime::delete_values() {
     }
 }
 void Runtime::run_gc() {
-    #ifdef DEBUG
-    assert(this->stack.size() == 0 &&
-        "as of now, the GC cannot be run when the stack has an element, because "
-        "we might accidentally free a string referenced in the stack");
-    #endif
-
     this->mark_values();
     this->delete_values();
 }
@@ -292,13 +279,13 @@ int Runtime::run() {
             {
                 variable_index_t index = this->read_value<variable_index_t>(prog_ip);
                 Value value = this->stack_pop();
-                this->global_variables[index] = this->get_runtime_value(value);
+                this->global_variables[index] = value;
             }
                 break;
             case OpCode::OP_LOAD_GLOBAL:
             {
                 variable_index_t index = this->read_value<variable_index_t>(prog_ip);
-                this->stack.push_back(this->global_variables[index]->value);
+                this->stack.push_back(this->global_variables[index]);
             }
                 break;
 
@@ -314,18 +301,21 @@ int Runtime::run() {
             case OpCode::OP_NULL: this->push_stack_value(Value(Values::NULL_VALUE)); break;
             case OpCode::OP_MAKE_ARRAY: {
                 variable_index_t element_count = this->read_value<variable_index_t>(prog_ip);
-                std::vector<RuntimeValue*> *array = new std::vector<RuntimeValue*>();
+                std::vector<Value> *array = new std::vector<Value>(element_count);
 
                 // Add the elements to the array
                 for (uint value_index = this->stack.size() - element_count; value_index < this->stack.size(); value_index += 1) {
-                    array->push_back(this->get_runtime_value(this->stack.at(value_index)));
+                    (*array)[value_index] = this->stack.at(value_index);
                 }
                 // Now pop the results from the stack
                 for (uint pop = 0; pop < element_count; pop += 1) {
                     this->stack.pop_back();
                 }
 
-                this->stack.push_back( Values::Value(ValueType::ARRAY, array) );
+                Object *obj = new Object(array, this->runtime_values);
+                this->add_object(obj);
+
+                this->stack.push_back( Values::Value(ValueType::OBJ, obj) );
             }
                 break;
             // Automatically push a copy of the push value if we're setting a value, e.g. arr[ind] = 3;
@@ -338,20 +328,21 @@ int Runtime::run() {
 
                 Values::Value index_value = this->stack_pop();
                 Values::Value array_value = this->stack_pop();
-
                 if (get_value_type(index_value) != ValueType::NUMBER) {
                     this->error = "Array index must be a number, but given index ";
                     this->error += value_to_string(index_value);
                     break;
                 }
-                if (get_value_type(array_value) != ValueType::ARRAY) {
+
+                Object *array_obj = safe_get_value_object(array_value);;
+                if (array_obj == nullptr || array_obj->type != ObjectType::ARRAY) {
                     this->error = "Cannot index non-array value ";
                     this->error += value_to_string(array_value);
                     break;
                 }
 
                 Values::number_t index = get_value_number(index_value);
-                std::vector<RuntimeValue*> *array = get_value_array(array_value);
+                std::vector<Value> *array = array_obj->memory.array;
                 if (index > static_cast<Values::number_t>(array->size()) || index < 0 || index != floor(index)) {
                     this->error = "Array index must be an integer within the range of array's values, but index was ";
                     this->error += value_to_string(index_value);
@@ -359,10 +350,10 @@ int Runtime::run() {
                 }
 
                 if (code == OpCode::OP_GET_ARRAY_VALUE) {
-                    this->stack.push_back(array->at(floor(index))->value);
+                    this->stack.push_back(array->at(floor(index)));
                 }
                 else {
-                    (*array)[static_cast<uint>(floor(index))] = this->get_runtime_value(set_value);
+                    (*array)[static_cast<uint>(floor(index))] = set_value;
                     this->stack.push_back(set_value);
                 }
             }
@@ -377,6 +368,12 @@ int Runtime::run() {
                 bool valid = Values::bin_op(type, a, b, &result, &this->error);
 
                 if (!valid) break;
+
+                /* Make sure that we add the object to the GC if necessary */
+                if (get_value_type(result) == ValueType::OBJ) {
+                    this->add_object(get_value_object(result));
+                }
+
                 this->push_stack_value(result);
             }
                 break;
@@ -412,7 +409,7 @@ Runtime::~Runtime() {
     // }
 
     while (this->runtime_values != nullptr) {
-        RuntimeValue *next = this->runtime_values->next;
+        Object *next = this->runtime_values->next;
         delete this->runtime_values;
         this->runtime_values = next;
     }

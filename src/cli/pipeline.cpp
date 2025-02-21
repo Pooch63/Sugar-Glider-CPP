@@ -8,7 +8,7 @@
 
 #include "pipeline.hpp"
 
-int run_file(std::string prog) {
+static int get_bytecode(std::string prog, Runtime &runtime) {
     Output output(prog);
     Scan::Scanner lexer(prog, output);
     Parse::Parser parser(lexer, output);
@@ -45,22 +45,24 @@ int run_file(std::string prog) {
 
     optimized.log_ir();
 
-    Bytecode::Chunk main = Bytecode::Chunk();
-    Runtime runtime = Runtime(main);
-
     Transpiler transpiler = Transpiler(runtime);
     // Use optimized bytecode for program
     transpiler.transpile_ir_to_bytecode(optimized);
 
-    std::cout << "got past transpilation\n";
-
     runtime.init_global_pool(transpiler.num_variable_slots());
-    std::cout << "got past global pool initialization\n";
 
     runtime.log_instructions();
-    std::cout << "got past logging\n";
+
+    return 0;
+}
+
+int run_file(std::string prog) {
+    Bytecode::Chunk main = Bytecode::Chunk();
+    Runtime runtime = Runtime(main);
+
+    int compile_code = get_bytecode(prog, runtime);
+    if (compile_code != 0) return compile_code;
 
     int code = runtime.run();
-
     return code;
 }

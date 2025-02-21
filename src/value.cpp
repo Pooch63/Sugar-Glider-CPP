@@ -1,4 +1,5 @@
 #include "runtime/runtime.hpp"
+#include "utils.hpp"
 #include "value.hpp"
 
 #include <bits/stdc++.h>
@@ -14,14 +15,21 @@ namespace Math {
 
 using namespace Values;
 
-Value::Value(ValueType type, std::vector<RuntimeValue*> *array) : type(type), value(value_mem_t{ .array = array }) {
-    #ifdef DEBUG_ASSERT
-    assert(type == ValueType::ARRAY);
-    #endif
+Object::Object(std::string *str, Object *next) :
+    type(ObjectType::STRING), memory(obj_mem_t{ .str = str }), next(next) {};
+Object::Object(std::vector<Value> *array, Object *next) :
+    type(ObjectType::ARRAY), memory(obj_mem_t{ .array = array }), next(next) {};
+
+Object::~Object() {
+    switch (this->type) {
+        case ObjectType::STRING: delete this->memory.str; break;
+        case ObjectType::ARRAY: delete this->memory.array; break;
+    }
 }
-Value::Value(ValueType type, std::string* str) : type(type), value(value_mem_t{ .str = str }) {
+
+Value::Value(ValueType type, Object *obj) : type(type), value(value_mem_t{ .obj = obj }) {
     #ifdef DEBUG_ASSERT
-    assert(type == ValueType::STRING);
+    assert(type == ValueType::OBJ);
     #endif
 }
 Value::Value(ValueType type, number_t number) : type(type), value(value_mem_t{ .number = number }) {
@@ -45,20 +53,26 @@ std::string Values::value_to_string(const Value &value) {
         case ValueType::NUMBER: return std::to_string(get_value_number(value));
         case ValueType::TRUE:   return "true";
         case ValueType::FALSE:  return "false";
-        case ValueType::STRING: return *get_value_string(value);
         case ValueType::NULL_VALUE: return "null";
         case ValueType::PROGRAM_FUNCTION: return "function";
         case ValueType::NATIVE_FUNCTION: return "[native function]";
-        case ValueType::ARRAY: {
-            std::string str = "[ ";
-            bool found_value = false;
-            for (RuntimeValue *value : *get_value_array(value)) {
-                if (found_value) str += ", ";
-                str += value_to_string(value->value);
-                found_value = true;
+        case ValueType::OBJ: {
+            Object *obj = get_value_object(value);
+            switch (obj->type) {
+                case ObjectType::STRING: return '"' + *get_value_string(value) + '"';
+                case ObjectType::ARRAY: {
+                    std::string str = "[ ";
+                    bool found_value = false;
+                    for (Value value : *get_value_array(value)) {
+                        if (found_value) str += ", ";
+                        str += value_to_string(value);
+                        found_value = true;
+                    }
+                    str += " ]";
+                    return str;
+                }
+                default: throw sg_assert_error("Unknown object type when making string");
             }
-            str += " ]";
-            return str;
         }
         default:
             throw sg_assert_error("Unknown value to log as string");
@@ -66,28 +80,43 @@ std::string Values::value_to_string(const Value &value) {
 };
 std::string Values::value_to_debug_string(const Value &value) {
     switch (get_value_type(value)) {
-        case ValueType::NULL_VALUE: return "null";
-        case ValueType::NUMBER: return std::to_string(get_value_number(value));
-        case ValueType::TRUE:   return "true";
-        case ValueType::FALSE:  return "false";
-        case ValueType::STRING: return '"' + *get_value_string(value) + '"';
-        case ValueType::PROGRAM_FUNCTION: return "function";
-        case ValueType::NATIVE_FUNCTION: return "[native function]";
-        case ValueType::ARRAY: {
-            std::string str = "[ ";
-            bool found_value = false;
-            for (RuntimeValue *value : *get_value_array(value)) {
-                if (found_value) str += ", ";
-                str += value_to_debug_string(value->value);
-                found_value = true;
+        case ValueType::OBJ: {
+            Object *obj = get_value_object(value);
+            switch (obj->type) {
+                case ObjectType::STRING: {
+                    std::string trimmed;
+                    truncate_string(trimmed, 36, *get_value_string(value));
+                    return '"' + trimmed + '"';
+                }
+                case ObjectType::ARRAY: {
+                    std::string str = "[ ";
+                    bool found_value = false;
+                    for (Value value : *get_value_array(value)) {
+                        if (found_value) str += ", ";
+                        str += value_to_debug_string(value);
+                        found_value = true;
+                    }
+                    str += " ]";
+                    return str;
+                }
+                default: throw sg_assert_error("Unknown object type when making debug string");
             }
-            str += " ]";
-            return str;
         }
-        default:
-            throw sg_assert_error("Unknown value to log as string");
+        default: return value_to_string(value);
     }
 };
+std::string Values::object_to_debug_string(Object *obj) {
+    return value_to_debug_string(Value(ValueType::OBJ, obj));
+};
+
+void Values::free_value_if_object(Value &value) {
+    if (get_value_type(value) != ValueType::OBJ) return;
+    delete get_value_object(value);
+};
+Object *Values::safe_get_value_object(const Value &value) {
+    if (get_value_type(value) != ValueType::OBJ) return nullptr;
+    return get_value_object(value);
+}
 
 bool Values::value_is_truthy(const Value &value) {
     switch (get_value_type(value)) {
@@ -95,7 +124,14 @@ bool Values::value_is_truthy(const Value &value) {
         case ValueType::TRUE: return true;
         case ValueType::FALSE: return false;
         case ValueType::NUMBER: return get_value_type(value) != 0;
-        case ValueType::STRING: return get_value_string(value)->size() > 0;
+        case ValueType::OBJ: {
+            Object *obj = get_value_object(value);
+            switch (obj->type) {
+                case ObjectType::STRING: return get_value_string(value)->size() > 0;
+                case ObjectType::ARRAY: return get_value_array(value)->size() > 0;
+                default: throw sg_assert_error("Unknown object type when determining value truth");
+            }
+        }
         case ValueType::NATIVE_FUNCTION: return true;
         default:
             throw sg_assert_error("Unknown value to get truthy value from");
@@ -119,7 +155,17 @@ Values::number_t Value::to_number() const {
 bool Values::values_are_equal(const Value &a, const Value &b) {
     if (get_value_type(a) != get_value_type(b)) return false;
     switch (get_value_type(a)) {
-        case ValueType::STRING: return *get_value_string(a) == *get_value_string(b);
+        case ValueType::OBJ: {
+            Object *obj_a = get_value_object(a);
+            Object *obj_b = get_value_object(b);
+            if (obj_a->type != obj_b->type) return false;
+
+            switch (obj_a->type) {
+                case ObjectType::STRING: return *get_value_string(a) == *get_value_string(b);
+                case ObjectType::ARRAY: return get_value_array(a) == get_value_array(b);
+                default: throw sg_assert_error("Unknown object type when determining object equality");
+            }
+        }
         case ValueType::NATIVE_FUNCTION: return get_value_native_function(a).func == get_value_native_function(b).func;
         default: return true;
     }
@@ -137,18 +183,29 @@ static Values::number_t mod(Values::number_t a, Values::number_t b) {
     return fmod(a, b);
 }
 
-bool Values::bin_op(Operations::BinOpType type, Value a, Value b, Value *result, std::string *error) {
+bool Values::bin_op(
+    Operations::BinOpType type,
+    Value a,
+    Value b,
+    Value *result,
+    std::string *error
+) {
     using Operations::BinOpType;
 
     if (
         type == BinOpType::BINOP_ADD &&
-        get_value_type(a) == ValueType::STRING &&
-        get_value_type(b) == ValueType::STRING
+        get_value_type(a) == ValueType::OBJ &&
+        get_value_type(b) == ValueType::OBJ
     ) {
-        *result = Value(
-            ValueType::STRING,
-            new std::string(*get_value_string(a) + *get_value_string(b)));
-        return true;
+        Object *obj_a = get_value_object(a);
+        Object *obj_b = get_value_object(b);
+
+        if (obj_a->type == ObjectType::STRING && obj_b->type == ObjectType::STRING) {
+            std::string *concat = new std::string(*get_value_string(a) + *get_value_string(b));
+            Object *obj = new Object(concat, nullptr);
+            *result = Value(ValueType::OBJ, obj);
+            return true;
+        }
     }
     if (type == BinOpType::BINOP_NOT_EQUAL_TO) {
         *result = Value(values_are_equal(a, b) ? ValueType::FALSE : ValueType::TRUE);
@@ -257,14 +314,4 @@ bool Values::unary_op(Operations::UnaryOpType type, Value arg, Value *result, st
     }
 
     return true;
-};
-
-void Value::free_payload() {
-    if (!this->should_free_payload) return;
-    switch (this->type) {
-        case ValueType::STRING: delete get_value_string(*this); break;
-        case ValueType::ARRAY: delete get_value_array(*this); break;
-        
-        default: break;
-    }
 };

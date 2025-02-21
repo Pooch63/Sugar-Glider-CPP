@@ -2,6 +2,7 @@
 #include "../utils.hpp"
 
 using namespace Intermediate;
+using namespace Values;
 
 const char* Intermediate::variable_type_to_string(VariableType type) {
     switch (type) {
@@ -90,20 +91,20 @@ bool Instruction::is_static_flow_load() const {
     return this->is_constant();
 }
 
-Values::Value Instruction::payload_to_value() const {
+Value Instruction::payload_to_value() const {
     switch (this->code) {
         case InstrCode::INSTR_NUMBER:
-            return Values::Value(Values::ValueType::NUMBER, this->get_number());
+            return Value(ValueType::NUMBER, this->get_number());
         case InstrCode::INSTR_TRUE:
-            return Values::Value(Values::ValueType::TRUE);
+            return Value(ValueType::TRUE);
         case InstrCode::INSTR_FALSE:
-            return Values::Value(Values::ValueType::FALSE);
+            return Value(ValueType::FALSE);
         case InstrCode::INSTR_NULL:
-            return Values::Value(Values::ValueType::NULL_VALUE);
+            return Value(ValueType::NULL_VALUE);
         case InstrCode::INSTR_STRING:
-            return Values::Value(Values::ValueType::STRING, new std::string(*this->payload.str));
+            return Value(ValueType::OBJ, new Object(new std::string(*this->payload.str), nullptr));
         case InstrCode::INSTR_GET_FUNCTION_REFERENCE:
-            return Values::Value(this->get_function_index(), Values::ValueType::PROGRAM_FUNCTION);
+            return Value(this->get_function_index(), ValueType::PROGRAM_FUNCTION);
         default:
             throw sg_assert_error("Tried to convert instruction payload to value that could not become a value");
     }
@@ -111,13 +112,19 @@ Values::Value Instruction::payload_to_value() const {
 
 Instruction Instruction::value_to_instruction(Values::Value value) {
     switch (Values::get_value_type(value)) {
-        case Values::ValueType::STRING:
-            return Instruction(InstrCode::INSTR_STRING, Values::get_value_string(value));
-        case Values::ValueType::NUMBER:
-            return Instruction(Values::get_value_number(value));
-        case Values::ValueType::TRUE:
+        case ValueType::OBJ: {
+            Object *obj = get_value_object(value);
+
+            switch (obj->type) {
+                case ObjectType::STRING: return Instruction(InstrCode::INSTR_STRING, get_value_string(value));
+                default: throw sg_assert_error("Optimization tried to condense array when it shouldn't have");
+            }
+        }
+        case ValueType::NUMBER:
+            return Instruction(get_value_number(value));
+        case ValueType::TRUE:
             return Instruction(InstrCode::INSTR_TRUE);
-        case Values::ValueType::FALSE:
+        case ValueType::FALSE:
             return Instruction(InstrCode::INSTR_FALSE);
         default:
             throw sg_assert_error("Tried to convert instruction to a value that could not become a value");

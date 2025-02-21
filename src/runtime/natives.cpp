@@ -28,28 +28,31 @@ bool clock NATIVE_FUNCTION_HEADERS() {
 bool length NATIVE_FUNCTION_HEADERS() {
     Value top = stack[0];
     ValueType type = get_value_type(top);
-    if (type == ValueType::STRING) {
-        result = Values::Value(Values::NUMBER, get_value_string(top)->size());
-    }
-    else if (type == ValueType::ARRAY) {
-        result = Values::Value(Values::NUMBER, get_value_array(top)->size());
-    }
-    else {
+
+    if (type!= ValueType::OBJ) {
         error_message = "Cannot get length of value ";
         error_message += value_to_string(top);
         error_message += " - it is not an array or string";
         return false;
     }
 
+    Object *obj = get_value_object(top);
+    if (obj->type == ObjectType::STRING) {
+        result = Values::Value(Values::NUMBER, get_value_string(top)->size());
+    }
+    else if (obj->type == ObjectType::ARRAY) {
+        result = Values::Value(Values::NUMBER, get_value_array(top)->size());
+    }
     return true;
 }
 bool append NATIVE_FUNCTION_HEADERS() {
     Value appendee = stack[0];
-    ValueType appendee_type = get_value_type(appendee);
     Value added_type = stack[1];
 
-    if (appendee_type == ValueType::ARRAY) {
-       get_value_array(appendee)->push_back(runtime.get_runtime_value(added_type));
+    Object *obj = safe_get_value_object(appendee);
+
+    if (obj->type == ObjectType::ARRAY) {
+       get_value_array(appendee)->push_back(added_type);
        return true;
     }
     else {
