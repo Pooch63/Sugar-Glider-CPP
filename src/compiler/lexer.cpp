@@ -186,6 +186,23 @@ bool Scanner::skip_comment() {
         while (this->current() != '\n' && !this->at_EOF()) this->advance();
         return true;
     }
+    if (this->current() == '/' && this->peek(1) == '*') {
+        std::cout << "skipping comment?\n";
+        while (this->current() != '*' || this->peek(1) != '/') {
+            if (this->at_EOF()) {
+                this->output.error(
+                    TokenPosition{ .line = this->line, .col = this->col, .length = 1 },
+                    "Multiline /* comment wasn't terminated with a\"'*/\"",
+                    Errors::LEX_ERROR);
+                break;
+            }
+            this->advance();
+        }
+        // Go past the */
+        this->advance();
+        this->advance();
+        return true;
+    }
 
     return false;
 }
