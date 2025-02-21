@@ -34,14 +34,14 @@ int run_file(std::string prog) {
         return Errors::COMPILE_ERROR;
     }
 
-    block.log_ir();
+    // block.log_ir();
 
     auto optimized = Intermediate::LabelIR();
     optimize_labels(block, optimized);
 
     std::cout << "got past optimization\n";
 
-    optimized.log_ir();
+    // optimized.log_ir();
 
     Bytecode::Chunk main = Bytecode::Chunk();
     Runtime runtime = Runtime(main);
@@ -50,9 +50,13 @@ int run_file(std::string prog) {
     // Use optimized bytecode for program
     transpiler.transpile_ir_to_bytecode(optimized);
 
+    std::cout << "got past transpilation\n";
+
     runtime.init_global_pool(transpiler.num_variable_slots());
+    std::cout << "got past global pool initialization\n";
 
     runtime.log_instructions();
+    std::cout << "got past logging\n";
 
     int code = runtime.run();
 
