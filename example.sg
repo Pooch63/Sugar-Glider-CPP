@@ -1,4 +1,5 @@
-// function k() { return println; }
-// k(1,2,3);
-var b = "d" + "polio";
-//* Expected output: Prints "d" */
+var g = [ "a", "b" ];
+println(g);
+println(g[1]);
+g[1] = [ 1, 2, [ 3, 4 ] ];
+println(g[1]);
