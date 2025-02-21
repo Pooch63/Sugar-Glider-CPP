@@ -55,6 +55,8 @@ namespace Parse {
         /* Rule functions */
         AST::Node *number(Scan::Token &current, Parser *parser);
         AST::Node *parse_string(Scan::Token &current, Parser *parser);
+        AST::Node *parse_array(Scan::Token &current, Parser *parser);
+        AST::Node *parse_array_index(Scan::Token &current, AST::Node *left, Parser *parser);
         // E.g., true, false, and null
         AST::Node *keyword_constant(Scan::Token &current, Parser *parser);
 

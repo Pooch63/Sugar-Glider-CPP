@@ -7,6 +7,8 @@
 
 namespace AST {
     enum NodeType {
+        NODE_ARRAY,
+        NODE_ARRAY_INDEX,
         NODE_STRING,
         NODE_NUMBER,
         NODE_NULL,
@@ -35,10 +37,13 @@ namespace AST {
 
     bool node_is_expression(NodeType type);
     bool node_may_be_function(NodeType type);
+    bool node_may_be_array(NodeType type);
 
     const char* node_type_to_string(NodeType type);
 
     class String;
+    class Array;
+    class ArrayIndex;
     class Number;
     class True;
     class False;
@@ -75,6 +80,8 @@ namespace AST {
             /* Return pointers to nodes depending on the type you specify.
                 The wrapper type MUST be the same as the node type. */
             String* as_string();
+            Array* as_array();
+            ArrayIndex* as_array_index();
             Number* as_number();
             BinOp* as_bin_op();
             UnaryOp* as_unary_op();
@@ -94,13 +101,52 @@ namespace AST {
             virtual ~Node() = default;
     };
 
+    class Array : public Node {
+        private:
+            std::vector<Node*> values = std::vector<Node*>();
+        public:
+            Array();
+
+            inline auto begin() const noexcept { return this->values.begin(); };
+            inline auto   end() const noexcept { return this->values.end(); };
+
+            void add_element(Node *element);
+            inline size_t element_count() const { return this->values.size(); };
+
+            ~Array();
+    };
+    /* Used for both array indexing and value updating, because
+        compilation logic for both is very similar */
+    class ArrayIndex : public Node {
+        private:
+            Node *array;
+            Node *index;
+            // Can be nullptr, if so, it is just a value get
+            Node *value;
+        public:
+            ArrayIndex(Node *array, Node *index, Node *value);
+
+            inline Node* get_array() const noexcept { return this->array; };
+            inline Node* get_index() const noexcept { return this->index; };
+            inline bool  is_value_get() const noexcept {
+                return this->value == nullptr;
+            }
+            inline Node* get_value() const {
+                #ifdef DEBUG
+                assert(!this->is_value_get());
+                #endif
+                return this->value;
+            };
+            
+            ~ArrayIndex();
+    };
     class String : public Node {
         private:
             std::string* str;
         public:
             String(std::string* str, TokenPosition pos);
 
-            inline std::string* get_string() const { return this->str; };
+            inline std::string* get_string() const noexcept { return this->str; };
 
             ~String();
     };
@@ -110,7 +156,7 @@ namespace AST {
         public:
             Number(Values::number_t number);
 
-            inline Values::number_t get_number() const { return this->number; };
+            inline Values::number_t get_number() const noexcept { return this->number; };
     };
     class Null : public Node {
         public:

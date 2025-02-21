@@ -68,6 +68,16 @@ namespace Bytecode {
             Constant must be a value of unknown size at runtime, so not a boolean, null, nor number.
             Argument is constant_index_t. */
         OP_LOAD_CONST,
+        /* Make the last n elements of the stack into an array. The topmost element of the stack is the
+            last element of the array. Argument is variable_index_t, the number of elements in the array */
+        OP_MAKE_ARRAY,
+        /* Get the element in the array at the given index. Top of stack is index, value under that is array. */
+        OP_GET_ARRAY_VALUE,
+        /* Set the value at the top of the stack in the index at the array. Stack is:
+            value
+            index
+            array */
+        OP_SET_ARRAY_VALUE,
 
         /* Argument is call_arguments_t, number of arguments that are used to call the function.
             Top value of stack must be the function to call.

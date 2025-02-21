@@ -14,6 +14,7 @@ namespace Values {
     class Value;
 
     enum ValueType {
+        ARRAY,
         STRING,
         NUMBER,
         TRUE,
@@ -37,13 +38,17 @@ namespace Values {
         int number_arguments;
     };
 
+    class Value;
+
+    /* With arrays, the value class is responsible for the container. It is NOT
+        responsible for the elements inside, nor their free. */
     union value_mem_t {
         number_t number;
-        std::string* str;
+        std::string *str;
         native_method_t native;
         Bytecode::constant_index_t prog_func_index;
+        std::vector<Value> *array;
     };
-
 
     class Value {
         private:
@@ -54,6 +59,8 @@ namespace Values {
             bool should_free_payload = true;
 
         public:
+            /* For arrays */
+            explicit Value(ValueType type, std::vector<Value> *array);
             /* For strings */
             explicit Value(ValueType type, std::string* str);
             /* For numbers */
@@ -75,6 +82,7 @@ namespace Values {
             friend ValueType get_value_type(const Value &value);
             friend number_t get_value_number(const Value &value);
             friend std::string *get_value_string(const Value &value);
+            friend std::vector<Value> *get_value_array(const Value &value);
             friend native_method_t get_value_native_function(const Value &value);
             friend Bytecode::constant_index_t get_value_program_function(const Value &value);
 
@@ -101,6 +109,12 @@ namespace Values {
         assert(get_value_type(value) == ValueType::STRING);
         #endif
         return value.value.str;
+    }
+    inline std::vector<Value>* get_value_array(const Value &value) {
+        #ifdef DEBUG
+        assert(get_value_type(value) == ValueType::ARRAY);
+        #endif
+        return value.value.array;
     }
     inline native_method_t get_value_native_function(const Value &value) {
         #ifdef DEBUG

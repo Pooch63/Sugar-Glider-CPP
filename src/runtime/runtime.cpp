@@ -1,5 +1,7 @@
 #include "runtime.hpp"
 
+#include <math.h>
+
 RuntimeFunction::RuntimeFunction(Bytecode::Chunk chunk, Bytecode::call_arguments_t num_arguments) :
     chunk(chunk), num_arguments(num_arguments) {};
 
@@ -155,13 +157,13 @@ int Runtime::run() {
         switch (code) {
             case OpCode::OP_LOAD_CONST:
             {
-                constant_index_t index = this->get_running_block().read_value<constant_index_t>(prog_ip);
+                constant_index_t index = this->read_value<constant_index_t>(prog_ip);
                 this->stack.push_back(this->constants.at(index));
             }
                 break;
             case OpCode::OP_LOAD_NATIVE:
             {
-                variable_index_t index = this->get_running_block().read_value<variable_index_t>(prog_ip);
+                variable_index_t index = this->read_value<variable_index_t>(prog_ip);
                 this->stack.push_back(this->natives.at(index));
             }
                 break;
@@ -169,7 +171,7 @@ int Runtime::run() {
             case OpCode::OP_CALL:
             {
                 Value func = this->stack_pop();
-                call_arguments_t num_args = this->get_running_block().read_value<call_arguments_t>(prog_ip);
+                call_arguments_t num_args = this->read_value<call_arguments_t>(prog_ip);
 
                 if (get_value_type(func) == Values::NATIVE_FUNCTION) {
                     Values::native_method_t native = get_value_native_function(func);
@@ -247,21 +249,21 @@ int Runtime::run() {
 
             case OpCode::OP_STORE_GLOBAL:
             {
-                variable_index_t index = this->get_running_block().read_value<variable_index_t>(prog_ip);
+                variable_index_t index = this->read_value<variable_index_t>(prog_ip);
                 Value value = this->stack_pop();
                 this->global_variables[index] = this->get_runtime_value(value);
             }
                 break;
             case OpCode::OP_LOAD_GLOBAL:
             {
-                variable_index_t index = this->get_running_block().read_value<variable_index_t>(prog_ip);
+                variable_index_t index = this->read_value<variable_index_t>(prog_ip);
                 this->stack.push_back(this->global_variables[index]->value);
             }
                 break;
 
             case OpCode::OP_LOAD_FRAME_VAR:
             {
-                variable_index_t index = this->get_running_block().read_value<variable_index_t>(prog_ip);
+                variable_index_t index = this->read_value<variable_index_t>(prog_ip);
                 this->stack.push_back(this->call_stack.back().get_variable(index));
             }
                 break;
@@ -269,6 +271,61 @@ int Runtime::run() {
             case OpCode::OP_TRUE: this->push_stack_value(Value(Values::TRUE)); break;
             case OpCode::OP_FALSE: this->push_stack_value(Value(Values::FALSE)); break;
             case OpCode::OP_NULL: this->push_stack_value(Value(Values::NULL_VALUE)); break;
+            case OpCode::OP_MAKE_ARRAY: {
+                variable_index_t element_count = this->read_value<variable_index_t>(prog_ip);
+                std::vector<Value> *array = new std::vector<Value>();
+
+                // Add the elements to the array
+                for (uint value_index = this->stack.size() - element_count; value_index < this->stack.size(); value_index += 1) {
+                    array->push_back(this->stack.at(value_index));
+                }
+                // Now pop the results from the stack
+                for (uint pop = 0; pop < element_count; pop += 1) {
+                    this->stack.pop_back();
+                }
+
+                this->stack.push_back( Values::Value(ValueType::ARRAY, array) );
+            }
+                break;
+            // Automatically push a copy of the push value if we're setting a value, e.g. arr[ind] = 3;
+            case OpCode::OP_GET_ARRAY_VALUE:
+            case OpCode::OP_SET_ARRAY_VALUE: {
+                Values::Value set_value;
+                if (code == OpCode::OP_SET_ARRAY_VALUE) {
+                    set_value = this->stack_pop();
+                }
+
+                Values::Value index_value = this->stack_pop();
+                Values::Value array_value = this->stack_pop();
+
+                if (get_value_type(index_value) != ValueType::NUMBER) {
+                    this->error = "Array index must be a number, but given index ";
+                    this->error += value_to_string(index_value);
+                    break;
+                }
+                if (get_value_type(array_value) != ValueType::ARRAY) {
+                    this->error = "Cannot index non-array value ";
+                    this->error += value_to_string(array_value);
+                    break;
+                }
+
+                Values::number_t index = get_value_number(index_value);
+                std::vector<Value> *array = get_value_array(array_value);
+                if (index > static_cast<Values::number_t>(array->size()) || index < 0 || index != floor(index)) {
+                    this->error = "Array index must be an integer within the range of array's values, but index was ";
+                    this->error += value_to_string(index_value);
+                    break;
+                }
+
+                if (code == OpCode::OP_GET_ARRAY_VALUE) {
+                    this->stack.push_back(array->at(floor(index)));
+                }
+                else {
+                    array->emplace(array->begin() + index, set_value);
+                    this->stack.push_back(set_value);
+                }
+            }
+                break;
             
             case OpCode::OP_BIN:
             {
@@ -300,7 +357,6 @@ int Runtime::run() {
 
             case OpCode::OP_EXIT:
                 this->exit();
-                std::cout << value_to_debug_string(this->runtime_values->value) << std::endl;
                 return 0;
             default: std::cerr << "unhandled " << instruction_to_string(code) << std::endl; break;
         }

@@ -43,28 +43,33 @@ class Runtime {
         std::vector<RuntimeFunction> functions = std::vector<RuntimeFunction>();
         /* Make a separate copy for natives so that each individual runtime can update native namespaces */
         std::array<Values::Value, Natives::native_count> natives = std::array<Values::Value, Natives::native_count>();
-
         RuntimeValue *runtime_values = nullptr;
+
         std::vector<Values::Value> stack = std::vector<Values::Value>();
         // Add value to stack that needs to be allocated at runtime
         void push_stack_value(Values::Value value);
         Values::Value stack_pop();
 
         std::vector<Values::Value> constants = std::vector<Values::Value>();
-
         std::vector<RuntimeValue*> global_variables;
+
         std::vector<RuntimeCallFrame> call_stack = std::vector<RuntimeCallFrame>();
         size_t call_stack_size = 0;
 
-        Bytecode::address_t main_ip;
-        std::string error = "";
-
-        void exit();
 
         Bytecode::Chunk &get_running_block();
 
+        template<typename read_type>
+        inline read_type read_value(Bytecode::address_t &prog_ip) {
+            return this->get_running_block().read_value<read_type>(prog_ip);
+        }
+        Bytecode::address_t main_ip;
+        std::string error = "";
+
         // Convert value into runtime value, then attach it to the current value list
         RuntimeValue *get_runtime_value(Values::Value &value);
+
+        void exit();
 
         // GC
         void mark_value(RuntimeValue *value);

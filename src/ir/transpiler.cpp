@@ -97,6 +97,17 @@ void Transpiler::transpile_ir_instruction(Instruction instr, Intermediate::Funct
             instr.free_payload();
             break;
 
+        case InstrCode::INSTR_GET_ARRAY_VALUE:
+            chunk->push_opcode(OpCode::OP_GET_ARRAY_VALUE);
+            break;
+        case InstrCode::INSTR_SET_ARRAY_VALUE:
+            chunk->push_opcode(OpCode::OP_SET_ARRAY_VALUE);
+            break;
+        case InstrCode::INSTR_MAKE_ARRAY:
+            chunk->push_opcode(OpCode::OP_MAKE_ARRAY);
+            chunk->push_value<Bytecode::variable_index_t>(instr.get_array_element_count());
+            break;
+
         case InstrCode::INSTR_GOTO:
         case InstrCode::INSTR_POP_JIZ:
         case InstrCode::INSTR_POP_JNZ:

@@ -405,6 +405,8 @@ Token Scanner::next_token() {
 
         case '(': one_char_type = TokType::LPAREN; break;
         case ')': one_char_type = TokType::RPAREN; break;
+        case '[': one_char_type = TokType::LBRACE; break;
+        case ']': one_char_type = TokType::RBRACE; break;
         case '{': one_char_type = TokType::LBRACKET; break;
         case '}': one_char_type = TokType::RBRACKET; break;
         case '<': one_char_type = TokType::LESS_THAN; break;

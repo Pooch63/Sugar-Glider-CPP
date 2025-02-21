@@ -95,6 +95,12 @@ namespace Intermediate {
         INSTR_NULL,
         INSTR_NUMBER,
         INSTR_STRING,
+        /* Argument is the number of elements in the array */
+        INSTR_MAKE_ARRAY,
+        /* Get value of array at the index on the stack */
+        INSTR_GET_ARRAY_VALUE,
+        /* Set value of array at the index under the value */
+        INSTR_SET_ARRAY_VALUE,
 
         /* Create a reference to a function at the given index, which is a value.
             Argument is index of function. */
@@ -132,6 +138,7 @@ namespace Intermediate {
 
         uint num_arguments;
         uint function_index;
+        uint array_element_count;
 
         Variable *variable;
     };
@@ -140,17 +147,17 @@ namespace Intermediate {
         InstrCode code;
         ir_instruction_arg_t payload;
 
-        Instruction(InstrCode code);
+        explicit Instruction(InstrCode code);
         /* Used for strings, and also for jump commands, since a string
             is the label index type.
             If the label type is ever changed, then another overload will be needed. */
-        Instruction(InstrCode code, std::string* payload);
-        Instruction(InstrCode code, Operations::BinOpType bin_op);
-        Instruction(InstrCode code, Operations::UnaryOpType unary_op);
-        Instruction(InstrCode code, Variable *variable);
-        Instruction(InstrCode code, uint argument);
+        explicit Instruction(InstrCode code, std::string* payload);
+        explicit Instruction(InstrCode code, Operations::BinOpType bin_op);
+        explicit Instruction(InstrCode code, Operations::UnaryOpType unary_op);
+        explicit Instruction(InstrCode code, Variable *variable);
+        explicit Instruction(InstrCode code, uint argument);
         /* There is only one instruction that takes this number. */
-        Instruction(Values::number_t number);
+        explicit Instruction(Values::number_t number);
 
         bool is_truthy_constant() const;
         bool is_constant() const;
@@ -200,6 +207,12 @@ namespace Intermediate {
             assert(this->code == InstrCode::INSTR_GET_FUNCTION_REFERENCE);
             #endif
             return this->payload.function_index;
+        }
+        inline uint get_array_element_count() const {
+            #ifdef DEBUG
+            assert(this->code == InstrCode::INSTR_MAKE_ARRAY);
+            #endif
+            return this->payload.array_element_count;
         }
         inline Variable *get_variable() const {
             #ifdef DEBUG

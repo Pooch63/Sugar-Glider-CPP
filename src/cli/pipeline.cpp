@@ -34,6 +34,8 @@ int run_file(std::string prog) {
         return Errors::COMPILE_ERROR;
     }
 
+    delete node;
+
     // block.log_ir();
 
     auto optimized = Intermediate::LabelIR();
@@ -41,7 +43,7 @@ int run_file(std::string prog) {
 
     std::cout << "got past optimization\n";
 
-    // optimized.log_ir();
+    optimized.log_ir();
 
     Bytecode::Chunk main = Bytecode::Chunk();
     Runtime runtime = Runtime(main);
@@ -60,6 +62,5 @@ int run_file(std::string prog) {
 
     int code = runtime.run();
 
-    delete node;
     return code;
 }

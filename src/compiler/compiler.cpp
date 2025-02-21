@@ -16,6 +16,27 @@ Compiler::Compiler(Intermediate::LabelIR& block, Output &output) : ir(block), ma
     this->scopes.new_scope(ScopeType::NORMAL);
 };
 
+void Compiler::compile_array(AST::Array* node) {
+    for (AST::Node *element : *node) {
+        this->compile_node(element);
+    }
+    this->main_block->add_instruction(Intermediate::Instruction(
+        Intermediate::INSTR_MAKE_ARRAY, node->element_count() ));
+}
+void Compiler::compile_array_index(AST::ArrayIndex* node) {
+    this->compile_node(node->get_array());
+    this->compile_node(node->get_index());
+
+    if (node->is_value_get()) {
+        this->main_block->add_instruction(
+            Intermediate::Instruction(Intermediate::INSTR_GET_ARRAY_VALUE));
+    }
+    else {
+        this->compile_node(node->get_value());
+        this->main_block->add_instruction(
+            Intermediate::Instruction(Intermediate::INSTR_SET_ARRAY_VALUE));
+    }
+}
 void Compiler::compile_string(AST::String* node) {
     this->main_block->add_instruction(
         Intermediate::Instruction(
@@ -130,6 +151,10 @@ void Compiler::compile_variable_value(AST::VarValue* node) {
     /* Close variable if necessary */
     if (var_info->function_ind != this->function_index && !var_info->in_topmost_scope()) {
         var_info->close();
+        this->output.error(
+            node->get_position(),
+            "Cannot close variables (cannot access variables in one function from within a nested function). This functionality is not yet supported.",
+            Errors::COMPILE_ERROR);
     }
 };
 void Compiler::compile_variable_assignment(AST::VarAssignment* node) {
@@ -351,6 +376,12 @@ void Compiler::compile_node(AST::Node* node) {
 
     switch (node->get_type()) {
         /* Push these values onto the stack */
+        case AST::NodeType::NODE_ARRAY:
+            this->compile_array(node->as_array());
+            break;
+        case AST::NodeType::NODE_ARRAY_INDEX:
+            this->compile_array_index(node->as_array_index());
+            break;
         case AST::NodeType::NODE_STRING:
             this->compile_string(node->as_string());
             break;

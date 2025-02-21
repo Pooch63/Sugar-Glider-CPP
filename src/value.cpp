@@ -13,6 +13,11 @@ namespace Math {
 
 using namespace Values;
 
+Value::Value(ValueType type, std::vector<Value> *array) : type(type), value(value_mem_t{ .array = array }) {
+    #ifdef DEBUG_ASSERT
+    assert(type == ValueType::ARRAY);
+    #endif
+}
 Value::Value(ValueType type, std::string* str) : type(type), value(value_mem_t{ .str = str }) {
     #ifdef DEBUG_ASSERT
     assert(type == ValueType::STRING);
@@ -43,6 +48,17 @@ std::string Values::value_to_string(const Value &value) {
         case ValueType::NULL_VALUE: return "null";
         case ValueType::PROGRAM_FUNCTION: return "function";
         case ValueType::NATIVE_FUNCTION: return "[native function]";
+        case ValueType::ARRAY: {
+            std::string str = "[ ";
+            bool found_value = false;
+            for (Value value : *get_value_array(value)) {
+                if (found_value) str += ", ";
+                str += value_to_string(value);
+                found_value = true;
+            }
+            str += " ]";
+            return str;
+        }
         default:
             throw sg_assert_error("Unknown value to log as string");
     }
@@ -56,6 +72,17 @@ std::string Values::value_to_debug_string(const Value &value) {
         case ValueType::STRING: return '"' + *get_value_string(value) + '"';
         case ValueType::PROGRAM_FUNCTION: return "function";
         case ValueType::NATIVE_FUNCTION: return "[native function]";
+        case ValueType::ARRAY: {
+            std::string str = "[ ";
+            bool found_value = false;
+            for (Value value : *get_value_array(value)) {
+                if (found_value) str += ", ";
+                str += value_to_debug_string(value);
+                found_value = true;
+            }
+            str += " ]";
+            return str;
+        }
         default:
             throw sg_assert_error("Unknown value to log as string");
     }
@@ -231,6 +258,8 @@ void Value::free_payload() {
     if (!this->should_free_payload) return;
     switch (this->type) {
         case ValueType::STRING: delete get_value_string(*this); break;
+        case ValueType::ARRAY: delete get_value_array(*this); break;
+        
         default: break;
     }
 };

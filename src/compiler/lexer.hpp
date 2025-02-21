@@ -51,6 +51,10 @@ namespace Scan {
         LPAREN,
         // )
         RPAREN,
+        // [
+        LBRACE,
+        // ]
+        RBRACE,
         // {
         LBRACKET,
         // }

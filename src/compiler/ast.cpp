@@ -9,6 +9,8 @@ using namespace AST;
 
 bool AST::node_is_expression(NodeType type) {
     switch (type) {
+        case NODE_ARRAY:
+        case NODE_ARRAY_INDEX:
         case NODE_BINOP:
         case NODE_UNARYOP:
         case NODE_STRING:
@@ -29,6 +31,21 @@ bool AST::node_may_be_function(NodeType type) {
         case NODE_VAR_VALUE:
         case NODE_VAR_ASSIGNMENT:
         case NODE_FUNCTION_CALL:
+        case NODE_ARRAY_INDEX:
+        case NODE_TERNARY_OP:
+            return true;
+        default:
+            return false;
+    }
+}
+bool AST::node_may_be_array(NodeType type) {
+    switch (type) {
+        case NODE_VAR_VALUE:
+        case NODE_VAR_ASSIGNMENT:
+        case NODE_FUNCTION_CALL:
+        case NODE_ARRAY_INDEX:
+        case NODE_TERNARY_OP:
+        case NODE_ARRAY:
             return true;
         default:
             return false;
@@ -91,6 +108,8 @@ Node::Node(NodeType type, TokenPosition position) : node_type(type), position(po
     return dynamic_cast<type*>(this); \
 };
 #endif
+AST_CAST_DEFINE(Array, as_array, NODE_ARRAY)
+AST_CAST_DEFINE(ArrayIndex, as_array_index, NODE_ARRAY_INDEX)
 AST_CAST_DEFINE(String, as_string, NODE_STRING)
 AST_CAST_DEFINE(Number, as_number, NODE_NUMBER)
 AST_CAST_DEFINE(BinOp, as_bin_op, NODE_BINOP)
@@ -108,6 +127,23 @@ AST_CAST_DEFINE(Function, as_function, NODE_FUNCTION_DEFINITION)
 AST_CAST_DEFINE(Return, as_return_statement, NODE_RETURN)
 AST_CAST_DEFINE(Body, as_body, NODE_BODY)
 
+Array::Array(): Node(NodeType::NODE_ARRAY) {}
+void Array::add_element(Node *value) {
+    this->values.push_back(value);
+}
+Array::~Array() {
+    for (Node *value : this->values) {
+        delete value;
+    }
+}
+
+ArrayIndex::ArrayIndex(Node *array, Node *index, Node *value) :
+    Node(NodeType::NODE_ARRAY_INDEX), array(array), index(index), value(value) {};
+ArrayIndex::~ArrayIndex() {
+    if (this->array != nullptr) delete this->array;
+    if (this->index != nullptr) delete this->index;
+    if (this->value != nullptr) delete this->value;
+}
 
 String::String(std::string* str, TokenPosition pos) :
     Node(NodeType::NODE_STRING, pos), str(str) {};

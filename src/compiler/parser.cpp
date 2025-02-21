@@ -39,6 +39,45 @@ AST::Node* Parse::Rules::keyword_constant(Scan::Token &current, [[maybe_unused]]
             throw sg_assert_error("Parser tried to parse non-literal token as literal");
     }
 }
+AST::Node* Parse::Rules::parse_array([[maybe_unused]] Scan::Token &current, Parser* parser) {
+    AST::Array *array = new AST::Array();
+
+    bool found_element = false;
+
+    while (!parser->at_EOF() && parser->curr().get_type() != TokType::RBRACE) {
+        // NEED comma before element
+        if (found_element) {
+            parser->expect_symbol(
+                TokType::COMMA, "Comma expected before additional array element");
+        }
+
+        AST::Node *element = parser->parse_expression();
+        array->add_element(element);
+        found_element = true;
+    }
+    parser->expect_symbol(TokType::RBRACE, "Array was not closed with a ']'");
+
+    return array;
+}
+AST::Node *Parse::Rules::parse_array_index([[maybe_unused]] Scan::Token &current, AST::Node *left, Parser *parser) {
+    if (!AST::node_may_be_array(left->get_type())) {
+        char error_message[100];
+        snprintf(error_message, 100, "Cannot index non-array type %s", AST::node_type_to_string(left->get_type()));
+        parser->get_output().error(current.get_position(), "", Errors::PARSE_ERROR);
+    }
+
+    AST::Node *index = parser->parse_expression();
+    parser->expect_symbol(TokType::RBRACE, "Expected ']' to close off array index");
+
+    AST::Node *value = nullptr;
+
+    if (parser->curr().get_type() == TokType::EQUALS) {
+        parser->advance();
+        value = parser->parse_expression();
+    }
+
+    return new AST::ArrayIndex(left, index, value);
+}
 
 AST::Node* Parse::Rules::unary_op(Scan::Token& current, Parser* parser) {
     Operations::UnaryOpType type;
@@ -245,6 +284,12 @@ void Parser::initialize_parse_rules() {
         .nud = nullptr,
         .led = Rules::var_assignment,
         .precedence = Precedence::PREC_ASSIGNMENT_OR_TERNARY
+    };
+
+    rules[TokType::LBRACE] = ParseRule{
+        .nud = Rules::parse_array,
+        .led = Rules::parse_array_index,
+        .precedence = Precedence::PREC_NONE
     };
 
     Parser::rules_initialized = true;

@@ -58,6 +58,9 @@ Instruction::Instruction(InstrCode code, uint argument) : code(code) {
     else if (code == InstrCode::INSTR_GET_FUNCTION_REFERENCE) {
         this->payload.function_index = argument;
     }
+    else if (code == InstrCode::INSTR_MAKE_ARRAY) {
+        this->payload.array_element_count = argument;
+    }
     else {
         #ifdef DEBUG
         assert(false && "The instruction code given does not accept an unsigned integer (uint) argument");
@@ -79,6 +82,7 @@ bool Instruction::is_constant() const {
         this->code == InstrCode::INSTR_NULL ||
         this->code == InstrCode::INSTR_NUMBER ||
         this->code == InstrCode::INSTR_STRING ||
+        this->code == InstrCode::INSTR_MAKE_ARRAY ||
         this->code == InstrCode::INSTR_GET_FUNCTION_REFERENCE;
 }
 bool Instruction::is_static_flow_load() const {
@@ -157,6 +161,12 @@ const char* Intermediate::instr_type_to_string(InstrCode code) {
             return "INSTR_NUMBER";
         case InstrCode::INSTR_STRING:
             return "INSTR_STRING";
+        case InstrCode::INSTR_MAKE_ARRAY:
+            return "INSTR_MAKE_ARRAY";
+        case InstrCode::INSTR_GET_ARRAY_VALUE:
+            return "INSTR_GET_ARRAY_VALUE";
+        case InstrCode::INSTR_SET_ARRAY_VALUE:
+            return "INSTR_SET_ARRAY_VALUE";
         case InstrCode::INSTR_GET_FUNCTION_REFERENCE:
             return "GET_FUNCTION_REFERENCE";
         case InstrCode::INSTR_MAKE_FUNCTION:
@@ -271,6 +281,16 @@ void Intermediate::log_instruction(Instruction instr) {
             comment = "length=(";
             comment += std::to_string(value->size());
             comment += ")";
+        }
+            break;
+        case InstrCode::INSTR_MAKE_ARRAY:
+        {
+            argument = std::to_string(instr.payload.array_element_count);
+            std::cout << number_c << argument;
+
+            comment = "[#elements=";
+            comment += std::to_string(instr.payload.array_element_count);
+            comment += "]";
         }
             break;
         case InstrCode::INSTR_GET_FUNCTION_REFERENCE:
