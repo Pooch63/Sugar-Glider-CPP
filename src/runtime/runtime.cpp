@@ -3,19 +3,20 @@
 RuntimeFunction::RuntimeFunction(Bytecode::Chunk chunk, Bytecode::call_arguments_t num_arguments) :
     chunk(chunk), num_arguments(num_arguments) {};
 
-RuntimeCallFrame::RuntimeCallFrame(Bytecode::constant_index_t func_index, Bytecode::call_arguments_t arg_count) :
-    func_index(func_index), variables(std::vector<Values::Value>(arg_count)) {};
+RuntimeCallFrame::RuntimeCallFrame(Bytecode::constant_index_t func_index, Bytecode::call_arguments_t arg_count, std::vector<Values::Value> &stack) :
+    func_index(func_index), variables(std::vector<Values::Value>(arg_count)) {
+        for (int var_ind = arg_count - 1; var_ind >= 0; var_ind -= 1) {
+            variables.emplace(variables.begin() + var_ind, stack.back());
+            stack.pop_back();
+        }
+    };
 
 Runtime::Runtime(Bytecode::Chunk &main) : main(main) {
     Natives::create_natives(this->natives);
 };
 
 void Runtime::init_global_pool(size_t num_globals) {
-    // Make sure we haven't already initialized the variable pool
-    #ifdef DEBUG
-    assert(this->global_variables == nullptr);
-    #endif
-    this->global_variables = new Values::Value[num_globals];
+    this->global_variables = std::vector<RuntimeValue*>(num_globals);
 }
 
 Bytecode::variable_index_t Runtime::new_constant(Values::Value value) {
@@ -36,6 +37,80 @@ Bytecode::Chunk &Runtime::get_running_block() {
 using namespace Values;
 using namespace Bytecode;
 
+RuntimeValue::RuntimeValue(Values::Value &value, RuntimeValue *next) :
+    value(value),  marked_to_save(false), next(next) {}
+
+RuntimeValue *Runtime::get_runtime_value(Values::Value &value) {
+    RuntimeValue *runtime_value = new RuntimeValue(value, this->runtime_values);
+    this->runtime_values = runtime_value;
+    return runtime_value;
+};
+
+RuntimeValue::~RuntimeValue() {
+    this->value.free_payload();
+}
+
+void Runtime::push_stack_value(Values::Value value) {
+    switch (get_value_type(value)) {
+        case ValueType::STRING:
+            this->get_runtime_value(value);
+            this->stack.push_back(value);
+            break;
+        // Any other value doesn't need to be allocated
+        default:
+            this->stack.push_back(value);
+    }
+};
+
+void Runtime::mark_value(RuntimeValue *value) {
+    value->marked_to_save = true;
+};
+void Runtime::mark_values() {
+    // Mark every value referenced by variables
+
+    // Unmark everything. We're only saving the values we need to
+    for (RuntimeValue *value : this->global_variables) {
+        value->marked_to_save = false;
+    }
+
+    // First, globals
+    for (RuntimeValue *value : this->global_variables) {
+        mark_value(value);
+        std::cout << "marked value wtf?? " << value_to_debug_string(value->value) << "\n";
+    }
+}
+void Runtime::delete_values() {
+    RuntimeValue *current = this->runtime_values;
+    this->runtime_values = nullptr;
+
+    while (true) {
+        RuntimeValue *next = current->next;
+
+        if (!current->marked_to_save) {
+            std::cout << "freeing " << current << '\n';
+            delete current;
+            std::cout << "freed " << '\n';
+        }
+        else {
+            current->next = this->runtime_values;
+            this->runtime_values = current;
+        }
+
+        if (next == nullptr) break;
+        current = next;
+    }
+}
+void Runtime::run_gc() {
+    #ifdef DEBUG
+    assert(this->stack.size() == 0 &&
+        "as of now, the GC cannot be run when the stack has an element, because "
+        "we might accidentally free a string referenced in the stack");
+    #endif
+
+    this->mark_values();
+    this->delete_values();
+}
+
 Values::Value Runtime::stack_pop() {
     #ifdef DEBUG
     assert(this->stack.size() > 0);
@@ -49,6 +124,7 @@ void Runtime::exit() {}
 
 void Runtime::log_instructions() {
     this->main.print_code(this);
+    std::cout << "got past runtime main log\n";
 
     for (size_t func_ind = 0; func_ind < this->functions.size(); func_ind += 1) {
         std::cout << "-------------------------------------------------------\n";
@@ -61,7 +137,7 @@ void Runtime::log_instructions() {
 
 int Runtime::run() {
     #ifdef DEBUG
-    assert(this->global_variables != nullptr && "Runtime global variable pool must be initialized before running");
+    assert(!this->global_variables.empty() && "Runtime global variable pool must be initialized before running");
     #endif
 
     main_ip = 0;
@@ -103,16 +179,22 @@ int Runtime::run() {
 
                     Values::Value result;
                     native.func(this->stack.data(), this->stack.size(), result, error);
-                    this->stack.push_back(result);
+
+                    // Pop arguments
+                    for (int pop = 0; pop < native.number_arguments; pop += 1) {
+                        this->stack.pop_back();
+                    }
+
+                    this->push_stack_value(result);
                 }
                 else if (get_value_type(func) == Values::PROGRAM_FUNCTION) {
                     Bytecode::constant_index_t func_ind = get_value_program_function(func);
 
                     this->call_stack.push_back(
-                        RuntimeCallFrame(func_ind, this->functions.at(func_ind).num_arguments)
+                        RuntimeCallFrame(func_ind, this->functions.at(func_ind).num_arguments, this->stack)
                     );
 
-                    uint stack_size = this->functions.at(func_ind).num_arguments * sizeof(Value) + sizeof(RuntimeCallFrame::variables);
+                    uint stack_size = this->functions.at(func_ind).num_arguments * sizeof(Value) + sizeof(RuntimeCallFrame);
                     this->call_stack_size += stack_size;
 
                     if (this->call_stack_size > MAX_CALL_STACK_SIZE) {
@@ -164,19 +246,26 @@ int Runtime::run() {
             {
                 variable_index_t index = this->get_running_block().read_value<variable_index_t>(prog_ip);
                 Value value = this->stack_pop();
-                this->global_variables[index] = value;
+                this->global_variables[index] = this->get_runtime_value(value);
             }
                 break;
             case OpCode::OP_LOAD_GLOBAL:
             {
                 variable_index_t index = this->get_running_block().read_value<variable_index_t>(prog_ip);
-                this->stack.push_back(this->global_variables[index]);
+                this->stack.push_back(this->global_variables[index]->value);
             }
                 break;
 
-            case OpCode::OP_TRUE: this->stack.push_back(Value(Values::TRUE)); break;
-            case OpCode::OP_FALSE: this->stack.push_back(Value(Values::FALSE)); break;
-            case OpCode::OP_NULL: this->stack.push_back(Value(Values::NULL_VALUE)); break;
+            case OpCode::OP_LOAD_FRAME_VAR:
+            {
+                variable_index_t index = this->get_running_block().read_value<variable_index_t>(prog_ip);
+                this->stack.push_back(this->call_stack.back().get_variable(index));
+            }
+                break;
+
+            case OpCode::OP_TRUE: this->push_stack_value(Value(Values::TRUE)); break;
+            case OpCode::OP_FALSE: this->push_stack_value(Value(Values::FALSE)); break;
+            case OpCode::OP_NULL: this->push_stack_value(Value(Values::NULL_VALUE)); break;
             
             case OpCode::OP_BIN:
             {
@@ -187,7 +276,7 @@ int Runtime::run() {
                 bool valid = Values::bin_op(type, a, b, &result, &error);
 
                 if (!valid) break;
-                this->stack.push_back(result);
+                this->push_stack_value(result);
             }
                 break;
             case OpCode::OP_UNARY:
@@ -198,7 +287,7 @@ int Runtime::run() {
                 bool valid = Values::unary_op(type, arg, &result, &error);
 
                 if (!valid) break;
-                this->stack.push_back(result);
+                this->push_stack_value(result);
             }
                 break;
 
@@ -209,7 +298,7 @@ int Runtime::run() {
             case OpCode::OP_EXIT:
                 this->exit();
                 break;
-            default: std::cout << "unhandled " << instruction_to_string(code) << std::endl; break;
+            default: std::cerr << "unhandled " << instruction_to_string(code) << std::endl; break;
         }
         if (error.size() > 0) {
             std::cerr << rang::fg::red << "runtime error: " << rang::style::reset << error << std::endl;
@@ -225,5 +314,9 @@ Runtime::~Runtime() {
         value.free_payload();
     }
 
-    delete [] this->global_variables;
+    while (this->runtime_values != nullptr) {
+        RuntimeValue *next = this->runtime_values->next;
+        delete this->runtime_values;
+        this->runtime_values = next;
+    }
 }
