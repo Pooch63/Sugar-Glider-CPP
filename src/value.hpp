@@ -10,6 +10,9 @@
 #include <cassert>
 #endif
 
+struct RuntimeValue;
+class Runtime;
+
 namespace Values {
     class Value;
 
@@ -31,7 +34,7 @@ namespace Values {
      * @param {std::string&} - reference to error message that may be updated
      * @return {bool} - True if okay, false if error
     */
-    typedef bool (*native_function_t)(const Value * const start, uint arg_count, Value &result, std::string &error_message);
+    typedef bool (*native_function_t)(const Value * const start, uint arg_count, Value &result, Runtime &runtime, std::string &error_message);
 
     struct native_method_t {
         native_function_t func;
@@ -47,7 +50,7 @@ namespace Values {
         std::string *str;
         native_method_t native;
         Bytecode::constant_index_t prog_func_index;
-        std::vector<Value> *array;
+        std::vector<RuntimeValue*> *array;
     };
 
     class Value {
@@ -60,7 +63,7 @@ namespace Values {
 
         public:
             /* For arrays */
-            explicit Value(ValueType type, std::vector<Value> *array);
+            explicit Value(ValueType type, std::vector<RuntimeValue*> *array);
             /* For strings */
             explicit Value(ValueType type, std::string* str);
             /* For numbers */
@@ -82,7 +85,7 @@ namespace Values {
             friend ValueType get_value_type(const Value &value);
             friend number_t get_value_number(const Value &value);
             friend std::string *get_value_string(const Value &value);
-            friend std::vector<Value> *get_value_array(const Value &value);
+            friend std::vector<RuntimeValue*> *get_value_array(const Value &value);
             friend native_method_t get_value_native_function(const Value &value);
             friend Bytecode::constant_index_t get_value_program_function(const Value &value);
 
@@ -110,7 +113,7 @@ namespace Values {
         #endif
         return value.value.str;
     }
-    inline std::vector<Value>* get_value_array(const Value &value) {
+    inline std::vector<RuntimeValue*>* get_value_array(const Value &value) {
         #ifdef DEBUG
         assert(get_value_type(value) == ValueType::ARRAY);
         #endif

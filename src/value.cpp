@@ -1,3 +1,4 @@
+#include "runtime/runtime.hpp"
 #include "value.hpp"
 
 #include <bits/stdc++.h>
@@ -13,7 +14,7 @@ namespace Math {
 
 using namespace Values;
 
-Value::Value(ValueType type, std::vector<Value> *array) : type(type), value(value_mem_t{ .array = array }) {
+Value::Value(ValueType type, std::vector<RuntimeValue*> *array) : type(type), value(value_mem_t{ .array = array }) {
     #ifdef DEBUG_ASSERT
     assert(type == ValueType::ARRAY);
     #endif
@@ -51,9 +52,9 @@ std::string Values::value_to_string(const Value &value) {
         case ValueType::ARRAY: {
             std::string str = "[ ";
             bool found_value = false;
-            for (Value value : *get_value_array(value)) {
+            for (RuntimeValue *value : *get_value_array(value)) {
                 if (found_value) str += ", ";
-                str += value_to_string(value);
+                str += value_to_string(value->value);
                 found_value = true;
             }
             str += " ]";
@@ -75,9 +76,9 @@ std::string Values::value_to_debug_string(const Value &value) {
         case ValueType::ARRAY: {
             std::string str = "[ ";
             bool found_value = false;
-            for (Value value : *get_value_array(value)) {
+            for (RuntimeValue *value : *get_value_array(value)) {
                 if (found_value) str += ", ";
-                str += value_to_debug_string(value);
+                str += value_to_debug_string(value->value);
                 found_value = true;
             }
             str += " ]";
