@@ -5,7 +5,7 @@ using namespace Natives;
 using namespace Values;
 
 #define NATIVE_FUNCTION_HEADERS() ( \
-    [[maybe_unused]] const Value * const start, \
+    [[maybe_unused]] const Value * const stack, \
     [[maybe_unused]] uint stack_size, \
     [[maybe_unused]] Value &result, \
     [[maybe_unused]] Runtime &runtime, \
@@ -14,7 +14,7 @@ using namespace Values;
 using Values::Value;
 
 bool println NATIVE_FUNCTION_HEADERS() {
-    std::cout << Values::value_to_string(start[stack_size - 1]) << std::endl;
+    std::cout << Values::value_to_string(stack[0]) << std::endl;
 
     return true;
 }
@@ -26,7 +26,7 @@ bool clock NATIVE_FUNCTION_HEADERS() {
 }
 
 bool length NATIVE_FUNCTION_HEADERS() {
-    Value top = start[stack_size - 1];
+    Value top = stack[0];
     ValueType type = get_value_type(top);
     if (type == ValueType::STRING) {
         result = Values::Value(Values::NUMBER, get_value_string(top)->size());
@@ -44,17 +44,17 @@ bool length NATIVE_FUNCTION_HEADERS() {
     return true;
 }
 bool append NATIVE_FUNCTION_HEADERS() {
-    Value top = start[stack_size - 1];
-    ValueType appendee_type = get_value_type(top);
-    Value added_type = start[stack_size - 2];
+    Value appendee = stack[0];
+    ValueType appendee_type = get_value_type(appendee);
+    Value added_type = stack[1];
 
     if (appendee_type == ValueType::ARRAY) {
-       get_value_array(top)->push_back(runtime.get_runtime_value(added_type));
+       get_value_array(appendee)->push_back(runtime.get_runtime_value(added_type));
        return true;
     }
     else {
-        error_message = "Cannot get append to value ";
-        error_message += value_to_string(top);
+        error_message = "Cannot append to value ";
+        error_message += value_to_string(appendee);
         error_message += " - it is not an array";
         return false;
     }
