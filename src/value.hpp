@@ -28,7 +28,7 @@ namespace Values {
         NATIVE_FUNCTION
     };
     /**
-     * @param {Value*} - start of stack
+     * @param {Value*} - start of argument stack
      * @param {uint} - number of arguments passed
      * @param {Value&} - return value. MUST be updated
      * @param {std::string&} - reference to error message that may be updated

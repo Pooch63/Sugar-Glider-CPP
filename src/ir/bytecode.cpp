@@ -26,12 +26,6 @@ void Chunk::push_unary_op_type(Operations::UnaryOpType type) {
     this->push_small_enum<Operations::UnaryOpType>(type);
 };
 
-uint8_t Chunk::read_byte(uint &current_byte_index) const {
-    // DO NOT USE .at -- this method is caused so much,
-    // removing the check removes upwards of 5% of execution time
-    return this->code[current_byte_index++];
-}
-
 #ifdef DEBUG
 
 const char* Bytecode::instruction_to_string(OpCode code) {

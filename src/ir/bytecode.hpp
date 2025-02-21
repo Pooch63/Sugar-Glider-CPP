@@ -158,7 +158,7 @@ namespace Bytecode {
                 this->code.push_back(get_bottom_byte<enum_t>(value));
             }
             template<typename enum_t>
-            enum_t read_small_enum(Bytecode::address_t &index) {
+            inline enum_t read_small_enum(Bytecode::address_t &index) {
                 return static_cast<enum_t>(this->read_byte(index));
             }
             /* Push necessary enum functions. Separate them, because if
@@ -216,7 +216,11 @@ namespace Bytecode {
 
             /* Read helpers, read a value of the specified type,
                 with the first byte starting at the specified index  */
-            uint8_t read_byte(uint &index) const;
+            inline uint8_t read_byte(uint &current_byte_index) const {
+                // DO NOT USE .at -- this method is caused so much,
+                // removing the check removes upwards of 5% of execution time
+                return this->code[current_byte_index++];
+            }
             inline uint32_t read_uint32(uint &current_byte_index) const {
                 return this->read_value<uint32_t>(current_byte_index);
             };

@@ -15,6 +15,7 @@ RuntimeCallFrame::RuntimeCallFrame(Bytecode::constant_index_t func_index, Byteco
 
 Runtime::Runtime(Bytecode::Chunk &main) : main(main) {
     Natives::create_natives(this->natives);
+    this->running_blocks.push_back(&this->main);
 };
 
 void Runtime::init_global_pool(size_t num_globals) {
@@ -29,33 +30,36 @@ void Runtime::add_function(RuntimeFunction &func) {
     this->functions.push_back(func);
 }
 
-Bytecode::Chunk &Runtime::get_running_block() {
-    if (this->call_stack.size() > 0) {
-        return this->functions.at(this->call_stack.back().func_index).chunk;
-    }
-    else return this->main;
-};
-
 using namespace Values;
 using namespace Bytecode;
 
-RuntimeValue::RuntimeValue(Values::Value &value, RuntimeValue *next) :
+RuntimeValue::RuntimeValue(Value &value, RuntimeValue *next) :
     value(value),  marked_to_save(false), next(next) {}
+RuntimeValue::~RuntimeValue() {
+    this->value.free_payload();
+}
 
 RuntimeValue *Runtime::get_runtime_value(Values::Value &value) {
     try {
         RuntimeValue *runtime_value = new RuntimeValue(value, this->runtime_values);
+
+        #ifdef DEBUG_GC
+        std::cout << "GC: Allocating value " << value_to_debug_string(value)
+            << "(" << runtime_value << ") on heap\n";
+        #endif
+        #ifdef DEBUG_STRESS_GC
+        this->run_gc();
+        #endif
+
         this->runtime_values = runtime_value;
+        this->gc_size += sizeof(RuntimeValue);
+
         return runtime_value;
     } catch (std::runtime_error &err) {
         this->error = "Sugar Glider Runtime ran out of memory. Heap allocation failed.";
         return nullptr;
     }
 };
-
-RuntimeValue::~RuntimeValue() {
-    this->value.free_payload();
-}
 
 void Runtime::push_stack_value(Values::Value value) {
     switch (get_value_type(value)) {
@@ -71,39 +75,67 @@ void Runtime::push_stack_value(Values::Value value) {
 
 void Runtime::mark_value(RuntimeValue *value) {
     value->marked_to_save = true;
+
+    // If it's array, get all of ITS values as well
+    if (get_value_type(value->value)) {
+        for (RuntimeValue *value : *get_value_array(value->value)) {
+            mark_value(value);
+        }
+    }
 };
 void Runtime::mark_values() {
     // Mark every value referenced by variables
 
     // Unmark everything. We're only saving the values we need to
     for (RuntimeValue *value : this->global_variables) {
-        value->marked_to_save = false;
+        // When the global pool is initialized, all variable slots are set to nullptr,
+        // so don't mark those
+        if (value != nullptr) {
+            #ifdef DEBUG_GC
+            std::cout << "GC: Unmarking value " << value_to_debug_string(value->value) <<
+                " at " << value << '\n';
+            #endif
+            value->marked_to_save = false;
+        }
     }
 
     // First, globals
     for (RuntimeValue *value : this->global_variables) {
-        mark_value(value);
-        std::cout << "marked value wtf?? " << value_to_debug_string(value->value) << "\n";
+        // Once again, runtime value slots are initialized to nullptr
+        if (value != nullptr) {
+            #ifdef DEBUG_GC
+            std::cout << "GC: Marking value " << value_to_debug_string(value->value) <<
+                " at " << value << "\n";
+            #endif
+            mark_value(value);
+        }
     }
 }
 void Runtime::delete_values() {
     RuntimeValue *current = this->runtime_values;
     this->runtime_values = nullptr;
 
-    while (true) {
+    std::cout << "DELETING VALUES\n";
+
+    while (current != nullptr) {
+        std::cout << "running " << current << std::endl;
+
         RuntimeValue *next = current->next;
 
         if (!current->marked_to_save) {
-            std::cout << "freeing " << current << '\n';
+            this->gc_size -= sizeof(RuntimeValue);
+            #ifdef DEBUG_GC
+            std::cout << "GC: Freeing value " << value_to_debug_string(current->value) <<
+                " at " << current << '\n';
+            #endif
             delete current;
-            std::cout << "freed " << '\n';
+            // std::cout << "freed " << '\n';
         }
         else {
             current->next = this->runtime_values;
             this->runtime_values = current;
         }
 
-        if (next == nullptr) break;
         current = next;
     }
 }
@@ -143,7 +175,7 @@ void Runtime::log_instructions() {
 
 int Runtime::run() {
     #ifdef DEBUG
-    assert(!this->global_variables.empty() && "Runtime global variable pool must be initialized before running");
+    assert("Runtime global variable pool must be initialized before running");
     #endif
 
     main_ip = 0;
@@ -152,7 +184,7 @@ int Runtime::run() {
         Bytecode::address_t &prog_ip = 
             this->call_stack.size() > 0 ? this->call_stack.back().ip : this->main_ip;
 
-        OpCode code = this->get_running_block().read_opcode(prog_ip);
+        OpCode code = this->get_running_block()->read_opcode(prog_ip);
 
         switch (code) {
             case OpCode::OP_LOAD_CONST:
@@ -183,7 +215,10 @@ int Runtime::run() {
                     }
 
                     Values::Value result;
-                    native.func(this->stack.data(), this->stack.size(), result, this->error);
+                    native.func(
+                        (this->stack.begin() + (this->stack.size() - num_args)).base(),
+                        this->stack.size(),
+                        result, *this, this->error);
 
                     // Pop arguments
                     for (int pop = 0; pop < native.number_arguments; pop += 1) {
@@ -194,24 +229,24 @@ int Runtime::run() {
                 }
                 else if (get_value_type(func) == Values::PROGRAM_FUNCTION) {
                     Bytecode::constant_index_t func_ind = get_value_program_function(func);
+                    Bytecode::call_arguments_t num_args = this->functions.at(func_ind).num_arguments;
 
                     this->call_stack.push_back(
-                        RuntimeCallFrame(func_ind, this->functions.at(func_ind).num_arguments, this->stack)
+                        RuntimeCallFrame(func_ind, num_args, this->stack)
                     );
+                    this->running_blocks.push_back(&this->functions.at(func_ind).chunk);
 
-                    uint stack_size = this->functions.at(func_ind).num_arguments * sizeof(Value) + sizeof(RuntimeCallFrame);
-                    this->call_stack_size += stack_size;
+                    // uint stack_size = num_args * sizeof(Value) + sizeof(RuntimeCallFrame);
+                    // this->call_stack_size += stack_size;
 
-                    if (this->call_stack_size > MAX_CALL_STACK_SIZE) {
-                        this->error = "Maximum call stack size exceeded. ";
-                        this->error = std::to_string(this->call_stack_size / 1024.0);
-                        this->error += " KB necessary, but maximum is ";
-                        this->error += std::to_string(MAX_CALL_STACK_SIZE);
-                        this->error += " KB";
-                        break;
-                    }
-
-                    this->call_stack_size -= stack_size;
+                    // if (this->call_stack_size > MAX_CALL_STACK_SIZE) {
+                    //     this->error = "Maximum call stack size exceeded. ";
+                    //     this->error = std::to_string(this->call_stack_size / 1024.0);
+                    //     this->error += " KB necessary, but maximum is ";
+                    //     this->error += std::to_string(MAX_CALL_STACK_SIZE);
+                    //     this->error += " KB";
+                    //     break;
+                    // }
                 }
                 else {
                     this->error = "Cannot call non-function value ";
@@ -221,6 +256,12 @@ int Runtime::run() {
             }
                 break;
 
+            case OpCode::OP_RETURN:
+                // this->call_stack_size -= this->call_stack.back(). * sizeof(Value) + sizeof(RuntimeCallFrame);
+                this->call_stack.pop_back();
+                this->running_blocks.pop_back();
+                break;
+
             case OpCode::OP_POP:
             {
                 this->stack_pop();
@@ -228,20 +269,20 @@ int Runtime::run() {
                 break;
             case OpCode::OP_GOTO:
             {
-                address_t address = this->get_running_block().read_address(prog_ip);
+                address_t address = this->get_running_block()->read_address(prog_ip);
                 prog_ip = address;
             }
                 break;
             case OpCode::OP_POP_JIZ:
             {
-                address_t address = this->get_running_block().read_address(prog_ip);
+                address_t address = this->get_running_block()->read_address(prog_ip);
                 Value condition = this->stack_pop();
                 if (!Values::value_is_truthy(condition)) prog_ip = address;
             }
                 break;
             case OpCode::OP_POP_JNZ:
             {
-                address_t address = this->get_running_block().read_address(prog_ip);
+                address_t address = this->get_running_block()->read_address(prog_ip);
                 Value condition = this->stack_pop();
                 if (Values::value_is_truthy(condition)) prog_ip = address;
             }
@@ -273,11 +314,11 @@ int Runtime::run() {
             case OpCode::OP_NULL: this->push_stack_value(Value(Values::NULL_VALUE)); break;
             case OpCode::OP_MAKE_ARRAY: {
                 variable_index_t element_count = this->read_value<variable_index_t>(prog_ip);
-                std::vector<Value> *array = new std::vector<Value>();
+                std::vector<RuntimeValue*> *array = new std::vector<RuntimeValue*>();
 
                 // Add the elements to the array
                 for (uint value_index = this->stack.size() - element_count; value_index < this->stack.size(); value_index += 1) {
-                    array->push_back(this->stack.at(value_index));
+                    array->push_back(this->get_runtime_value(this->stack.at(value_index)));
                 }
                 // Now pop the results from the stack
                 for (uint pop = 0; pop < element_count; pop += 1) {
@@ -310,7 +351,7 @@ int Runtime::run() {
                 }
 
                 Values::number_t index = get_value_number(index_value);
-                std::vector<Value> *array = get_value_array(array_value);
+                std::vector<RuntimeValue*> *array = get_value_array(array_value);
                 if (index > static_cast<Values::number_t>(array->size()) || index < 0 || index != floor(index)) {
                     this->error = "Array index must be an integer within the range of array's values, but index was ";
                     this->error += value_to_string(index_value);
@@ -318,10 +359,10 @@ int Runtime::run() {
                 }
 
                 if (code == OpCode::OP_GET_ARRAY_VALUE) {
-                    this->stack.push_back(array->at(floor(index)));
+                    this->stack.push_back(array->at(floor(index))->value);
                 }
                 else {
-                    (*array)[static_cast<uint>(floor(index))] = set_value;
+                    (*array)[static_cast<uint>(floor(index))] = this->get_runtime_value(set_value);
                     this->stack.push_back(set_value);
                 }
             }
@@ -329,7 +370,7 @@ int Runtime::run() {
             
             case OpCode::OP_BIN:
             {
-                Operations::BinOpType type = this->get_running_block().read_small_enum<Operations::BinOpType>(prog_ip);
+                Operations::BinOpType type = this->get_running_block()->read_small_enum<Operations::BinOpType>(prog_ip);
                 Value b = this->stack_pop();
                 Value a = this->stack_pop();
                 Value result;
@@ -341,7 +382,7 @@ int Runtime::run() {
                 break;
             case OpCode::OP_UNARY:
             {
-                Operations::UnaryOpType type = this->get_running_block().read_small_enum<Operations::UnaryOpType>(prog_ip);
+                Operations::UnaryOpType type = this->get_running_block()->read_small_enum<Operations::UnaryOpType>(prog_ip);
                 Value arg = this->stack_pop();
                 Value result;
                 bool valid = Values::unary_op(type, arg, &result, &this->error);
@@ -351,17 +392,13 @@ int Runtime::run() {
             }
                 break;
 
-            case OpCode::OP_RETURN:
-                this->call_stack.pop_back();
-                break;
-
             case OpCode::OP_EXIT:
                 this->exit();
                 return 0;
             default: std::cerr << "unhandled " << instruction_to_string(code) << std::endl; break;
         }
         if (this->error.size() > 0) {
-            std::cerr << rang::fg::red << "runtime this->error: " << rang::style::reset << this->error << std::endl;
+            std::cerr << rang::fg::red << "runtime error: " << rang::style::reset << this->error << std::endl;
             return -1;
         }
     }

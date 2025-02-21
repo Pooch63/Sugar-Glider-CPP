@@ -18,7 +18,6 @@ struct RuntimeValue {
     RuntimeValue(Values::Value &value, RuntimeValue *next);
     ~RuntimeValue();
 };
-
 struct RuntimeFunction {
     Bytecode::Chunk chunk;
     Bytecode::call_arguments_t num_arguments;
@@ -53,21 +52,20 @@ class Runtime {
         std::vector<Values::Value> constants = std::vector<Values::Value>();
         std::vector<RuntimeValue*> global_variables;
 
+        std::vector<Bytecode::Chunk*> running_blocks = std::vector<Bytecode::Chunk*>();
         std::vector<RuntimeCallFrame> call_stack = std::vector<RuntimeCallFrame>();
         size_t call_stack_size = 0;
 
-
-        Bytecode::Chunk &get_running_block();
+        inline Bytecode::Chunk *get_running_block() const {
+            return this->running_blocks.back();
+        };
 
         template<typename read_type>
         inline read_type read_value(Bytecode::address_t &prog_ip) {
-            return this->get_running_block().read_value<read_type>(prog_ip);
+            return this->get_running_block()->read_value<read_type>(prog_ip);
         }
         Bytecode::address_t main_ip;
         std::string error = "";
-
-        // Convert value into runtime value, then attach it to the current value list
-        RuntimeValue *get_runtime_value(Values::Value &value);
 
         void exit();
 
@@ -76,6 +74,9 @@ class Runtime {
         void mark_values();
         void delete_values();
         void run_gc();
+        // Queue a GC run when the stack is emptied
+        bool gc_queue = false;
+        int gc_size = 0;
     public:
         Runtime(Bytecode::Chunk &main);
 
@@ -89,6 +90,8 @@ class Runtime {
         inline Bytecode::Chunk * get_main() { return &this->main; };
         inline Values::Value           get_constant(Bytecode::constant_index_t index) const { return this->constants.at(index); };
 
+        // Convert value into runtime value, then attach it to the current value list
+        RuntimeValue *get_runtime_value(Values::Value &value);
 
         void log_instructions();
         int run();
