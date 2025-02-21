@@ -7,11 +7,8 @@
 bool Operations::bin_op_is_bitwise_operator([[maybe_unused]] BinOpType type) {
     return false;
 };
-bool Operations::unary_is_bitwise_operator(UnaryOpType type) {
-    switch (type) {
-        default:
-            return false;
-    }
+bool Operations::unary_is_bitwise_operator([[maybe_unused]] UnaryOpType type) {
+    return false;
 }
 
 const char* Operations::bin_op_to_string(BinOpType type) {

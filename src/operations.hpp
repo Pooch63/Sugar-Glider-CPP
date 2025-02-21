@@ -17,7 +17,7 @@ namespace Operations {
         BINOP_EQUAL_TO = 16
     };
     enum UnaryOpType {
-        UNARY_NEGATE
+        UNARY_NEGATE = 0
     };
 
     bool bin_op_is_bitwise_operator(BinOpType type);
