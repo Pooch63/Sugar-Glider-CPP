@@ -41,15 +41,14 @@ RuntimeValue::RuntimeValue(Values::Value &value, RuntimeValue *next) :
     value(value),  marked_to_save(false), next(next) {}
 
 RuntimeValue *Runtime::get_runtime_value(Values::Value &value) {
-    RuntimeValue *runtime_value = new RuntimeValue(value, this->runtime_values);
-
-    if (runtime_value == nullptr) {
+    try {
+        RuntimeValue *runtime_value = new RuntimeValue(value, this->runtime_values);
+        this->runtime_values = runtime_value;
+        return runtime_value;
+    } catch (std::runtime_error &err) {
         this->error = "Sugar Glider Runtime ran out of memory. Heap allocation failed.";
         return nullptr;
     }
-
-    this->runtime_values = runtime_value;
-    return runtime_value;
 };
 
 RuntimeValue::~RuntimeValue() {
@@ -130,7 +129,6 @@ void Runtime::exit() {}
 
 void Runtime::log_instructions() {
     this->main.print_code(this);
-    std::cout << "got past runtime main log\n";
 
     for (size_t func_ind = 0; func_ind < this->functions.size(); func_ind += 1) {
         std::cout << "-------------------------------------------------------\n";
@@ -267,7 +265,6 @@ int Runtime::run() {
                 this->stack.push_back(this->call_stack.back().get_variable(index));
             }
                 break;
-    return -1;
 
             case OpCode::OP_TRUE: this->push_stack_value(Value(Values::TRUE)); break;
             case OpCode::OP_FALSE: this->push_stack_value(Value(Values::FALSE)); break;
@@ -303,6 +300,7 @@ int Runtime::run() {
 
             case OpCode::OP_EXIT:
                 this->exit();
+                std::cout << value_to_debug_string(this->runtime_values->value) << std::endl;
                 return 0;
             default: std::cerr << "unhandled " << instruction_to_string(code) << std::endl; break;
         }
@@ -316,9 +314,9 @@ int Runtime::run() {
 }
 
 Runtime::~Runtime() {
-    for (Value value : this->constants) {
-        value.free_payload();
-    }
+    // for (Value value : this->constants) {
+    //     value.free_payload();
+    // }
 
     while (this->runtime_values != nullptr) {
         RuntimeValue *next = this->runtime_values->next;
