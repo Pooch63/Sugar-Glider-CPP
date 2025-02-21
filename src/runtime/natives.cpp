@@ -1,4 +1,4 @@
-#include "natives.hpp"
+#include "runtime.hpp"
 #include "../utils.hpp"
 
 using namespace Natives;
@@ -8,12 +8,13 @@ using namespace Values;
     [[maybe_unused]] const Value * const start, \
     [[maybe_unused]] uint stack_size, \
     [[maybe_unused]] Value &result, \
+    [[maybe_unused]] Runtime &runtime, \
     [[maybe_unused]] std::string &error_message)
 
 using Values::Value;
 
 bool println NATIVE_FUNCTION_HEADERS() {
-    std::cout << Values::value_to_string(start[0]) << std::endl;
+    std::cout << Values::value_to_string(start[stack_size - 1]) << std::endl;
 
     return true;
 }
@@ -25,16 +26,17 @@ bool clock NATIVE_FUNCTION_HEADERS() {
 }
 
 bool length NATIVE_FUNCTION_HEADERS() {
-    ValueType type = get_value_type(start[0]);
+    Value top = start[stack_size - 1];
+    ValueType type = get_value_type(top);
     if (type == ValueType::STRING) {
-        result = Values::Value(Values::NUMBER, get_value_string(start[0])->size());
+        result = Values::Value(Values::NUMBER, get_value_string(top)->size());
     }
     else if (type == ValueType::ARRAY) {
-        result = Values::Value(Values::NUMBER, get_value_array(start[0])->size());
+        result = Values::Value(Values::NUMBER, get_value_array(top)->size());
     }
     else {
         error_message = "Cannot get length of value ";
-        error_message += value_to_string(start[0]);
+        error_message += value_to_string(top);
         error_message += " - it is not an array or string";
         return false;
     }
@@ -42,33 +44,20 @@ bool length NATIVE_FUNCTION_HEADERS() {
     return true;
 }
 bool append NATIVE_FUNCTION_HEADERS() {
-    ValueType appendee_type = get_value_type(start[0]);
-    Value added_type = start[1];
+    Value top = start[stack_size - 1];
+    ValueType appendee_type = get_value_type(top);
+    Value added_type = start[stack_size - 2];
 
-    if (appendee_type == ValueType::STRING) {
-        if (get_value_type(added_type) != ValueType::STRING) {
-            error_message = "Cannot add non-string value ";
-            error_message += value_to_string(added_type);
-            error_message += " to string ";
-            error_message += value_to_string(start[0]);
-            return false;
-        }
-        result = Value(ValueType::STRING, new std::string(*get_value_string(start[0]) + *get_value_string(start[1])));
-        return true;
-    }
-    else if (appendee_type == ValueType::ARRAY) {
-       get_value_array(start[0])->push_back(added_type);
-       result = start[0];
+    if (appendee_type == ValueType::ARRAY) {
+       get_value_array(top)->push_back(runtime.get_runtime_value(added_type));
        return true;
     }
     else {
         error_message = "Cannot get append to value ";
-        error_message += value_to_string(start[0]);
-        error_message += " - it is not an array or string";
+        error_message += value_to_string(top);
+        error_message += " - it is not an array";
         return false;
     }
-
-    return true;
 }
 
 Native::Native(const char *name, Values::Value value) :
