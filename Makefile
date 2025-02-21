@@ -1,3 +1,4 @@
+# debug, prof, build
 MAKE_MODE = debug
 
 CC = g++
@@ -12,9 +13,13 @@ OBJS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRC_FILES))
 ifeq ($(MAKE_MODE), debug)
 	flags := $(flags) -ggdb3
 endif
+ifeq ($(MAKE_MODE), prof)
+	flags := -pg
+endif
 
 main: $(OBJS)
 ifeq ($(MAKE_MODE), debug)
+else ifeq ($(MAKE_MODE), prof)
 else ifeq ($(MAKE_MODE), build)
 else
 	echo "Error: unknown make mode \"$(MAKE_MODE)\""
