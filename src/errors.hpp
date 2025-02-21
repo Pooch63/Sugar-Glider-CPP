@@ -69,6 +69,6 @@ class Output {
         inline bool had_error() const { return this->error_code != Errors::NO_ERROR; };
         inline Errors::ErrorCode get_error() const { return this->error_code; };
 };
-std::runtime_error log_assert(const char *message);
+std::runtime_error log_assert(std::string message);
 
 #endif
