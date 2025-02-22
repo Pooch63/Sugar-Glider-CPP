@@ -31,6 +31,7 @@ Value::Value(ValueType type, Object *obj) : type(type), value(value_mem_t{ .obj 
     #ifdef DEBUG_ASSERT
     assert(type == ValueType::OBJ);
     #endif
+
 }
 Value::Value(ValueType type, number_t number) : type(type), value(value_mem_t{ .number = number }) {
     #ifdef DEBUG_ASSERT
@@ -78,35 +79,31 @@ std::string Values::value_to_string(const Value &value) {
             throw sg_assert_error("Unknown value to log as string");
     }
 };
-std::string Values::value_to_debug_string(const Value &value) {
-    switch (get_value_type(value)) {
-        case ValueType::OBJ: {
-            Object *obj = get_value_object(value);
-            switch (obj->type) {
-                case ObjectType::STRING: {
-                    std::string trimmed;
-                    truncate_string(trimmed, 36, *get_value_string(value));
-                    return '"' + trimmed + '"';
-                }
-                case ObjectType::ARRAY: {
-                    std::string str = "[ ";
-                    bool found_value = false;
-                    for (Value value : *get_value_array(value)) {
-                        if (found_value) str += ", ";
-                        str += value_to_debug_string(value);
-                        found_value = true;
-                    }
-                    str += " ]";
-                    return str;
-                }
-                default: throw sg_assert_error("Unknown object type when making debug string");
-            }
+
+std::string Values::object_to_debug_string(Object *obj) {
+    switch (obj->type) {
+        case ObjectType::STRING: {
+            std::string trimmed;
+            truncate_string(trimmed, 36, *obj->memory.str);
+            return '"' + trimmed + '"';
         }
-        default: return value_to_string(value);
+        case ObjectType::ARRAY: {
+            std::string str = "[ ";
+            bool found_value = false;
+            for (Value value : *obj->memory.array) {
+                if (found_value) str += ", ";
+                str += value_to_debug_string(value);
+                found_value = true;
+            }
+            str += " ]";
+            return str;
+        }
+        default: throw sg_assert_error("Unknown object type when making debug string");
     }
 };
-std::string Values::object_to_debug_string(Object *obj) {
-    return value_to_debug_string(Value(ValueType::OBJ, obj));
+std::string Values::value_to_debug_string(const Value &value) {
+    if (get_value_type(value) == ValueType::OBJ) return object_to_debug_string(get_value_object(value));
+    return value_to_string(value);
 };
 
 void Values::free_value_if_object(Value &value) {
