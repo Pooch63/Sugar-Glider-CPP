@@ -1,5 +1,8 @@
 #include "runtime.hpp"
 
+#include <array>
+#include <unordered_map>
+
 #include <math.h>
 
 using namespace Values;
@@ -52,6 +55,8 @@ void Runtime::add_object(Object *obj) {
         case ObjectType::STRING:
             this->gc_size += sizeof(obj_mem_t::str) + sizeof(*obj_mem_t::str) + obj->memory.str->size();;
             break;
+        // Constant namespaces are allocated at compile time
+        case ObjectType::NAMESPACE_CONSTANT: throw sg_assert_error("Tried to allocate at runtime a compile-time constant namespace");
     }
 
     std::cout << "gc_size=" << this->gc_size << std::endl;
@@ -327,7 +332,8 @@ int Runtime::run() {
             case OpCode::OP_TRUE: this->push_stack_value(Value(Values::TRUE)); break;
             case OpCode::OP_FALSE: this->push_stack_value(Value(Values::FALSE)); break;
             case OpCode::OP_NULL: this->push_stack_value(Value(Values::NULL_VALUE)); break;
-            case OpCode::OP_MAKE_ARRAY: {
+            case OpCode::OP_MAKE_ARRAY:
+            {
                 variable_index_t element_count = this->read_value<variable_index_t>(prog_ip);
                 std::vector<Value> *array = new std::vector<Value>(element_count);
 
@@ -340,15 +346,16 @@ int Runtime::run() {
                     this->stack.pop_back();
                 }
 
-                Object *obj = new Object(array, this->runtime_values);
+                Object *obj = new Object(array);
                 this->add_object(obj);
 
-                this->stack.push_back( Values::Value(ValueType::OBJ, obj) );
+                this->stack.push_back(Values::Value(obj));
             }
                 break;
             // Automatically push a copy of the push value if we're setting a value, e.g. arr[ind] = 3;
             case OpCode::OP_GET_ARRAY_VALUE:
-            case OpCode::OP_SET_ARRAY_VALUE: {
+            case OpCode::OP_SET_ARRAY_VALUE:
+            {
                 Values::Value set_value;
                 if (code == OpCode::OP_SET_ARRAY_VALUE) {
                     set_value = this->stack_pop();
@@ -383,6 +390,32 @@ int Runtime::run() {
                 else {
                     (*array)[static_cast<uint>(floor(index))] = set_value;
                     this->stack.push_back(set_value);
+                }
+            }
+                break;
+
+            case OpCode::OP_CONSTANT_PROPERTY_ACCESS:
+            {
+                Value left = this->stack_pop();
+                Object *obj = safe_get_value_object(left);
+
+                std::string *property_name = this->read_value<std::string*>(prog_ip);
+
+                if (obj == nullptr || obj->type != ObjectType::NAMESPACE_CONSTANT) {
+                    this->error = "Cannot access property ";
+                    this->error += *property_name;
+                    this->error += " of non-object value ";
+                    this->error += value_to_string(left);
+                    break;
+                }
+
+                auto namespace_ = obj->memory.namespace_;
+                auto property = namespace_->find(*property_name);
+                if (property == namespace_->end()) {
+                    this->push_stack_value(Value(ValueType::NULL_VALUE));
+                }
+                else {
+                    this->push_stack_value(property->second);
                 }
             }
                 break;
@@ -432,6 +465,9 @@ int Runtime::run() {
 }
 
 Runtime::~Runtime() {
+    for (Value value : this->natives) {
+        free_value_if_object(value);
+    }
     for (Value value : this->constants) {
         free_value_if_object(value);
     }
