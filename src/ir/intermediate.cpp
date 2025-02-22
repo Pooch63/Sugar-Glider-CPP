@@ -136,7 +136,10 @@ Instruction Instruction::value_to_instruction(Values::Value value) {
 };
 
 void Instruction::free_payload() {
-    if (this->code == InstrCode::INSTR_STRING) {
+    if (
+        this->code == InstrCode::INSTR_STRING ||
+        this->code == InstrCode::INSTR_CONSTANT_PROPERTY_ACCESS
+    ) {
         delete this->payload.str;
     }
 };
