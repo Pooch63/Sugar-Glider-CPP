@@ -194,9 +194,10 @@ void Transpiler::transpile_single_block(Intermediate::Function *func) {
         chunk->insert_address(jump.byte_address, address);
     }
 
-    /* Clear label starts info, since it's only specific to this label.
+    /* Clear label starts and jump argument info, since they're specific to this label.
         But make sure not to clear variable info */
     this->label_starts.clear();
+    this->jump_arguments.clear();
 };
 void Transpiler::transpile_ir_to_bytecode(Intermediate::LabelIR &ir) {
     this->chunk = runtime.get_main();
