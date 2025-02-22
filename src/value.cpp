@@ -15,24 +15,22 @@ namespace Math {
 
 using namespace Values;
 
-Object::Object(std::string *str, Object *next) :
-    type(ObjectType::STRING), memory(obj_mem_t{ .str = str }), next(next) {};
-Object::Object(std::vector<Value> *array, Object *next) :
-    type(ObjectType::ARRAY), memory(obj_mem_t{ .array = array }), next(next) {};
+Object::Object(std::string *str) :
+    type(ObjectType::STRING), memory(obj_mem_t{ .str = str }) {};
+Object::Object(std::vector<Value> *array) :
+    type(ObjectType::ARRAY), memory(obj_mem_t{ .array = array }) {};
+Object::Object(namespace_t *namespace_) :
+    type(ObjectType::NAMESPACE_CONSTANT), memory(obj_mem_t{ .namespace_ = namespace_ }) {}
 
 Object::~Object() {
     switch (this->type) {
         case ObjectType::STRING: delete this->memory.str; break;
         case ObjectType::ARRAY: delete this->memory.array; break;
+        case ObjectType::NAMESPACE_CONSTANT: delete this->memory.namespace_;
     }
 }
 
-Value::Value(ValueType type, Object *obj) : type(type), value(value_mem_t{ .obj = obj }) {
-    #ifdef DEBUG_ASSERT
-    assert(type == ValueType::OBJ);
-    #endif
-
-}
+Value::Value(Object *obj) : type(ValueType::OBJ), value(value_mem_t{ .obj = obj }) {}
 Value::Value(ValueType type, number_t number) : type(type), value(value_mem_t{ .number = number }) {
     #ifdef DEBUG_ASSERT
     assert(type == ValueType::NUMBER);
@@ -199,8 +197,8 @@ bool Values::bin_op(
 
         if (obj_a->type == ObjectType::STRING && obj_b->type == ObjectType::STRING) {
             std::string *concat = new std::string(*get_value_string(a) + *get_value_string(b));
-            Object *obj = new Object(concat, nullptr);
-            *result = Value(ValueType::OBJ, obj);
+            Object *obj = new Object(concat);
+            *result = Value(obj);
             return true;
         }
     }

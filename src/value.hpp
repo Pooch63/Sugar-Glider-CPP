@@ -10,6 +10,8 @@
 #include <cassert>
 #endif
 
+#include <unordered_map>
+
 class Runtime;
 
 namespace Values {
@@ -42,8 +44,9 @@ namespace Values {
     class Value;
     class Object;
     
-    /* With arrays, the value class is responsible for the container. It is NOT
-        responsible for the elements inside, nor their free. */
+    /* Objects are responsible for the container and ont the elements inside.
+        E.g., arrays aren't responsible for the elements themselves, and
+        namespaces are NOT responsible for the values. */
     union value_mem_t {
         number_t number;
         native_method_t native;
@@ -58,7 +61,7 @@ namespace Values {
 
         public:
             /* For arrays or strings */
-            explicit Value(ValueType type, Object *obj);
+            explicit Value(Object *obj);
             /* For numbers */
             explicit Value(ValueType type, number_t number);
             /* For program functions */
@@ -86,23 +89,30 @@ namespace Values {
             number_t to_number() const;
     };
 
+    typedef std::unordered_map<std::string, Value> namespace_t;
     union obj_mem_t {
         std::string *str;
         std::vector<Value> *array;
+        namespace_t *namespace_;
     };
     enum ObjectType {
         STRING,
-        ARRAY
+        ARRAY,
+        // A namespace that cannot be updated
+        NAMESPACE_CONSTANT
     };
     // For values that need to be allocated on the heap
+    // The runtime itself will add the next linked list value, so
+    // you can't pass it in the constructor
     struct Object {
         ObjectType type;
         obj_mem_t memory;
         bool marked_for_save = false;
         Object *next;
 
-        Object(std::string *str, Object *next);
-        Object(std::vector<Value> *str, Object *next);
+        Object(std::string *str);
+        Object(std::vector<Value> *str);
+        Object(namespace_t *namespace_);
 
         ~Object();
     };
