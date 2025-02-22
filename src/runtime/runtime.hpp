@@ -1,7 +1,7 @@
 #ifndef _SG_CPP_RUNTIME_HPP
 #define _SG_CPP_RUNTIME_HPP
 
-#include "natives.hpp"
+#include "../natives/natives.hpp"
 #include "../ir/bytecode.hpp"
 #include "../value.hpp"
 

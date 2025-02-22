@@ -165,6 +165,7 @@ void Transpiler::transpile_single_block(Intermediate::Function *func) {
     for (size_t label_ind = 0; label_ind < labels->label_count(); label_ind += 1) {
         Label label = labels->get_label_at_numerical_index(label_ind);
         label_starts[*label.name] = chunk->code_byte_count();
+
         for (size_t instr_ind = 0; instr_ind < label.instructions.size(); instr_ind += 1) {
             Instruction instr = label.instructions.at(instr_ind);
 
