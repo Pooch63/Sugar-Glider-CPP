@@ -26,6 +26,7 @@ const char* Scan::tok_type_to_string(TokType type) {
 
         case EQUALS: return "=";
         case EQUALS_EQUALS: return "==";
+        case BANG_EQ: return "!=";
 
         case LPAREN: return "(";
         case RPAREN: return ")";
@@ -40,7 +41,7 @@ const char* Scan::tok_type_to_string(TokType type) {
         case COLON: return ":";
         case SEMICOLON: return ";";
         case COMMA: return ",";
-        case BANG_EQ: return "!=";
+        case DOT: return ".";
 
         case BREAK: return "break";
         case CONST: return "const";
@@ -572,6 +573,7 @@ Token Scanner::next_token() {
         case ':': one_char_type = TokType::COLON; break;
         case ';': one_char_type = TokType::SEMICOLON; break;
         case ',': one_char_type = TokType::COMMA; break;
+        case '.': one_char_type = TokType::DOT; break;
         case '!': {
             if (this->peek(1) == '=') two_char_type = TokType::BANG_EQ;
         }

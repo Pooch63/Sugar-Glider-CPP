@@ -15,6 +15,9 @@ namespace Parse {
         // Used for unary operators that are NOT infix operators, e.g. numbers
         PREC_NONE,
 
+        // a.b
+        PREC_DOT,
+
         PREC_ASSIGNMENT_OR_TERNARY, // a = b OR a ? b : c
         PREC_EQUALITY, // ==, !=
         PREC_RELATIONAL, // <, <=, >, >=
@@ -66,6 +69,7 @@ namespace Parse {
         AST::Node *paren_group(Scan::Token &current, Parser *parser);
 
         AST::Node *function_call(Scan::Token &currrent, AST::Node *left, Parser *parser);
+        AST::Node *parse_dot_get(Scan::Token &current, AST::Node *left, Parser *parser);
 
         AST::Node *var_value(Scan::Token &current, Parser *parser);
         // Something like x = 3

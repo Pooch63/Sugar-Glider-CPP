@@ -9,6 +9,7 @@ namespace AST {
     enum NodeType {
         NODE_ARRAY,
         NODE_ARRAY_INDEX,
+        NODE_DOT,
         NODE_STRING,
         NODE_NUMBER,
         NODE_NULL,
@@ -38,12 +39,14 @@ namespace AST {
     bool node_is_expression(NodeType type);
     bool node_may_be_function(NodeType type);
     bool node_may_be_array(NodeType type);
+    bool node_may_be_object(NodeType type);
 
     const char* node_type_to_string(NodeType type);
 
     class String;
     class Array;
     class ArrayIndex;
+    class Dot;
     class Number;
     class True;
     class False;
@@ -82,6 +85,7 @@ namespace AST {
             String* as_string();
             Array* as_array();
             ArrayIndex* as_array_index();
+            Dot* as_dot();
             Number* as_number();
             BinOp* as_bin_op();
             UnaryOp* as_unary_op();
@@ -139,6 +143,18 @@ namespace AST {
             };
             
             ~ArrayIndex();
+    };
+    class Dot : public Node {
+        private:
+            Node *left;
+            std::string *property;
+        public:
+            Dot(Node *left, std::string *property);
+
+            inline Node        *get_object() const { return this->left; };
+            inline std::string *get_property() const { return this->property; };
+
+            ~Dot();
     };
     class String : public Node {
         private:

@@ -48,6 +48,8 @@ namespace Scan {
         EQUALS,
         // ==
         EQUALS_EQUALS,
+        // !=
+        BANG_EQ,
 
         // (
         LPAREN,
@@ -73,8 +75,8 @@ namespace Scan {
         SEMICOLON,
         // ,
         COMMA,
-        // !=
-        BANG_EQ,
+        // .
+        DOT,
         // < Operators
 
         // Keywords >

@@ -24,6 +24,7 @@ class Compiler {
         /* All the compilation functions for specific nodes */
         void compile_array(AST::Array* node);
         void compile_array_index(AST::ArrayIndex* node);
+        void compile_dot(AST::Dot *node);
         void compile_string(AST::String* node);
         void compile_number(AST::Number* node);
         void compile_null_value();

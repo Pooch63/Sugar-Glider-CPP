@@ -200,6 +200,24 @@ AST::Node* Parse::Rules::function_call(Scan::Token &current, AST::Node* left, Pa
 
     return call;
 }
+AST::Node *Parse::Rules::parse_dot_get([[maybe_unused]] Scan::Token &current, AST::Node *left, Parser *parser) {
+    if (!AST::node_may_be_object(left->get_type())) {
+        char error_message[100];
+        snprintf(error_message, 100, "Cannot use dot operator (.) on non-object %s", AST::node_type_to_string(left->get_type()));
+        parser->get_output().error(
+            current.get_position(),
+            error_message,
+            Errors::PARSE_ERROR
+        );
+    }
+    
+    bool next_is_identifier = parser->expect(TokType::IDENTIFIER, "Expected identifier to complete dot qualifier");
+    
+    std::string *right = next_is_identifier ? parser->previous().get_string() : nullptr;
+    if (next_is_identifier) parser->previous().mark_payload();
+    return new AST::Dot(left, right);
+};
+
 
 AST::Node* Parse::Rules::var_value(Scan::Token &current, [[maybe_unused]] Parser* parser) {
     // Make sure to stop the variable name from automatically being freed
@@ -251,7 +269,6 @@ void Parser::initialize_parse_rules() {
         .led = Rules::binary_op,
         .precedence = Precedence::PREC_TERM
     };
-
     rules[TokType::STAR] =
         rules[TokType::SLASH] = rules[TokType::PERCENT] =
         ParseRule{
@@ -259,7 +276,6 @@ void Parser::initialize_parse_rules() {
             .led = Rules::binary_op,
             .precedence = Precedence::PREC_FACTOR
         };
-
     rules[TokType::LESS_THAN] = rules[TokType::GREATER_THAN] =
         ParseRule{
             .nud = nullptr,
@@ -271,19 +287,16 @@ void Parser::initialize_parse_rules() {
         .led = Rules::binary_op,
         .precedence = Precedence::PREC_EQUALITY
     };
-
     rules[TokType::LPAREN] = ParseRule{
         .nud = Rules::paren_group,
         .led = Rules::function_call,
         .precedence = Precedence::PREC_CALL
     };
-
     rules[TokType::QUESTION_MARK] = ParseRule{
         .nud = nullptr,
         .led = Rules::ternary_op,
         .precedence = Precedence::PREC_ASSIGNMENT_OR_TERNARY
     };
-
     rules[TokType::EQUALS] = ParseRule{
         .nud = nullptr,
         .led = Rules::var_assignment,
@@ -294,6 +307,11 @@ void Parser::initialize_parse_rules() {
         .nud = Rules::parse_array,
         .led = Rules::parse_array_index,
         .precedence = Precedence::PREC_NONE
+    };
+    rules[TokType::DOT] = ParseRule{
+        .nud = nullptr,
+        .led = Rules::parse_dot_get,
+        .precedence = Precedence::PREC_DOT
     };
 
     Parser::rules_initialized = true;

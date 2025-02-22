@@ -37,6 +37,12 @@ void Compiler::compile_array_index(AST::ArrayIndex* node) {
             Intermediate::Instruction(Intermediate::INSTR_SET_ARRAY_VALUE));
     }
 }
+void Compiler::compile_dot(AST::Dot* node) {
+    this->compile_node(node->get_object());
+    this->main_block->add_instruction(Intermediate::Instruction(
+        Intermediate::INSTR_CONSTANT_PROPERTY_ACCESS,
+        new std::string(*node->get_property()) ));
+}
 void Compiler::compile_string(AST::String* node) {
     this->main_block->add_instruction(
         Intermediate::Instruction(
@@ -385,6 +391,9 @@ void Compiler::compile_node(AST::Node* node) {
             break;
         case AST::NodeType::NODE_ARRAY_INDEX:
             this->compile_array_index(node->as_array_index());
+            break;
+        case AST::NodeType::NODE_DOT:
+            this->compile_dot(node->as_dot());
             break;
         case AST::NodeType::NODE_STRING:
             this->compile_string(node->as_string());

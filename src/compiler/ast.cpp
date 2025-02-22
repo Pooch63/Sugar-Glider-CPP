@@ -11,6 +11,7 @@ bool AST::node_is_expression(NodeType type) {
     switch (type) {
         case NODE_ARRAY:
         case NODE_ARRAY_INDEX:
+        case NODE_DOT:
         case NODE_BINOP:
         case NODE_UNARYOP:
         case NODE_STRING:
@@ -33,6 +34,7 @@ bool AST::node_may_be_function(NodeType type) {
         case NODE_FUNCTION_CALL:
         case NODE_ARRAY_INDEX:
         case NODE_TERNARY_OP:
+        case NODE_DOT:
             return true;
         default:
             return false;
@@ -46,6 +48,20 @@ bool AST::node_may_be_array(NodeType type) {
         case NODE_ARRAY_INDEX:
         case NODE_TERNARY_OP:
         case NODE_ARRAY:
+        case NODE_DOT:
+            return true;
+        default:
+            return false;
+    }
+}
+bool AST::node_may_be_object(NodeType type) {
+    switch (type) {
+        case NODE_VAR_VALUE:
+        case NODE_VAR_ASSIGNMENT:
+        case NODE_FUNCTION_CALL:
+        case NODE_ARRAY_INDEX:
+        case NODE_TERNARY_OP:
+        case NODE_DOT:
             return true;
         default:
             return false;
@@ -54,6 +70,12 @@ bool AST::node_may_be_array(NodeType type) {
 
 const char* AST::node_type_to_string(NodeType type) {
     switch (type) {
+        case NODE_ARRAY:
+            return "array";
+        case NODE_ARRAY_INDEX:
+            return "array index";
+        case NODE_DOT:
+            return "dot operator";
         case NODE_BINOP:
             return "binary op";
         case NODE_UNARYOP:
@@ -110,6 +132,7 @@ Node::Node(NodeType type, TokenPosition position) : node_type(type), position(po
 #endif
 AST_CAST_DEFINE(Array, as_array, NODE_ARRAY)
 AST_CAST_DEFINE(ArrayIndex, as_array_index, NODE_ARRAY_INDEX)
+AST_CAST_DEFINE(Dot, as_dot, NODE_DOT)
 AST_CAST_DEFINE(String, as_string, NODE_STRING)
 AST_CAST_DEFINE(Number, as_number, NODE_NUMBER)
 AST_CAST_DEFINE(BinOp, as_bin_op, NODE_BINOP)
@@ -143,6 +166,13 @@ ArrayIndex::~ArrayIndex() {
     if (this->array != nullptr) delete this->array;
     if (this->index != nullptr) delete this->index;
     if (this->value != nullptr) delete this->value;
+}
+
+Dot::Dot(AST::Node *left, std::string *property) :
+    Node(NodeType::NODE_DOT), left(left), property(property) {};
+Dot::~Dot() {
+    if (this->left != nullptr) delete this->left;
+    if (this->property != nullptr) delete this->property;
 }
 
 String::String(std::string* str, TokenPosition pos) :
