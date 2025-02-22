@@ -122,7 +122,7 @@ bool Values::value_is_truthy(const Value &value) {
         case ValueType::NULL_VALUE: return false;
         case ValueType::TRUE: return true;
         case ValueType::FALSE: return false;
-        case ValueType::NUMBER: return get_value_type(value) != 0;
+        case ValueType::NUMBER: return get_value_number(value) != 0;
         case ValueType::OBJ: {
             Object *obj = get_value_object(value);
             switch (obj->type) {
