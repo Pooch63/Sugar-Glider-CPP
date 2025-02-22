@@ -1,6 +1,6 @@
 #include "scopes.hpp"
 #include "../globals.hpp"
-#include "../runtime/natives.hpp"
+#include "../natives/natives.hpp"
 
 #ifdef DEBUG_ASSERT
 #include <cassert>
