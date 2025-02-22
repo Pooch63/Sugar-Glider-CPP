@@ -43,13 +43,18 @@ struct RuntimeCallFrame {
 };
 
 class Runtime {
-private:
+public:
     template <typename T, typename... Args>
     T *create(Args &&...args) {
         try {
             return new T(std::forward<Args>(args)...);
         } catch (const std::bad_alloc&) {
-            throw memory_error();
+            this->run_gc();
+            try {
+                return new T(std::forward<Args>(args)...);
+            } catch (const std::bad_alloc&) {
+                throw memory_error();
+            }
         }
     }
 private:
@@ -89,7 +94,9 @@ private:
     void exit();
 
     // GC
+public:
     void add_object(Values::Object *obj);
+private:
     void mark_object(Values::Value value);
     void mark_values();
     void delete_values();
