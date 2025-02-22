@@ -1,5 +1,5 @@
 #include "../runtime/runtime.hpp"
-#include "../utils.hpp"
+#include "../time-utils.hpp"
 
 using namespace Natives;
 using namespace Values;
@@ -19,6 +19,7 @@ bool clock NATIVE_FUNCTION_HEADERS() {
 }
 
 #include "array.hpp"
+#include "date.hpp"
 #include "math.hpp"
 
 Native::Native(const char *name, Values::Value value) :
@@ -31,7 +32,8 @@ std::unordered_map<std::string, uint> Natives::name_to_native_index = {
     { "println", 0 },
     { "clock", 1 },
     { "Array", 2 },
-    { "Math", 3 }
+    { "Date", 3 },
+    { "Math", 4 }
 };
 
 void Natives::create_natives(std::array<Value, native_count> &natives) {
@@ -43,5 +45,6 @@ void Natives::create_natives(std::array<Value, native_count> &natives) {
     );
 
     natives[2] = Natives::create_array_namespace();
-    natives[3] = Natives::create_math_namespace();
+    natives[3] = Natives::create_date_namespace();
+    natives[4] = Natives::create_math_namespace();
 };
