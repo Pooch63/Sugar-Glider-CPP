@@ -441,8 +441,8 @@ int Runtime::run() {
                         break;
                     }
 
-                    std::string *str = this->create<std::string>(1, (*str)[index]);
-                    Object *obj = this->create<Object>(str);
+                    std::string *character = this->create<std::string>(1, (*str)[index]);
+                    Object *obj = this->create<Object>(character);
                     this->add_object(obj);
                     this->push_stack_value(Value(obj));
                     break;

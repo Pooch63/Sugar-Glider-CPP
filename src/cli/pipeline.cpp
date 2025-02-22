@@ -28,21 +28,21 @@ static int get_bytecode(std::string prog, Runtime &runtime) {
 
     delete node;
 
-    std::cout << "got past compilaton\n";
+    // std::cout << "got past compilaton\n";
 
     /* If there was a compiler error, don't continue. */
     if (!compile_success) {
         return Errors::COMPILE_ERROR;
     }
 
-    block.log_ir();
+    // block.log_ir();
 
     auto optimized = Intermediate::LabelIR();
     optimize_labels(block, optimized);
 
-    std::cout << "got past optimization\n";
+    // std::cout << "got past optimization\n";
 
-    optimized.log_ir();
+    // optimized.log_ir();
 
     Transpiler transpiler = Transpiler(runtime);
     // Use optimized bytecode for program
@@ -50,7 +50,7 @@ static int get_bytecode(std::string prog, Runtime &runtime) {
 
     runtime.init_global_pool(transpiler.num_variable_slots());
 
-    runtime.log_instructions();
+    // runtime.log_instructions();
 
     return 0;
 }
