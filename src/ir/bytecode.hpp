@@ -148,12 +148,10 @@ namespace Bytecode {
                 }
             }
 
-            #ifdef DEBUG
             /* From the current byte index in the code, log the instruction
                 and any arguments it has. Then, return the number of bytes we read,
                 starting from the current byte, in order to log it. */
             void print_instruction(uint &current_byte_index, const Runtime *runtime);
-            #endif
         public:
             /* Push an enum into the code.
                 Will push only the first byte of the enum value. */
@@ -244,10 +242,8 @@ namespace Bytecode {
                 to know where exactly to insert the value later */
             inline size_t code_byte_count() const { return this->code.size(); };
 
-            #ifdef DEBUG
             /* Log representation of bytecode to console */
             void print_code(const Runtime *runtime);
-            #endif
     };
 };
 

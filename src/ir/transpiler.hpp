@@ -37,8 +37,8 @@ class Transpiler {
         /* A map of IR variables to the function variable at every function. */
         std::vector<func_var_info_t> func_variables = std::vector<func_var_info_t>();
 
-        void transpile_variable_instruction(Intermediate::Instruction instr, Intermediate::Function *func);
-        void transpile_ir_instruction(Intermediate::Instruction instr, Intermediate::Function *func);
+        void transpile_variable_instruction(Intermediate::Instruction instr);
+        void transpile_ir_instruction(Intermediate::Instruction instr);
         void transpile_single_block(Intermediate::Function *func);
     public:
         Transpiler(Runtime &runtime);

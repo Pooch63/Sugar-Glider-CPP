@@ -26,8 +26,6 @@ void Chunk::push_unary_op_type(Operations::UnaryOpType type) {
     this->push_small_enum<Operations::UnaryOpType>(type);
 };
 
-#ifdef DEBUG
-
 const char* Bytecode::instruction_to_string(OpCode code) {
     switch (code) {
         case OpCode::OP_POP: return "POP";
@@ -180,4 +178,3 @@ void Chunk::print_code(const Runtime *runtime) {
     
     std::cout << "-------------------------------------------------------" << std::endl;
 };
-#endif

@@ -10,7 +10,7 @@ func_var_info_t::func_var_info_t(Intermediate::Function *func) : func(func) {}
 
 Transpiler::Transpiler(Runtime &runtime) : runtime(runtime) {};
 
-void Transpiler::transpile_variable_instruction(Instruction instr, Intermediate::Function *func) {
+void Transpiler::transpile_variable_instruction(Instruction instr) {
     Intermediate::Variable variable = *instr.get_variable();
 
     if (variable.is_global()) {
@@ -34,10 +34,6 @@ void Transpiler::transpile_variable_instruction(Instruction instr, Intermediate:
         chunk->push_value<Bytecode::variable_index_t>(index);
     }
     else if (variable.is_local_function_var()) {
-        #ifdef DEBUG
-        assert(func != nullptr && "Tried to compile function var that wasn't in a function");
-        #endif
-
         Bytecode::variable_index_t index;
         bool is_arg = false;
         func_var_info_t &info = this->func_variables.at(variable.function_ind);
@@ -79,7 +75,7 @@ void Transpiler::transpile_variable_instruction(Instruction instr, Intermediate:
         );
     }
 }
-void Transpiler::transpile_ir_instruction(Instruction instr, Intermediate::Function *func) {
+void Transpiler::transpile_ir_instruction(Instruction instr) {
     switch (instr.code) {
         // 0 argument instructions
         case InstrCode::INSTR_POP: chunk->push_opcode(OpCode::OP_POP); break;
@@ -150,7 +146,7 @@ void Transpiler::transpile_ir_instruction(Instruction instr, Intermediate::Funct
         case InstrCode::INSTR_STORE:
         case InstrCode::INSTR_LOAD:
         {
-            this->transpile_variable_instruction(instr, func);
+            this->transpile_variable_instruction(instr);
         }
             break;
 
@@ -184,7 +180,7 @@ void Transpiler::transpile_single_block(Intermediate::Function *func) {
                 break;
             }
 
-            this->transpile_ir_instruction(instr, func);
+            this->transpile_ir_instruction(instr);
         }
     }
 
