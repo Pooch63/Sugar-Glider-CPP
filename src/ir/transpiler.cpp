@@ -105,7 +105,6 @@ void Transpiler::transpile_ir_instruction(Instruction instr) {
         case InstrCode::INSTR_GET_FUNCTION_REFERENCE:
             chunk->push_opcode(OpCode::OP_LOAD_CONST);
             chunk->push_value<Bytecode::constant_index_t>(this->runtime.new_constant(instr.payload_to_value()));
-            instr.free_payload();
             break;
 
         case InstrCode::INSTR_GET_ARRAY_VALUE:
@@ -154,6 +153,8 @@ void Transpiler::transpile_ir_instruction(Instruction instr) {
         {}
             break;
     }
+
+    instr.free_payload();
 }
 
 void Transpiler::transpile_single_block(Intermediate::Function *func) {
