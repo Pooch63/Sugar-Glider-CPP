@@ -26,17 +26,16 @@ static int get_bytecode(std::string prog, Runtime &runtime) {
     Compiler compiler(block, output);
     bool compile_success = compiler.compile(node);
 
+    delete node;
+
     std::cout << "got past compilaton\n";
 
     /* If there was a compiler error, don't continue. */
     if (!compile_success) {
-        delete node;
         return Errors::COMPILE_ERROR;
     }
 
-    delete node;
-
-    // block.log_ir();
+    block.log_ir();
 
     auto optimized = Intermediate::LabelIR();
     optimize_labels(block, optimized);

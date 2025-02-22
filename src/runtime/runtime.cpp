@@ -7,10 +7,14 @@ using namespace Bytecode;
 
 RuntimeFunction::RuntimeFunction(Bytecode::Chunk chunk, Bytecode::call_arguments_t num_arguments, Bytecode::variable_index_t total_variables) :
     chunk(chunk), num_arguments(num_arguments), total_variables(total_variables) {};
-RuntimeCallFrame::RuntimeCallFrame(Bytecode::constant_index_t func_index, Bytecode::call_arguments_t arg_count, std::vector<Values::Value> &stack) :
-    func_index(func_index), variables(std::vector<Values::Value>(arg_count)) {
+RuntimeCallFrame::RuntimeCallFrame(
+    Bytecode::constant_index_t func_index,
+    Bytecode::call_arguments_t arg_count,
+    std::vector<Values::Value> &stack,
+    std::vector<Values::Value>::iterator variables_start) :
+    func_index(func_index), variables_start(variables_start) {
         for (int var_ind = arg_count - 1; var_ind >= 0; var_ind -= 1) {
-            variables[var_ind] = stack.back();
+            variables_start[var_ind] = stack.back();
             stack.pop_back();
         }
     };
@@ -22,6 +26,7 @@ Runtime::Runtime(Bytecode::Chunk &main) : main(main) {
 
 void Runtime::init_global_pool(size_t num_globals) {
     this->global_variables = std::vector<Value>(num_globals);
+    this->variable_stack_size = num_globals;
 }
 Bytecode::variable_index_t Runtime::new_constant(Values::Value value) {
     this->constants.push_back(value);
@@ -223,22 +228,29 @@ int Runtime::run() {
                     Bytecode::constant_index_t func_ind = get_value_program_function(func);
                     Bytecode::call_arguments_t num_args = this->functions.at(func_ind).num_arguments;
 
+                    Bytecode::variable_index_t total_variables = this->functions.at(func_ind).total_variables;
+                    size_t necessary_space = this->variable_stack_size + total_variables;
+                    
+                    if (this->global_variables.size() < necessary_space) {
+                        this->global_variables.resize(necessary_space);
+                    }
                     this->call_stack.push_back(
-                        RuntimeCallFrame(func_ind, num_args, this->stack)
+                        RuntimeCallFrame(func_ind, num_args, this->stack, this->global_variables.begin() + this->variable_stack_size)
                     );
+                    this->variable_stack_size += total_variables;
                     this->running_blocks.push_back(&this->functions.at(func_ind).chunk);
 
-                    // uint stack_size = num_args * sizeof(Value) + sizeof(RuntimeCallFrame);
-                    // this->call_stack_size += stack_size;
+                    uint stack_size = total_variables * sizeof(Value) + sizeof(RuntimeCallFrame);
+                    this->call_stack_size += stack_size;
 
-                    // if (this->call_stack_size > MAX_CALL_STACK_SIZE) {
-                    //     this->error = "Maximum call stack size exceeded. ";
-                    //     this->error = std::to_string(this->call_stack_size / 1024.0);
-                    //     this->error += " KB necessary, but maximum is ";
-                    //     this->error += std::to_string(MAX_CALL_STACK_SIZE);
-                    //     this->error += " KB";
-                    //     break;
-                    // }
+                    if (this->call_stack_size > MAX_CALL_STACK_SIZE) {
+                        this->error = "Maximum call stack size exceeded. ";
+                        this->error = std::to_string(this->call_stack_size / 1024.0);
+                        this->error += " KB necessary, but maximum is ";
+                        this->error += std::to_string(MAX_CALL_STACK_SIZE);
+                        this->error += " KB";
+                        break;
+                    }
                 }
                 else {
                     this->error = "Cannot call non-function value ";
@@ -249,9 +261,13 @@ int Runtime::run() {
                 break;
 
             case OpCode::OP_RETURN:
-                // this->call_stack_size -= this->call_stack.back(). * sizeof(Value) + sizeof(RuntimeCallFrame);
+            {
+                uint total_variables = this->functions.at(this->call_stack.back().func_index).total_variables;
+                this->call_stack_size -= total_variables * sizeof(Value) + sizeof(RuntimeCallFrame);
+                this->variable_stack_size -= total_variables;
                 this->call_stack.pop_back();
                 this->running_blocks.pop_back();
+            }
                 break;
 
             case OpCode::OP_POP:
@@ -294,6 +310,13 @@ int Runtime::run() {
             }
                 break;
 
+            case OpCode::OP_STORE_FRAME_VAR:
+            {
+                Value value = this->stack_pop();
+                variable_index_t index = this->read_value<variable_index_t>(prog_ip);
+                this->call_stack.back().set_variable(index, value);
+            }
+                break;
             case OpCode::OP_LOAD_FRAME_VAR:
             {
                 variable_index_t index = this->read_value<variable_index_t>(prog_ip);

@@ -18,13 +18,22 @@ struct RuntimeFunction {
 };
 struct RuntimeCallFrame {
     Bytecode::constant_index_t func_index;
-    std::vector<Values::Value> variables;
+    std::vector<Values::Value>::iterator variables_start;
     uint ip = 0;
 
-    inline Values::Value get_variable(Bytecode::variable_index_t index) const { return this->variables.at(index); };
+    inline Values::Value get_variable(Bytecode::variable_index_t index) const { 
+        return *(this->variables_start + index).base();
+    };
+    inline void set_variable(Bytecode::variable_index_t index, Values::Value value) {
+        *(this->variables_start + index).base() = value;
+    }
 
     // Pops the function variable values off the stack
-    RuntimeCallFrame(Bytecode::constant_index_t func_index, Bytecode::call_arguments_t arg_count, std::vector<Values::Value> &stack);
+    RuntimeCallFrame(
+        Bytecode::constant_index_t func_index,
+        Bytecode::call_arguments_t arg_count,
+        std::vector<Values::Value> &stack,
+        std::vector<Values::Value>::iterator variables);
 };
 
 class Runtime {
@@ -43,6 +52,7 @@ class Runtime {
 
         std::vector<Values::Value> constants = std::vector<Values::Value>();
         std::vector<Values::Value> global_variables;
+        size_t variable_stack_size;
 
         std::vector<Bytecode::Chunk*> running_blocks = std::vector<Bytecode::Chunk*>();
         std::vector<RuntimeCallFrame> call_stack = std::vector<RuntimeCallFrame>();

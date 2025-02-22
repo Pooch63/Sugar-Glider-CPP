@@ -155,6 +155,7 @@ void Compiler::compile_variable_value(AST::VarValue* node) {
             node->get_position(),
             "Cannot close variables (cannot access variables in one function from within a nested function). This functionality is not yet supported.",
             Errors::COMPILE_ERROR);
+        this->error = true;
     }
 };
 void Compiler::compile_variable_assignment(AST::VarAssignment* node) {
@@ -335,6 +336,9 @@ void Compiler::compile_function_definition(AST::Function* node) {
     }
 
     this->compile_node(node->get_body());
+    this->main_block->add_instruction(Intermediate::Instruction(Intermediate::INSTR_NULL));
+    this->main_block->add_instruction(Intermediate::Instruction(Intermediate::INSTR_RETURN));
+
     this->scopes.pop_scope();
 
     this->function_index = last_function_index;
