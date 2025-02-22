@@ -173,6 +173,8 @@ void Runtime::log_call_frame(RuntimeCallFrame &frame, std::ostream &out) {
     out << func.name << "(...)" << std::endl;
 }
 void Runtime::log_stack_trace(std::ostream &out) {
+    if (this->call_stack.size() == 0) return;
+
     int bottom_ind = std::max(0, static_cast<int>(this->call_stack.size()) - 3);
     // Log first 3
     for (int ind = this->call_stack.size() - 1;
@@ -394,32 +396,55 @@ int Runtime::run() {
                 Values::Value index_value = this->stack_pop();
                 Values::Value array_value = this->stack_pop();
                 if (get_value_type(index_value) != ValueType::NUMBER) {
-                    this->error = "Array index must be a number, but given index ";
+                    this->error = "Index must be a number, but given index ";
                     this->error += value_to_string(index_value);
                     break;
                 }
 
                 Object *array_obj = safe_get_value_object(array_value);;
-                if (array_obj == nullptr || array_obj->type != ObjectType::ARRAY) {
-                    this->error = "Cannot index non-array value ";
+                if (
+                    array_obj == nullptr ||
+                    (array_obj->type != ObjectType::ARRAY && array_obj->type != ObjectType::STRING)
+                ) {
+                    this->error = "Cannot index value ";
                     this->error += value_to_string(array_value);
                     break;
                 }
 
                 Values::number_t index = get_value_number(index_value);
-                std::vector<Value> *array = array_obj->memory.array;
-                if (index > static_cast<Values::number_t>(array->size()) || index < 0 || index != floor(index)) {
-                    this->error = "Array index must be an integer within the range of array's values, but index was ";
-                    this->error += value_to_string(index_value);
-                    break;
-                }
 
-                if (code == OpCode::OP_GET_ARRAY_VALUE) {
-                    this->stack.push_back(array->at(floor(index)));
+                if (array_obj->type == ObjectType::ARRAY) {
+                    std::vector<Value> *array = array_obj->memory.array;
+                    if (index > static_cast<Values::number_t>(array->size()) || index < 0 || index != floor(index)) {
+                        this->error = "Array index must be an integer within the range of array's values, but index was ";
+                        this->error += value_to_string(index_value);
+                        break;
+                    }
+
+                    if (code == OpCode::OP_GET_ARRAY_VALUE) {
+                        this->stack.push_back(array->at(floor(index)));
+                    }
+                    else {
+                        (*array)[static_cast<uint>(floor(index))] = set_value;
+                        this->stack.push_back(set_value);
+                    }
                 }
-                else {
-                    (*array)[static_cast<uint>(floor(index))] = set_value;
-                    this->stack.push_back(set_value);
+                else if (array_obj->type == ObjectType::STRING) {
+                    if (code == OpCode::OP_SET_ARRAY_VALUE) {
+                        this->error = "Strings are immutable. Cannot update string ";
+                        this->error += value_to_string(array_value);
+                    }
+                    std::string *str = array_obj->memory.str;
+                    if (index > static_cast<Values::number_t>(str->size()) || index < 0 || index != floor(index)) {
+                        this->error = "String index must be an integer within the range of array's values, but index was ";
+                        this->error += value_to_string(index_value);
+                        break;
+                    }
+
+                    Object *obj = new Object(new std::string(1, (*str)[index]));
+                    this->add_object(obj);
+                    this->push_stack_value(Value(obj));
+                    break;
                 }
             }
                 break;
