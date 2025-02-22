@@ -78,6 +78,10 @@ namespace Bytecode {
             index
             array */
         OP_SET_ARRAY_VALUE,
+        /* Gets the property of the object at the top of the stack.
+            Argument is a pointer to a string, but the string is a constant loaded into the pool.
+            It is just a string pointer to get rid of redundant value check */
+        OP_CONSTANT_PROPERTY_ACCESS,
 
         /* Argument is call_arguments_t, number of arguments that are used to call the function.
             Top value of stack must be the function to call.

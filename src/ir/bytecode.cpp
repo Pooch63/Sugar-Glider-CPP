@@ -44,6 +44,7 @@ const char* Bytecode::instruction_to_string(OpCode code) {
         case OpCode::OP_MAKE_ARRAY: return "MAKE_ARRAY";
         case OpCode::OP_GET_ARRAY_VALUE: return "GET_ARRAY_VALUE";
         case OpCode::OP_SET_ARRAY_VALUE: return "SET_ARRAY_VALUE";
+        case OpCode::OP_CONSTANT_PROPERTY_ACCESS: return "CONSTANT_PROPERTY_ACCESS";
         case OpCode::OP_LOAD_GLOBAL: return "LOAD_GLOBAL";
         case OpCode::OP_STORE_GLOBAL: return "STORE_GLOBAL";
         case OpCode::OP_LOAD_FRAME_VAR: return "LOAD_FRAME_VAR";
@@ -121,6 +122,12 @@ void Chunk::print_instruction(uint &current_byte_index, const Runtime *runtime) 
         {
             variable_index_t index = this->read_value<variable_index_t>(current_byte_index);
             argument = std::to_string(index);
+        }
+            break;
+        case OpCode::OP_CONSTANT_PROPERTY_ACCESS:
+        {
+            std::string *property = this->read_value<std::string*>(current_byte_index);
+            argument = *property;
         }
             break;
         case OpCode::OP_CALL:

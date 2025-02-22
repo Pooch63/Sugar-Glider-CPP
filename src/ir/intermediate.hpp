@@ -101,6 +101,8 @@ namespace Intermediate {
         INSTR_GET_ARRAY_VALUE,
         /* Set value of array at the index under the value */
         INSTR_SET_ARRAY_VALUE,
+        /* Get property of object at the string index given as the argument */
+        INSTR_CONSTANT_PROPERTY_ACCESS,
 
         /* Create a reference to a function at the given index, which is a value.
             Argument is index of function. */
@@ -150,7 +152,8 @@ namespace Intermediate {
         explicit Instruction(InstrCode code);
         /* Used for strings, and also for jump commands, since a string
             is the label index type.
-            If the label type is ever changed, then another overload will be needed. */
+            If the label type is ever changed, then another overload will be needed.
+            Makes a copy of the string*/
         explicit Instruction(InstrCode code, std::string* payload);
         explicit Instruction(InstrCode code, Operations::BinOpType bin_op);
         explicit Instruction(InstrCode code, Operations::UnaryOpType unary_op);
@@ -222,7 +225,7 @@ namespace Intermediate {
         }
         inline std::string *get_string() const {
             #ifdef DEBUG
-            assert(this->code == InstrCode::INSTR_STRING);
+            assert(this->code == InstrCode::INSTR_STRING || this->code == InstrCode::INSTR_CONSTANT_PROPERTY_ACCESS);
             #endif
             return this->payload.str;
         }

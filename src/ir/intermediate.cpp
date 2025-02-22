@@ -101,8 +101,9 @@ Value Instruction::payload_to_value() const {
             return Value(ValueType::FALSE);
         case InstrCode::INSTR_NULL:
             return Value(ValueType::NULL_VALUE);
+        case InstrCode::INSTR_CONSTANT_PROPERTY_ACCESS:
         case InstrCode::INSTR_STRING:
-            return Value(ValueType::OBJ, new Object(new std::string(*this->payload.str), nullptr));
+            return Value(new Object(new std::string(*this->payload.str)));
         case InstrCode::INSTR_GET_FUNCTION_REFERENCE:
             return Value(this->get_function_index(), ValueType::PROGRAM_FUNCTION);
         default:
@@ -174,6 +175,8 @@ const char* Intermediate::instr_type_to_string(InstrCode code) {
             return "INSTR_GET_ARRAY_VALUE";
         case InstrCode::INSTR_SET_ARRAY_VALUE:
             return "INSTR_SET_ARRAY_VALUE";
+        case InstrCode::INSTR_CONSTANT_PROPERTY_ACCESS:
+            return "INSTR_CONSTANT_PROPERTY_ACCESS";
         case InstrCode::INSTR_GET_FUNCTION_REFERENCE:
             return "GET_FUNCTION_REFERENCE";
         case InstrCode::INSTR_MAKE_FUNCTION:
@@ -202,7 +205,7 @@ rang::fg variable_c = rang::fg::red;
 rang::fg comment_c = rang::fg::green;
 
 /* Length of instruction name in the console */
-static const uint INSTRUCTION_NAME_LENGTH = 30;
+static const uint INSTRUCTION_NAME_LENGTH = 35;
 /* Space given to argument before logging the comment */
 static const uint ARGUMENT_SPACE = IR_LABEL_LENGTH + 5;
 /* Max length of a string in an argument */
@@ -214,8 +217,8 @@ static_assert(MAX_STRING_LENGTH >= 5);
 void Intermediate::log_instruction(Instruction instr) {
     std::string type = Intermediate::instr_type_to_string(instr.code);
     
-    std::cout << instruction_name_c << type << rang::style::reset;
-    for (uint space = type.size(); space < INSTRUCTION_NAME_LENGTH; space += 1) {
+    std::cout << instruction_name_c << type << ' ' <<  rang::style::reset;
+    for (uint space = type.size() + 1; space < INSTRUCTION_NAME_LENGTH; space += 1) {
         std::cout << ' ';
     }
 
@@ -298,6 +301,12 @@ void Intermediate::log_instruction(Instruction instr) {
             comment = "[#elements=";
             comment += std::to_string(instr.payload.array_element_count);
             comment += "]";
+        }
+            break;
+        case InstrCode::INSTR_CONSTANT_PROPERTY_ACCESS:
+        {
+            argument = *instr.get_string();
+            std::cout << string_c << argument;
         }
             break;
         case InstrCode::INSTR_GET_FUNCTION_REFERENCE:
