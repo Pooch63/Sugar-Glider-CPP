@@ -170,8 +170,11 @@ namespace Bytecode {
             void push_bin_op_type(Operations::BinOpType type);
             void push_unary_op_type(Operations::UnaryOpType type);
 
-            /* Read opcode and update with the new byte index. */
-            OpCode read_opcode(Bytecode::address_t &index);
+            /* Read opcode and update with the new byte index.
+                Inlining this function */
+            inline OpCode read_opcode(Bytecode::address_t &index) {
+                return this->read_small_enum<OpCode>(index);
+            };
 
             template<typename push_type>
             void push_value(push_type data) {

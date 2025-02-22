@@ -12,9 +12,6 @@ using namespace Bytecode;
 void Chunk::push_opcode(OpCode code) {
     this->push_small_enum<OpCode>(code);
 }
-OpCode Chunk::read_opcode(Bytecode::address_t &index) {
-    return this->read_small_enum<OpCode>(index);
-};
 
 /* Note that push_bin_op_type and puush_unary_op_type only push the first byte
     of the code because, as of now, there are AT MOST 256 binary op types and
