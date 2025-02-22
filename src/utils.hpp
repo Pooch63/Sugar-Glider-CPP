@@ -15,9 +15,6 @@ uint get_string_length_as_utf32(std::string str);
 /* Truncate a string to the maximum length, then add ... if necessary */
 void truncate_string(std::string &output, uint max_len, std::string &value);
 
-uint64_t time_in_nanoseconds();
-uint64_t time_in_millis();
-
 namespace Random {
     typedef std::mt19937 RNG;
     extern RNG rng;

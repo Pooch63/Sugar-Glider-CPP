@@ -1,6 +1,5 @@
+#include "time-utils.hpp"
 #include "utils.hpp"
-
-#include <chrono>
 
 #ifdef DEBUG
 #include <cassert>
@@ -67,20 +66,6 @@ uint get_string_length_as_utf32(std::string str) {
     int len = 0;
     while (*s) len += (*s++ & 0xc0) != 0x80;
     return len;
-}
-
-template<typename chronos_type>
-static uint64_t get_time() {
-    return std::chrono::duration_cast<chronos_type>(
-        std::chrono::high_resolution_clock::now().time_since_epoch()
-    ).count();
-}
-
-uint64_t time_in_nanoseconds() {
-    return get_time<std::chrono::nanoseconds>();
-}
-uint64_t time_in_millis() {
-    return get_time<std::chrono::milliseconds>();
 }
 
 Random::RNG Random::rng;
