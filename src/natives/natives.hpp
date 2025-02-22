@@ -6,8 +6,15 @@
 #include <array>
 #include <unordered_map>
 
+#define NATIVE_FUNCTION_HEADERS() ( \
+    [[maybe_unused]] const Value * const stack, \
+    [[maybe_unused]] uint stack_size, \
+    [[maybe_unused]] Value &result, \
+    [[maybe_unused]] Runtime &runtime, \
+    [[maybe_unused]] std::string &error_message)
+
 namespace Natives {
-    const int native_count = 5;
+    const int native_count = 4;
 
     struct Native {
         const char *native_name;
