@@ -127,6 +127,14 @@ AST::Node* Parse::Rules::binary_op(Scan::Token &current, AST::Node* left, Parser
             type = Operations::BINOP_GREATER_THAN;
             prec = Precedence::PREC_RELATIONAL;
             break;
+        case TokType::LESS_THAN_EQUAL:
+            type = Operations::BINOP_LESS_THAN_OR_EQUAL;
+            prec = Precedence::PREC_RELATIONAL;
+            break;
+        case TokType::GREATER_THAN_EQUAL:
+            type = Operations::BINOP_GREATER_THAN_OR_EQUAL;
+            prec = Precedence::PREC_RELATIONAL;
+            break;
         case TokType::BANG_EQ:
             type = Operations::BINOP_NOT_EQUAL_TO;
             prec = Precedence::PREC_EQUALITY;
@@ -277,6 +285,7 @@ void Parser::initialize_parse_rules() {
             .precedence = Precedence::PREC_FACTOR
         };
     rules[TokType::LESS_THAN] = rules[TokType::GREATER_THAN] =
+        rules[TokType::LESS_THAN_EQUAL] = rules[TokType::GREATER_THAN_EQUAL] =
         ParseRule{
             .nud = nullptr,
             .led = Rules::binary_op,

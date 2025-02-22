@@ -36,6 +36,8 @@ const char* Scan::tok_type_to_string(TokType type) {
         case RBRACKET: return "}";
         case LESS_THAN: return "<";
         case GREATER_THAN: return ">";
+        case LESS_THAN_EQUAL: return "<=";
+        case GREATER_THAN_EQUAL: return ">=";
 
         case QUESTION_MARK: return "?";
         case COLON: return ":";
@@ -566,8 +568,16 @@ Token Scanner::next_token() {
         case ']': one_char_type = TokType::RBRACE; break;
         case '{': one_char_type = TokType::LBRACKET; break;
         case '}': one_char_type = TokType::RBRACKET; break;
-        case '<': one_char_type = TokType::LESS_THAN; break;
-        case '>': one_char_type = TokType::GREATER_THAN; break;
+        case '<': {
+            if (this->peek(1) == '=') two_char_type = TokType::LESS_THAN_EQUAL;
+            else one_char_type = TokType::LESS_THAN;
+        }
+            break;
+        case '>': {
+            if (this->peek(1) == '=') two_char_type = TokType::GREATER_THAN_EQUAL;
+            else one_char_type = TokType::GREATER_THAN;
+        }
+            break;
 
         case '?': one_char_type = TokType::QUESTION_MARK; break;
         case ':': one_char_type = TokType::COLON; break;

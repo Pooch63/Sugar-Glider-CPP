@@ -55,29 +55,33 @@ std::string Values::value_to_string(const Value &value) {
         case ValueType::NULL_VALUE: return "null";
         case ValueType::PROGRAM_FUNCTION: return "function";
         case ValueType::NATIVE_FUNCTION: return "[native function]";
-        case ValueType::OBJ: {
-            Object *obj = get_value_object(value);
-            switch (obj->type) {
-                case ObjectType::STRING: return '"' + *get_value_string(value) + '"';
-                case ObjectType::ARRAY: {
-                    std::string str = "[ ";
-                    bool found_value = false;
-                    for (Value value : *get_value_array(value)) {
-                        if (found_value) str += ", ";
-                        str += value_to_string(value);
-                        found_value = true;
-                    }
-                    str += " ]";
-                    return str;
-                }
-                default: throw sg_assert_error("Unknown object type when making string");
-            }
-        }
+        case ValueType::OBJ: return object_to_string(get_value_object(value));
         default:
             throw sg_assert_error("Unknown value to log as string");
     }
 };
 
+std::string Values::object_to_string(Object *obj) {
+    switch (obj->type) {
+        case ObjectType::STRING: {
+            std::string trimmed;
+            truncate_string(trimmed, 36, *obj->memory.str);
+            return '"' + trimmed + '"';
+        }
+        case ObjectType::ARRAY: {
+            std::string str = "[ ";
+            bool found_value = false;
+            for (Value value : *obj->memory.array) {
+                if (found_value) str += ", ";
+                str += value_to_string(value);
+                found_value = true;
+            }
+            str += " ]";
+            return str;
+        }
+        default: throw sg_assert_error("Unknown object type when making string");
+    }
+};
 std::string Values::object_to_debug_string(Object *obj) {
     switch (obj->type) {
         case ObjectType::STRING: {
@@ -137,9 +141,9 @@ bool Values::value_is_numerical(const Value &value) {
         get_value_type(value) == ValueType::TRUE ||
         get_value_type(value) == ValueType::FALSE;
 };
-Values::number_t Value::to_number() const {
-    switch (this->type) {
-        case ValueType::NUMBER: return this->value.number;
+Values::number_t Values::value_to_number(const Value &value) {
+    switch (get_value_type(value)) {
+        case ValueType::NUMBER: return get_value_number(value);
         case ValueType::TRUE: return static_cast<Values::number_t>(1);
         case ValueType::FALSE: return static_cast<Values::number_t>(0);
         default:
@@ -162,6 +166,7 @@ bool Values::values_are_equal(const Value &a, const Value &b) {
             }
         }
         case ValueType::NATIVE_FUNCTION: return get_value_native_function(a).func == get_value_native_function(b).func;
+        case ValueType::NUMBER: return get_value_number(a) == get_value_number(b);
         default: return true;
     }
 };
@@ -223,8 +228,8 @@ bool Values::bin_op(
         return false;
     }
 
-    Values::number_t first = a.to_number(),
-        second = b.to_number();
+    Values::number_t first = value_to_number(a),
+        second = value_to_number(b);
 
     int firstI, secondI;
 
@@ -262,6 +267,10 @@ bool Values::bin_op(
             *result = Value(first < second ? ValueType::TRUE : ValueType::FALSE); break;
         case BinOpType::BINOP_GREATER_THAN:
             *result = Value(first > second ? ValueType::TRUE : ValueType::FALSE); break;
+        case BinOpType::BINOP_LESS_THAN_OR_EQUAL:
+            *result = Value(first <= second ? ValueType::TRUE : ValueType::FALSE); break;
+        case BinOpType::BINOP_GREATER_THAN_OR_EQUAL:
+            *result = Value(first >= second ? ValueType::TRUE : ValueType::FALSE); break;
         default:
             throw sg_assert_error("Tried to compute unknown binary operation on two values");
     }
@@ -281,7 +290,7 @@ bool Values::unary_op(Operations::UnaryOpType type, Value arg, Value *result, st
         return false;
     }
 
-    Values::number_t num = arg.to_number();
+    Values::number_t num = value_to_number(arg);
 
     int argI;
 

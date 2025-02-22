@@ -67,6 +67,10 @@ namespace Scan {
         LESS_THAN,
         // >
         GREATER_THAN,
+        // <=
+        LESS_THAN_EQUAL,
+        // >=
+        GREATER_THAN_EQUAL,
         // ?
         QUESTION_MARK,
         // :

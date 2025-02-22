@@ -85,8 +85,6 @@ namespace Values {
             friend native_method_t get_value_native_function(const Value &value);
             friend Bytecode::constant_index_t get_value_program_function(const Value &value);
             friend Object *get_value_object(const Value &value);
-
-            number_t to_number() const;
     };
 
     typedef std::unordered_map<std::string, Value> namespace_t;
@@ -119,6 +117,7 @@ namespace Values {
 
     std::string value_to_string(const Value &value);
     std::string value_to_debug_string(const Value &value);
+    std::string object_to_string(Object *obj);
     std::string object_to_debug_string(Object *obj);
 
     // Free value payload if necessary
@@ -171,6 +170,7 @@ namespace Values {
     bool value_is_truthy(const Value &value);
     bool value_is_numerical(const Value &value);
     bool values_are_equal(const Value &a, const Value &b);
+    Values::number_t value_to_number(const Value &value);
 
     /**
      * @param {BinOpType} type

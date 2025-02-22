@@ -14,7 +14,7 @@
     [[maybe_unused]] std::string &error_message)
 
 namespace Natives {
-    const int native_count = 4;
+    const int native_count = 5;
 
     struct Native {
         const char *native_name;

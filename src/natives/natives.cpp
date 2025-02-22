@@ -19,6 +19,7 @@ bool clock NATIVE_FUNCTION_HEADERS() {
 }
 
 #include "array.hpp"
+#include "math.hpp"
 
 Native::Native(const char *name, Values::Value value) :
     native_name(name), value(value) {};
@@ -27,21 +28,20 @@ uint Natives::get_native_index(std::string native_name) {
     return name_to_native_index[native_name];
 };
 std::unordered_map<std::string, uint> Natives::name_to_native_index = {
-    { "PI", 0 },
-    { "println", 1 },
-    { "clock", 2 },
-    { "Array", 3 }
+    { "println", 0 },
+    { "clock", 1 },
+    { "Array", 2 },
+    { "Math", 3 }
 };
 
 void Natives::create_natives(std::array<Value, native_count> &natives) {
-    natives[0] = Values::Value(Values::NUMBER, 3.14159265358979323);
-
-    natives[1] = Values::Value(
+    natives[0] = Values::Value(
         Values::native_method_t{ .func = println, .number_arguments = 1 }
     );
-    natives[2] = Values::Value(
+    natives[1] = Values::Value(
         Values::native_method_t{ .func = clock, .number_arguments = 0 }
     );
 
-    natives[3] = Natives::create_array_namespace();
+    natives[2] = Natives::create_array_namespace();
+    natives[3] = Natives::create_math_namespace();
 };

@@ -13,8 +13,10 @@ namespace Operations {
         BINOP_MOD = 8,
         BINOP_LESS_THAN = 10,
         BINOP_GREATER_THAN = 12,
-        BINOP_NOT_EQUAL_TO = 14,
-        BINOP_EQUAL_TO = 16
+        BINOP_LESS_THAN_OR_EQUAL = 14,
+        BINOP_GREATER_THAN_OR_EQUAL = 16,
+        BINOP_NOT_EQUAL_TO = 18,
+        BINOP_EQUAL_TO = 20
     };
     enum UnaryOpType {
         UNARY_NEGATE = 0
