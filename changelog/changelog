@@ -1,0 +1,5 @@
+Feb 21, 2025, Commit bfb4e37cb55c3247161c755fa0fee101ff8131db
+
+Added garbage collector, dot operator, better natives.
+- In order to implement the GC, a complete refactor of the Value object was required (which ultimately led to much easier-to-read code). Before, the Value had a string and an array type, and the runtime kept track of heap-allocated values WITH a value linked list. Now, there is a separate Object class for values we need to allocate on the heap. A Value only has one OBJ type, and the object then tracks which heap value it has. Right now, there are strings, arrays, and constant namespaces.
+- Natives can now use namespaces, so instead of append, you can use Array.append, which I think is MUCH prettier.
