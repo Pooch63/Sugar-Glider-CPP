@@ -41,7 +41,7 @@ void Runtime::add_object(Object *obj) {
     #ifdef DEBUG_STRESS_GC
         std::cout << "GC: Allocating value (" << obj << ") " <<
             object_to_debug_string(obj) << " on heap\n";
-        // this->run_gc();
+        this->run_gc();
     #endif
 
     this->gc_size += sizeof(Object*);
@@ -115,26 +115,26 @@ void Runtime::delete_values() {
     Object *current = this->runtime_values;
     this->runtime_values = nullptr;
 
-    std::cout << "DELETING VALUES\n";
-
     while (current != nullptr) {
         Object *next = current->next;
-        std::cout << "Checking for mark " << current << std::endl;
-
+        
+        // Note: we can't log any information about objects that are being deleted.
+        // This is because they might depend on other objects that were previously deleted
+        // E.g., if [ "a" ] is dereferenced, we might delete "a" first. Thus, the array itself cannot
+        // be logged
         if (!current->marked_for_save) {
-            this->gc_size -= sizeof(Object) + sizeof(Object*);
             #ifdef DEBUG_GC
-            std::cout << "GC: Freeing value " << object_to_debug_string(current) <<
-                " at " << current << '\n';
+            std::cout << "GC: Deleting value @ " << current << std::endl;
             #endif
+
+            this->gc_size -= sizeof(Object) + sizeof(Object*);
             delete current;
-            // std::cout << "freed " << '\n';
         }
         else {
             #ifdef DEBUG_GC
-            std::cout << "GC: Saving value " << object_to_debug_string(current) <<
-                " at " << current << '\n';
+            std::cout << "GC: Saving value (" << current << ") " << object_to_debug_string(current) << std::endl;
             #endif
+
             current->next = this->runtime_values;
             this->runtime_values = current;
         }
@@ -432,9 +432,9 @@ int Runtime::run() {
 }
 
 Runtime::~Runtime() {
-    // for (Value value : this->constants) {
-    //     value.free_payload();
-    // }
+    for (Value value : this->constants) {
+        free_value_if_object(value);
+    }
 
     while (this->runtime_values != nullptr) {
         Object *next = this->runtime_values->next;
