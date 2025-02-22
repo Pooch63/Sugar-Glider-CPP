@@ -304,14 +304,17 @@ namespace Intermediate {
             std::unique_ptr<Block> block;
             // NOT RESPONSIBLE for variable management
             std::vector<Intermediate::Variable*> arguments = std::vector<Intermediate::Variable*>();
+            std::string name;
         public:
-            Function(Block *block);
+            Function(Block *block, const std::string &name);
 
             inline Block *get_block() const { return this->block.get(); };
             void add_argument(Intermediate::Variable *argument);
             
             inline size_t argument_count() const { return this->arguments.size(); };
             inline auto     get_argument(uint index) const { return this->arguments.at(index); };
+
+            inline const std::string &get_name() const { return this->name; };
     };
     class LabelIR {
         private:
@@ -324,7 +327,7 @@ namespace Intermediate {
             inline Function            *get_main() { return &this->main; };
             int   last_function_index() const;
 
-            Function *new_function();
+            Function *new_function(const std::string &name);
             inline Function *get_function(int index) { return this->functions.at(index); };
 
             void log_ir() const;

@@ -212,7 +212,7 @@ void Transpiler::transpile_ir_to_bytecode(Intermediate::LabelIR &ir) {
         Bytecode::call_arguments_t num_arguments = static_cast<Bytecode::call_arguments_t>(func->argument_count());
         Bytecode::variable_index_t total_variables = num_arguments + this->func_variables.back().func->argument_count();
 
-        RuntimeFunction runtime_func = RuntimeFunction(chunk, num_arguments, total_variables);
+        RuntimeFunction runtime_func = RuntimeFunction(chunk, num_arguments, total_variables, func->get_name());
         this->runtime.add_function(runtime_func);
     }
 }

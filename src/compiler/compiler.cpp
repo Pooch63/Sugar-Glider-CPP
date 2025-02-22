@@ -326,7 +326,7 @@ void Compiler::compile_function_definition(AST::Function* node) {
     }
 
     Intermediate::Block *old_compile = this->main_block;
-    Intermediate::Function *function = this->ir.new_function();
+    Intermediate::Function *function = this->ir.new_function(*node->get_name());
 
     this->main_block = function->get_block();
 

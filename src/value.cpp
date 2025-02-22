@@ -119,9 +119,10 @@ Object *Values::safe_get_value_object(const Value &value) {
 
 bool Values::value_is_truthy(const Value &value) {
     switch (get_value_type(value)) {
-        case ValueType::NULL_VALUE: return false;
+        case ValueType::NATIVE_FUNCTION: return true;
         case ValueType::TRUE: return true;
         case ValueType::FALSE: return false;
+        case ValueType::NULL_VALUE: return false;
         case ValueType::NUMBER: return get_value_number(value) != 0;
         case ValueType::OBJ: {
             Object *obj = get_value_object(value);
@@ -131,7 +132,6 @@ bool Values::value_is_truthy(const Value &value) {
                 default: throw sg_assert_error("Unknown object type when determining value truth");
             }
         }
-        case ValueType::NATIVE_FUNCTION: return true;
         default:
             throw sg_assert_error("Unknown value to get truthy value from");
     }
@@ -231,12 +231,10 @@ bool Values::bin_op(
     Values::number_t first = value_to_number(a),
         second = value_to_number(b);
 
-    int firstI, secondI;
-
     if (Operations::bin_op_is_bitwise_operator(type)) {
         /* Make sure the numbers are both integers. */
-        firstI = floor(first);
-        secondI = floor(second);
+        int firstI = floor(first);
+        int secondI = floor(second);
 
         /* Bitwise operation error on floats */
         if (first != firstI && second != secondI) {

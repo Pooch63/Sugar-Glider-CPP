@@ -13,8 +13,14 @@ struct RuntimeFunction {
     Bytecode::call_arguments_t num_arguments;
     // Number of variable slots, including arguments
     Bytecode::variable_index_t total_variables;
+    // Debug info
+    const std::string name;
 
-    RuntimeFunction(Bytecode::Chunk chunk, Bytecode::call_arguments_t num_arguments, Bytecode::variable_index_t total_variables);
+    RuntimeFunction(
+        Bytecode::Chunk chunk,
+        Bytecode::call_arguments_t num_arguments,
+        Bytecode::variable_index_t total_variables,
+        const std::string &name);
 };
 struct RuntimeCallFrame {
     Bytecode::constant_index_t func_index;
@@ -69,6 +75,8 @@ class Runtime {
         Bytecode::address_t main_ip;
         std::string error = "";
 
+        void log_call_frame(RuntimeCallFrame &frame, std::ostream &out);
+        void log_stack_trace(std::ostream &out);
         void exit();
 
         // GC

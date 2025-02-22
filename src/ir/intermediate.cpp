@@ -390,17 +390,17 @@ void Block::log_block() const {
 }
 
 // Function >
-Function::Function(Block *block) : block(std::unique_ptr<Block>(block)) {};
+Function::Function(Block *block, const std::string &name) : block(std::unique_ptr<Block>(block)), name(name) {};
 void Function::add_argument(Intermediate::Variable *argument) {
     this->arguments.push_back(argument);
 }
 // < Function
 
 // Label IR >
-LabelIR::LabelIR() : main(Function(new Block())) {}
+LabelIR::LabelIR() : main(Function(new Block(), "[main]")) {}
 
-Function *LabelIR::new_function() {
-    Function *function = new Function(new Block());
+Function *LabelIR::new_function(const std::string &name) {
+    Function *function = new Function(new Block(), name);
     this->functions.push_back(function);
     return function;
 }

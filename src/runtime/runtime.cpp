@@ -8,8 +8,12 @@
 using namespace Values;
 using namespace Bytecode;
 
-RuntimeFunction::RuntimeFunction(Bytecode::Chunk chunk, Bytecode::call_arguments_t num_arguments, Bytecode::variable_index_t total_variables) :
-    chunk(chunk), num_arguments(num_arguments), total_variables(total_variables) {};
+RuntimeFunction::RuntimeFunction(
+    Bytecode::Chunk chunk,
+    Bytecode::call_arguments_t num_arguments,
+    Bytecode::variable_index_t total_variables,
+    const std::string &name) :
+    chunk(chunk), num_arguments(num_arguments), total_variables(total_variables), name(name) {};
 RuntimeCallFrame::RuntimeCallFrame(
     Bytecode::constant_index_t func_index,
     Bytecode::call_arguments_t arg_count,
@@ -59,7 +63,9 @@ void Runtime::add_object(Object *obj) {
         case ObjectType::NAMESPACE_CONSTANT: throw sg_assert_error("Tried to allocate at runtime a compile-time constant namespace");
     }
 
+    #ifdef DEBUG_GC
     std::cout << "gc_size=" << this->gc_size << std::endl;
+    #endif
 
     obj->next = this->runtime_values;
     this->runtime_values = obj;
@@ -161,6 +167,27 @@ Values::Value Runtime::stack_pop() {
     this->stack.pop_back();
     return back;
 }
+
+void Runtime::log_call_frame(RuntimeCallFrame &frame, std::ostream &out) {
+    RuntimeFunction func = this->functions.at(frame.func_index);
+    out << func.name << "(...)" << std::endl;
+}
+void Runtime::log_stack_trace(std::ostream &out) {
+    int bottom_ind = std::max(0, static_cast<int>(this->call_stack.size()) - 3);
+    // Log first 3
+    for (int ind = this->call_stack.size() - 1;
+        ind >= bottom_ind;
+        ind -= 1
+    ) {
+        log_call_frame(this->call_stack.at(ind), out);
+    }
+    if (this->call_stack.size() > 6) {
+        std::cout << "...\n";
+    }
+    for (int ind = std::min(static_cast<int>(2), bottom_ind); ind >= 0; ind -= 1) {
+        log_call_frame(this->call_stack.at(ind), out);
+    }
+}
 void Runtime::exit() {}
 
 void Runtime::log_instructions() {
@@ -249,10 +276,13 @@ int Runtime::run() {
                     this->call_stack_size += stack_size;
 
                     if (this->call_stack_size > MAX_CALL_STACK_SIZE) {
-                        this->error = "Maximum call stack size exceeded. ";
-                        this->error = std::to_string(this->call_stack_size / 1024.0);
+                        this->error = "Stack error: Maximum call stack size exceeded. ";
+                        double size = this->call_stack_size / 1024.0;
+                        char num[20];
+                        snprintf(num, 20, "%.2lf", size);
+                        this->error += num;
                         this->error += " KB necessary, but maximum is ";
-                        this->error += std::to_string(MAX_CALL_STACK_SIZE);
+                        this->error += std::to_string(MAX_CALL_STACK_SIZE / 1024);
                         this->error += " KB";
                         break;
                     }
@@ -457,6 +487,9 @@ int Runtime::run() {
         }
         if (this->error.size() > 0) {
             std::cerr << rang::fg::red << "runtime error: " << rang::style::reset << this->error << std::endl;
+            
+            this->log_stack_trace(std::cerr);
+            
             return -1;
         }
     }

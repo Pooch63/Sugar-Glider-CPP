@@ -22,6 +22,9 @@ namespace Operations {
         UNARY_NEGATE = 0
     };
 
+    /* Something interesting: On my system at least, inlining these functions
+        actually led to WORSE performance. HOWEVER, make sure to test as
+        more and more bitwise operations are added. */
     bool bin_op_is_bitwise_operator(BinOpType type);
     bool unary_is_bitwise_operator(UnaryOpType type);
     

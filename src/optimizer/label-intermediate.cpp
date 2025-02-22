@@ -226,7 +226,7 @@ void optimize_labels(Intermediate::LabelIR &old, Intermediate::LabelIR &optimize
     for (int func_index = 0; func_index < old.last_function_index() + 1; func_index += 1) {
         Intermediate::Function *function = old.get_function(func_index);
 
-        Intermediate::Function *new_func = optimized.new_function();
+        Intermediate::Function *new_func = optimized.new_function(function->get_name());
         for (uint arg_ind = 0; arg_ind < function->argument_count(); arg_ind += 1) {
             new_func->add_argument(function->get_argument(arg_ind));
         }
