@@ -43,5 +43,5 @@ void Natives::create_natives(std::array<Value, native_count> &natives) {
         Values::native_method_t{ .func = clock, .number_arguments = 0 }
     );
 
-    natives[5] = Natives::create_array_namespace();
+    natives[3] = Natives::create_array_namespace();
 };
