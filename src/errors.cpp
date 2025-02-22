@@ -94,3 +94,7 @@ std::runtime_error log_assert(std::string message) {
     std::cerr << rang::style::reset << "Please report this issue\n";
     return std::runtime_error(message);
 }
+std::runtime_error memory_error() {
+    std::cerr << '\n' << rang::style::bold << rang::fg::red << "memory error\n";
+    return std::runtime_error("Failed to allocate memory. Self-kill.");
+}

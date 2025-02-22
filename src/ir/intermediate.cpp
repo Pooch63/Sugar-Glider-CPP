@@ -1,4 +1,5 @@
 #include "intermediate.hpp"
+#include "../memory.hpp"
 #include "../utils.hpp"
 
 using namespace Intermediate;
@@ -103,7 +104,9 @@ Value Instruction::payload_to_value() const {
             return Value(ValueType::NULL_VALUE);
         case InstrCode::INSTR_CONSTANT_PROPERTY_ACCESS:
         case InstrCode::INSTR_STRING:
-            return Value(new Object(new std::string(*this->payload.str)));
+            return Value(
+                Allocate<Object>::create(
+                    Allocate<std::string>::create(*this->payload.str)));
         case InstrCode::INSTR_GET_FUNCTION_REFERENCE:
             return Value(this->get_function_index(), ValueType::PROGRAM_FUNCTION);
         default:
@@ -397,10 +400,11 @@ void Function::add_argument(Intermediate::Variable *argument) {
 // < Function
 
 // Label IR >
-LabelIR::LabelIR() : main(Function(new Block(), "[main]")) {}
+LabelIR::LabelIR() : main(Function(Allocate<Block>::create(), "[main]")) {}
 
 Function *LabelIR::new_function(const std::string &name) {
-    Function *function = new Function(new Block(), name);
+    Block *block = Allocate<Block>::create();
+    Function *function = Allocate<Function>::create(block, name);
     this->functions.push_back(function);
     return function;
 }
@@ -451,7 +455,7 @@ static char label_chars[CHAR_LABEL_COUNT] = {
     '-', '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
 };
 label_index_t* Block::gen_label_name() const {
-    label_index_t* label = new label_index_t("");
+    label_index_t* label = Allocate<label_index_t>::create("");
     for (uint i = 0; i < IR_LABEL_LENGTH; i += 1) {
         label->append(1, label_chars[Block::label_generator(Random::rng)]);
     }

@@ -1,6 +1,7 @@
 #include "parser.hpp"
 #include "scopes.hpp"
 #include "../globals.hpp"
+#include "../memory.hpp"
 
 #ifdef DEBUG
     #include <cassert>
@@ -15,7 +16,7 @@ std::array<Rules::ParseRule, Scan::NUM_TOKEN_TYPES> Rules::rules = {};
 
 // Rule functions >
 AST::Node* Parse::Rules::number(Scan::Token& current, [[maybe_unused]] Parser* parser) {
-    return new AST::Number(current.get_number());
+    return Allocate<AST::Number>::create(current.get_number());
 }
 AST::Node* Parse::Rules::parse_string(Scan::Token &current, Parser* parser) {
     // You can do something like "a""b" to concatenate into "ab", so allow for that
@@ -28,19 +29,19 @@ AST::Node* Parse::Rules::parse_string(Scan::Token &current, Parser* parser) {
         parser->advance();
     }
 
-    return new AST::String(str, current.get_position());
+    return Allocate<AST::String>::create(str, current.get_position());
 }
 AST::Node* Parse::Rules::keyword_constant(Scan::Token &current, [[maybe_unused]] Parser* parser) {
     switch (current.get_type()) {
-        case TokType::TRUE: return new AST::True();
-        case TokType::FALSE: return new AST::False();
-        case TokType::NULL_TOKEN: return new AST::Null();
+        case TokType::TRUE: return Allocate<AST::True>::create();
+        case TokType::FALSE: return Allocate<AST::False>::create();
+        case TokType::NULL_TOKEN: return Allocate<AST::Null>::create();
         default:
             throw sg_assert_error("Parser tried to parse non-literal token as literal");
     }
 }
 AST::Node* Parse::Rules::parse_array([[maybe_unused]] Scan::Token &current, Parser* parser) {
-    AST::Array *array = new AST::Array();
+    AST::Array *array = Allocate<AST::Array>::create();
 
     bool found_element = false;
 
@@ -76,7 +77,7 @@ AST::Node *Parse::Rules::parse_array_index([[maybe_unused]] Scan::Token &current
         value = parser->parse_expression();
     }
 
-    return new AST::ArrayIndex(left, index, value);
+    return Allocate<AST::ArrayIndex>::create(left, index, value);
 }
 
 AST::Node* Parse::Rules::unary_op(Scan::Token& current, Parser* parser) {
@@ -92,7 +93,7 @@ AST::Node* Parse::Rules::unary_op(Scan::Token& current, Parser* parser) {
             break;
     }
     AST::Node* argument = parser->parse_precedence((int)Precedence::PREC_UNARY + 1);
-    return new AST::UnaryOp(type, argument);
+    return Allocate<AST::UnaryOp>::create(type, argument);
 }
 AST::Node* Parse::Rules::binary_op(Scan::Token &current, AST::Node* left, Parser* parser) {
     Operations::BinOpType type;
@@ -148,7 +149,7 @@ AST::Node* Parse::Rules::binary_op(Scan::Token &current, AST::Node* left, Parser
     }
 
     AST::Node* right = parser->parse_precedence(static_cast<int>(prec) + 1);
-    return new AST::BinOp(type, left, right);
+    return Allocate<AST::BinOp>::create(type, left, right);
 }
 AST::Node* Parse::Rules::paren_group([[maybe_unused]] Scan::Token &current, Parser* parser) {
     AST::Node* expression = parser->parse_precedence((int)Precedence::PREC_NONE);
@@ -158,10 +159,10 @@ AST::Node* Parse::Rules::paren_group([[maybe_unused]] Scan::Token &current, Pars
 };
 AST::Node* Parse::Rules::ternary_op([[maybe_unused]] Scan::Token &current, AST::Node* left, Parser* parser) {
     AST::Node* if_true = parser->parse_precedence((int)Precedence::PREC_NONE);
-    parser->expect_symbol(TokType::COLON);
+    parser->expect_symbol(TokType::COLON, "Expected colon after '?' in ternary expression");
     AST::Node* if_false = parser->parse_precedence((int)Precedence::PREC_NONE);
 
-    return new AST::TernaryOp(left, if_true, if_false);
+    return Allocate<AST::TernaryOp>::create(left, if_true, if_false);
 };
 
 AST::Node* Parse::Rules::function_call(Scan::Token &current, AST::Node* left, Parser* parser) {
@@ -175,7 +176,7 @@ AST::Node* Parse::Rules::function_call(Scan::Token &current, AST::Node* left, Pa
         );
     }
 
-    AST::FunctionCall* call = new AST::FunctionCall(left);
+    AST::FunctionCall* call = Allocate<AST::FunctionCall>::create(left);
 
     int arg_count = 0;
     if (parser->curr().get_type() != TokType::RPAREN) {
@@ -223,14 +224,14 @@ AST::Node *Parse::Rules::parse_dot_get([[maybe_unused]] Scan::Token &current, AS
     
     std::string *right = next_is_identifier ? parser->previous().get_string() : nullptr;
     if (next_is_identifier) parser->previous().mark_payload();
-    return new AST::Dot(left, right);
+    return Allocate<AST::Dot>::create(left, right);
 };
 
 
 AST::Node* Parse::Rules::var_value(Scan::Token &current, [[maybe_unused]] Parser* parser) {
     // Make sure to stop the variable name from automatically being freed
     current.mark_payload();
-    return new AST::VarValue(current.get_string(), current.get_position());
+    return Allocate<AST::VarValue>::create(current.get_string(), current.get_position());
 };
 AST::Node* Parse::Rules::var_assignment(Scan::Token &current, AST::Node* left, Parser* parser) {
     if (left->get_type() != AST::NODE_VAR_VALUE) {
@@ -238,7 +239,7 @@ AST::Node* Parse::Rules::var_assignment(Scan::Token &current, AST::Node* left, P
     }
 
     AST::Node* value = parser->parse_expression();
-    return new AST::VarAssignment(left, value, current.get_position());
+    return Allocate<AST::VarAssignment>::create(left, value, current.get_position());
 };
 
 bool Parser::rules_initialized = false;
@@ -433,7 +434,7 @@ AST::Body* Parser::parse_braced_block() {
     // Go through {
     this->advance();
 
-    AST::Body* body = new AST::Body();
+    AST::Body* body = Allocate<AST::Body>::create();
 
     while (this->curr().get_type() != TokType::RBRACKET && !this->at_EOF()) {
         body->add_statement(this->parse_statement());
@@ -506,7 +507,7 @@ AST::VarDefinition *Parser::parse_var_def_no_header(Intermediate::VariableType t
     this->expect_symbol(TokType::EQUALS, "Expected equals sign after variable definition.");
     AST::Node* value = this->parse_expression();
 
-    return got_identifier ? new AST::VarDefinition(
+    return got_identifier ? Allocate<AST::VarDefinition>::create(
         type,
         name,
         value,
@@ -532,7 +533,7 @@ AST::If* Parser::parse_if_statement() {
     AST::Node* condition = this->parse_parenthesized_expression();
     AST::Node* block = this->parse_optionally_inlined_block();
 
-    return new AST::If(condition, block);
+    return Allocate<AST::If>::create(condition, block);
 }
 AST::While* Parser::parse_while_statement() {
     // Go through while token
@@ -541,7 +542,7 @@ AST::While* Parser::parse_while_statement() {
     AST::Node* condition = this->parse_parenthesized_expression();
     AST::Node* block = this->parse_optionally_inlined_block();
 
-    return new AST::While(condition, block);
+    return Allocate<AST::While>::create(condition, block);
 }
 
 AST::Break* Parser::parse_break_statement() {
@@ -549,14 +550,14 @@ AST::Break* Parser::parse_break_statement() {
     this->advance();
     Scan::Token break_= this->previous_token;
 
-    return new AST::Break(break_.get_position());
+    return Allocate<AST::Break>::create(break_.get_position());
 }
 AST::Continue* Parser::parse_continue_statement() {
     // Go through continue token
     this->advance();
     Scan::Token continue_= this->previous_token;
 
-    return new AST::Continue(continue_.get_position());
+    return Allocate<AST::Continue>::create(continue_.get_position());
 }
 AST::Return* Parser::parse_return_statement() {
     // Go through return token
@@ -566,7 +567,7 @@ AST::Return* Parser::parse_return_statement() {
     AST::Node* value = this->parse_expression();
 
     this->expect_symbol(TokType::SEMICOLON, "Semicolon expected after return statement");
-    return new AST::Return(value, return_position);
+    return Allocate<AST::Return>::create(value, return_position);
 };
 
 std::string* Parser::parse_function_parameter() {
@@ -582,7 +583,7 @@ AST::Function* Parser::parse_function() {
     std::string* name = found_identifier ? this->previous_token.get_string() : nullptr;
     if (found_identifier) this->previous_token.mark_payload();
 
-    AST::Function* function = new AST::Function(name, this->previous_token.get_position());
+    AST::Function* function = Allocate<AST::Function>::create(name, this->previous_token.get_position());
 
     this->expect_symbol(TokType::LPAREN);
 
@@ -652,7 +653,7 @@ AST::Node* Parser::parse_statement() {
 }
 
 AST::Body* Parser::parse() {
-    AST::Body* body = new AST::Body();
+    AST::Body* body = Allocate<AST::Body>::create();
 
     while (!this->at_EOF()) {
         AST::Node* statement = this->parse_statement();

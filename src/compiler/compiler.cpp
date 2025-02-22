@@ -1,6 +1,7 @@
 #include "compiler.hpp"
 #include "../globals.hpp"
 #include "../ir/bytecode.hpp"
+#include "../memory.hpp"
 
 #ifdef DEBUG
 #include <cassert>
@@ -39,15 +40,16 @@ void Compiler::compile_array_index(AST::ArrayIndex* node) {
 }
 void Compiler::compile_dot(AST::Dot* node) {
     this->compile_node(node->get_object());
+
+    std::string *string_copy = Allocate<std::string>::create(*node->get_property());
     this->main_block->add_instruction(Intermediate::Instruction(
         Intermediate::INSTR_CONSTANT_PROPERTY_ACCESS,
-        new std::string(*node->get_property()) ));
+        string_copy ));
 }
 void Compiler::compile_string(AST::String* node) {
+    std::string *string_copy = Allocate<std::string>::create(*node->get_string());
     this->main_block->add_instruction(
-        Intermediate::Instruction(
-            Intermediate::INSTR_STRING,
-            new std::string(*node->get_string()) ));
+        Intermediate::Instruction( Intermediate::INSTR_STRING, string_copy ));
 }
 void Compiler::compile_number(AST::Number* node) {
     this->main_block->add_instruction(Intermediate::Instruction(node->get_number()));

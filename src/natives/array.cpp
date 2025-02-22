@@ -1,5 +1,6 @@
 #include "array.hpp"
 #include "natives.hpp"
+#include "../memory.hpp"
 
 using namespace Values;
 
@@ -60,15 +61,16 @@ static bool length NATIVE_FUNCTION_HEADERS() {
 
 Value Natives::create_array_namespace() {
     std::unordered_map<std::string, Value> *Array = new std::unordered_map<std::string, Value>({
-        { "append", Values::Value(
-            Values::native_method_t{ .func = append, .number_arguments = 2 }
-        ) },
-        { "includes", Values::Value(
-            Values::native_method_t{ .func = includes, .number_arguments = 2 }
-        ) },
-        { "length", Values::Value(
-            Values::native_method_t{ .func = length, .number_arguments = 1 }
-        ) }
-    });
-    return Value(new Object(Array));
+            { "append", Values::Value(
+                Values::native_method_t{ .func = append, .number_arguments = 2 }
+            ) },
+            { "includes", Values::Value(
+                Values::native_method_t{ .func = includes, .number_arguments = 2 }
+            ) },
+            { "length", Values::Value(
+                Values::native_method_t{ .func = length, .number_arguments = 1 }
+            ) }
+        });
+    Object *array_obj = Allocate<Object>::create(Array);
+    return Value(array_obj);
 };

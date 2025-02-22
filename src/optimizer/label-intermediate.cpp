@@ -1,4 +1,5 @@
 #include "label-intermediate.hpp"
+#include "../memory.hpp"
 
 #include <unordered_map>
 
@@ -212,7 +213,7 @@ static void optimize_block(Intermediate::Block * const old, Intermediate::Block 
 
     /* Transfer instructions */
     for (Label label : labels) {
-        optimized->new_label(new std::string(*label.name));
+        optimized->new_label(Allocate<std::string>::create(*label.name));
         for (Instruction instr : label.instructions) {
             optimized->add_instruction(instr);
         }

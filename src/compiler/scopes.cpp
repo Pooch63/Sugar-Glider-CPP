@@ -2,6 +2,8 @@
 #include "../globals.hpp"
 #include "../natives/natives.hpp"
 
+#include "../memory.hpp"
+
 #ifdef DEBUG_ASSERT
 #include <cassert>
 #endif
@@ -75,8 +77,9 @@ Variable *ScopeManager::add_variable(std::string* name, VariableType type, int f
     assert(this->scopes.size() > 0);
     #endif
 
-    Variable *info = new Variable(
-        new std::string(*name),
+    std::string *name_str = Allocate<std::string>::create(*name);
+    Variable *info = Allocate<Variable>::create(
+        name_str,
         type,
         this->get_function_scope(),
         function_index);
@@ -148,9 +151,10 @@ void ScopeManager::init_native_scope() {
     std::string* var_name;
 
     for (auto &name : Natives::name_to_native_index) {
-        var_name = new std::string(name.first);
+        var_name = Allocate<std::string>::create(name.first);
 
-        Variable *variable = new Variable(var_name, VariableType::NATIVE, -1, Intermediate::global_function_ind);
+        Variable *variable = Allocate<Variable>::create(
+            var_name, VariableType::NATIVE, -1, Intermediate::global_function_ind);
         this->variables.push_back(variable);
 
         this->native_scope.add_variable(var_name, variable);

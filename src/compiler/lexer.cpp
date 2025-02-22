@@ -1,5 +1,6 @@
 #include "lexer.hpp"
 #include "../globals.hpp"
+#include "../memory.hpp"
 #include "../utils.hpp"
 
 #include <unordered_map> // Keyword map
@@ -235,7 +236,7 @@ TokenPosition Scanner::make_single_line_position(int length) const {
 std::string* Scanner::parse_string() {
     char delimeter = this->advance();
 
-    std::string* str = new std::string();
+    std::string* str = Allocate<std::string>::create();
 
     bool continue_loop = true;
 
@@ -616,7 +617,7 @@ Token Scanner::next_token() {
     // Identifier or keyword
     if ( is_identifier_start(curr) ) {
         // Start the string with the identifier start
-        std::string* identifier = new std::string(1, curr);
+        std::string* identifier = Allocate<std::string>::create(1, curr);
 
         int start_line = this->line,
             start_col = this->col,

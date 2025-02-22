@@ -1,5 +1,6 @@
 #include "math.hpp"
 #include "natives.hpp"
+#include "../memory.hpp"
 
 #include <math.h>
 
@@ -123,5 +124,6 @@ Value Natives::create_math_namespace() {
         { "e", Values::Value(ValueType::NUMBER, 2.7182818284590452353602874713527) },
         { "PI", Values::Value(ValueType::NUMBER, 3.141592653589793238462643383279 ) }
     });
-    return Value(new Object(Math));
+    Object *math_obj = Allocate<Object>::create(Math);
+    return Value(math_obj);
 };

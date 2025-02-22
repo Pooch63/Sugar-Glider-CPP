@@ -53,7 +53,7 @@ void Runtime::add_object(Object *obj) {
 
     this->gc_size += sizeof(Object*);
     switch (obj->type) {
-        case ObjectType::ARRAY: 
+        case ObjectType::ARRAY:
             this->gc_size += sizeof(obj_mem_t::array) + sizeof(*obj_mem_t::array);
             break;
         case ObjectType::STRING:
@@ -367,7 +367,7 @@ int Runtime::run() {
             case OpCode::OP_MAKE_ARRAY:
             {
                 variable_index_t element_count = this->read_value<variable_index_t>(prog_ip);
-                std::vector<Value> *array = new std::vector<Value>(element_count);
+                std::vector<Value> *array = this->create<std::vector<Value>>(element_count);
 
                 // Add the elements to the array
                 for (uint value_index = this->stack.size() - element_count; value_index < this->stack.size(); value_index += 1) {
@@ -378,7 +378,7 @@ int Runtime::run() {
                     this->stack.pop_back();
                 }
 
-                Object *obj = new Object(array);
+                Object *obj = this->create<Object>(array);
                 this->add_object(obj);
 
                 this->stack.push_back(Values::Value(obj));
@@ -441,7 +441,8 @@ int Runtime::run() {
                         break;
                     }
 
-                    Object *obj = new Object(new std::string(1, (*str)[index]));
+                    std::string *str = this->create<std::string>(1, (*str)[index]);
+                    Object *obj = this->create<Object>(str);
                     this->add_object(obj);
                     this->push_stack_value(Value(obj));
                     break;
