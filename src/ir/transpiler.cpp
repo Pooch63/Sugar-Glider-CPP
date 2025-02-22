@@ -1,5 +1,5 @@
 #include "transpiler.hpp"
-#include "../runtime/natives.hpp"
+#include "../natives/natives.hpp"
 
 using Intermediate::Instruction, Intermediate::InstrCode, Intermediate::Label, Intermediate::label_index_t, Bytecode::address_t;
 
@@ -121,6 +121,14 @@ void Transpiler::transpile_ir_instruction(Instruction instr, Intermediate::Funct
         case InstrCode::INSTR_MAKE_ARRAY:
             chunk->push_opcode(OpCode::OP_MAKE_ARRAY);
             chunk->push_value<Bytecode::variable_index_t>(instr.get_array_element_count());
+            break;
+        case InstrCode::INSTR_CONSTANT_PROPERTY_ACCESS:
+        {
+            Values::Value prop_value = instr.payload_to_value();
+            this->runtime.new_constant(prop_value);
+            chunk->push_opcode(OpCode::OP_CONSTANT_PROPERTY_ACCESS);
+            chunk->push_value<std::string*>(Values::get_value_string(prop_value));
+        }
             break;
 
         case InstrCode::INSTR_GOTO:
