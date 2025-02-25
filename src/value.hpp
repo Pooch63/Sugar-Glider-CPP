@@ -115,6 +115,28 @@ namespace Values {
         ~Object();
     };
 
+    inline Value value_from_object(Object *obj) __attribute__((__always_inline__));
+    inline Value value_from_object(Object *obj) {
+        #ifdef NAN_BOXING
+        #else
+        return Value(obj);
+        #endif
+    }
+    inline Value value_from_number(number_t obj) __attribute__((__always_inline__));
+    inline Value value_from_number(number_t number) {
+        #ifdef NAN_BOXING
+        #else
+        return Value(ValueType::NUMBER, number);
+        #endif
+    }
+    inline Value value_from_native_method(native_method_t native) __attribute__((__always_inline__));
+    inline Value value_from_native_method(native_method_t native) {
+        #ifdef NAN_BOXING
+        #else
+        return Value(native);
+        #endif
+    }
+
     std::string value_to_string(const Value &value);
     std::string value_to_debug_string(const Value &value);
     std::string object_to_string(Object *obj);
