@@ -8,7 +8,7 @@ function do_some_work(num) {
     return Math.sin(num) * Math.cos(num) / Math.sqrt(num) + Math.pow(num, num);
 }
 var start = clock(); // get the current time in nanoseconds
-var iter = 0;
+var iter = 1;
 while (iter < 1_000_000) {
     do_some_work(iter);
     iter = iter + 1;
