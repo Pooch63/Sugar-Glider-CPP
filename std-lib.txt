@@ -1,0 +1,32 @@
+Array:
+    .append(arr, element)
+    .includes(arr, element)
+    .length(arr)
+
+String
+    .substring(string, start, end) #exclusive range, [start, end)
+
+Math
+    acos(num)
+    asin(num)
+    atan(num)
+    .cos(num)
+    .sin(num)
+    .tan(num)
+    .log10(num)
+    .logE(num)
+    .log2(num)
+    .log2ff(num)
+    floor(num)
+    ceil(num)
+    trunc(num, places)
+    pow(a, b)
+    sqrt(num)
+    .PI = 3.14...
+    .E = 2.718...
+
+println(string)
+clock()
+
+Date
+    .timezoneOffset()

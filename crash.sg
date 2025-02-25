@@ -1,3 +1,9 @@
+// This is a single line comment
+/* And this is a multiline comment */
+var k = "a";
+k = k + "b";
+Console.println(k);
+
 function do_some_work(num) {
     return Math.sin(num) * Math.cos(num) / Math.sqrt(num) + Math.pow(num, num);
 }

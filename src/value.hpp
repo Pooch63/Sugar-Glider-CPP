@@ -1,9 +1,7 @@
 #ifndef _SGCPP_VALUE_HPP
 #define _SGCPP_VALUE_HPP
 
-#include "globals.hpp"
 #include "ir/bytecode.hpp"
-#include "operations.hpp"
 
 #ifdef DEBUG
 // For inline value functions
