@@ -1,5 +1,5 @@
 # debug, prof, build
-MAKE_MODE := prof
+MAKE_MODE := build
 
 CC = g++
 warnings = -pedantic -Wall -Wextra -Werror
