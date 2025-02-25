@@ -77,8 +77,6 @@ static void optimize_block(Intermediate::Block * const old, Intermediate::Block 
                 Instruction value = Instruction::value_to_instruction(result);
                 label.push_back(value);
 
-                Intermediate::log_instruction(Instruction::value_to_instruction(result));
-
                 continue;
             }
             /* Unary op folding */

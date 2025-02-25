@@ -64,9 +64,7 @@ std::string Values::value_to_string(const Value &value) {
 std::string Values::object_to_string(Object *obj) {
     switch (obj->type) {
         case ObjectType::STRING: {
-            std::string trimmed;
-            truncate_string(trimmed, 36, *obj->memory.str);
-            return '"' + trimmed + '"';
+            return *obj->memory.str;
         }
         case ObjectType::ARRAY: {
             std::string str = "[ ";

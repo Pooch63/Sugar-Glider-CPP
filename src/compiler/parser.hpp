@@ -15,9 +15,6 @@ namespace Parse {
         // Used for unary operators that are NOT infix operators, e.g. numbers
         PREC_NONE,
 
-        // a.b
-        PREC_DOT,
-
         PREC_ASSIGNMENT_OR_TERNARY, // a = b OR a ? b : c
         PREC_EQUALITY, // ==, !=
         PREC_RELATIONAL, // <, <=, >, >=
@@ -30,7 +27,10 @@ namespace Parse {
         // a(
         PREC_CALL,
 
-        PREC_UNARY
+        PREC_UNARY,
+
+        // a.b
+        PREC_DOT,
     };
 
     class Parser;

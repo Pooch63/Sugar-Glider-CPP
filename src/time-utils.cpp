@@ -19,6 +19,6 @@ uint64_t time_in_millis() {
     return get_time<chrono::milliseconds>();
 }
 
-std::string_view get_timezone_offset_name() {
+std::string_view get_timezone_name() {
     return chrono::current_zone()->name();
 }
