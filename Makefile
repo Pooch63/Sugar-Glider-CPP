@@ -12,7 +12,7 @@ SRC_DIR = ./src
 OBJ_DIR =./obj
 SRC_FILES := $(wildcard $(SRC_DIR)/**/*.cpp) $(wildcard $(SRC_DIR)/*.cpp)
 OBJS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRC_FILES))
-EXECUTABLE = main.exe
+EXECUTABLE = sgr.exe
 
 ifeq ($(MAKE_MODE), debug)
 	flags := $(flags) -ggdb3
