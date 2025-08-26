@@ -1,9 +1,11 @@
 # Sugar-Glider-CPP
  An implementation of my language, Sugar Glider, in C++
 
-Best way to run the project is to build from the repo.
+Best way to run the project is to build from the repo. Run `make` from the root, and you'll get a `sgr.exe` (sgr stands for **S**ugar **G**lider **R**untime).
 Usage:
-`sgr run file`
+
+`sgr run file` (e.g., `sgr run ./prog.sg`)
+
 `sgr` gives a help menu
 
 An example program showing off some of SugarGlider's capabilities
